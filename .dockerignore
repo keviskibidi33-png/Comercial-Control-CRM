@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# Next.js
+.next
+out
+dist
+build
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+logs
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.xlsx
+*.xls
+*.pdf
