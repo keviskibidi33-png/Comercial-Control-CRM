@@ -19,7 +19,7 @@ declare module "@tanstack/react-table" {
     }
 }
 
-// Utility to format date as DD/MM/YY
+// Utility to format date as YYYY/MM/DD
 const formatDateToShort = (dateStr: string | null) => {
     if (!dateStr) return null
     try {
@@ -376,7 +376,7 @@ const SmartDateCell = React.memo(({ getValue, row: { original }, column: { id },
 })
 SmartDateCell.displayName = "SmartDateCell"
 
-// Date Display Component (Shows DD/MM/YY, becomes picker on click)
+// Date Display Component (Shows YYYY/MM/DD, becomes picker on click)
 const DateDisplayCell = React.memo(({ getValue, row, column, table, className }: EditableCellProps<ProgramacionServicio>) => {
     const [isEditing, setIsEditing] = React.useState(false)
     const value = getValue() as string

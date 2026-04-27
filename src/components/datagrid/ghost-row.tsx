@@ -82,7 +82,7 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
         }
 
 
-        // Date fields: auto-complete to show DD/MM/YY format (store ISO internally for DB)
+        // Date fields: auto-complete to show YYYY/MM/DD format (store ISO internally for DB)
         const isDateField = ['fecha_recepcion', 'fecha_inicio', 'fecha_entrega_estimada', 'entrega_real', 'fecha_solicitud_com', 'fecha_entrega_com', 'fecha_pago'].includes(columnId)
         if (isDateField && formatted) {
             let day = ''
