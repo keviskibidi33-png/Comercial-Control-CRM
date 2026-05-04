@@ -18,7 +18,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ### Main CRM (.env.local)
 Update the following variable in the main `crm-geofal` project:
 ```text
-NEXT_PUBLIC_PROGRAMACION_COMERCIAL_URL=http://localhost:8474
+NEXT_PUBLIC_PROGRAMACION_COMERCIAL_URL=https://comercial.geofal.com.pe
 ```
 
 ## 2. Port Configuration
