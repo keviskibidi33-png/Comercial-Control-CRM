@@ -131,7 +131,10 @@ export function FixedProgramacionEditor({
   }, [activeViewMode, tabViewModes, viewMode])
 
   const currentColumns = React.useMemo(() => COLUMN_MAP[activeViewMode], [activeViewMode])
-  const canWrite = React.useMemo(() => getCanWrite(activeViewMode), [activeViewMode, getCanWrite])
+  const canWrite = React.useMemo(
+    () => (activeViewMode === "LAB" ? false : getCanWrite(activeViewMode)),
+    [activeViewMode, getCanWrite],
+  )
   const hasScopedAccess = React.useMemo(() => hasScopedProgramacionViewAccess(email, activeViewMode), [email, activeViewMode])
   const storageIdentity = React.useMemo(() => userId || email || role || "anonymous", [email, role, userId])
   const tableStateStorageKey = React.useMemo(
