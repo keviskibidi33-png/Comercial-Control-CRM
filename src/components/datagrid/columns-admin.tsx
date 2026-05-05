@@ -117,8 +117,14 @@ export const columnsAdmin: ColumnDef<ProgramacionServicio>[] = [
         accessorKey: "descripcion_servicio",
         header: ({ column }) => <SortableHeader column={column} title="DESCRIPCION DEL SERVICIO" />,
         size: 180, minSize: 150, maxSize: 420, enableResizing: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        cell: (props: any) => <EditableCell {...props} className="text-zinc-900 wrap-break-word whitespace-normal" />,
+        cell: ({ getValue }) => (
+            <div
+                className="px-1 py-1 text-zinc-900 wrap-break-word whitespace-normal cursor-not-allowed bg-zinc-50/50"
+                title="Campo bloqueado desde laboratorio"
+            >
+                {String(getValue() ?? "").trim() || "-"}
+            </div>
+        ),
     },
     {
         accessorKey: "cotizacion_lab",

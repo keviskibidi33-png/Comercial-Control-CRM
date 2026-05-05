@@ -44,6 +44,27 @@ function extractLeadingNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null
 }
 
+function normalizeServiceCostValue(value: unknown): string | null {
+    if (value === null || value === undefined) return null
+
+    const raw = String(value).trim()
+    if (!raw) return null
+
+    const stripped = raw
+        .replace(/s\/\.?/gi, "")
+        .replace(/\s+/g, "")
+
+    const decimalNormalized = stripped.includes(",") && stripped.includes(".")
+        ? stripped.replace(/\./g, "").replace(/,/g, ".")
+        : stripped.replace(/,/g, ".")
+
+    const cleaned = decimalNormalized.replace(/[^0-9.-]/g, "")
+    if (!cleaned) return null
+
+    const parsed = Number(cleaned)
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : null
+}
+
 function resolveParentOrigin(): string | null {
     if (typeof window === "undefined") return null
 
@@ -283,9 +304,11 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     }, [supabase, authLoading, handleRealtimePayload])
 
     const updateField = useCallback(async (rowId: string, field: string, value: unknown) => {
+        const normalizedValue = field === "costo_servicio" ? normalizeServiceCostValue(value) : value
+
         // 1. Optimistic Update in Cache (instant UI)
         queryClient.setQueryData(["programacion"], (oldData: ProgramacionServicio[] = []) => {
-            return oldData.map(row => row.id === rowId ? { ...row, [field]: value } : row)
+            return oldData.map(row => row.id === rowId ? { ...row, [field]: normalizedValue } : row)
         })
 
         // 2. Mark this ID so realtime skips the echo
@@ -308,7 +331,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
             const { error } = await (supabase
                 .from(targetTable) as any)
-                .update({ [field]: value, updated_at: new Date().toISOString() })
+                .update({ [field]: normalizedValue, updated_at: new Date().toISOString() })
                 .eq(idField, rowId)
 
             if (error) throw error
