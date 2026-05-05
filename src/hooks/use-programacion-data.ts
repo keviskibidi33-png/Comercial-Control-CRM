@@ -36,6 +36,14 @@ function exportDebugLog(message: string, payload?: unknown) {
     }
 }
 
+function extractLeadingNumber(value: unknown): number | null {
+    const match = String(value ?? "").match(/\d+/)
+    if (!match) return null
+
+    const parsed = Number.parseInt(match[0], 10)
+    return Number.isFinite(parsed) ? parsed : null
+}
+
 function resolveParentOrigin(): string | null {
     if (typeof window === "undefined") return null
 
@@ -57,7 +65,9 @@ function resolveParentOrigin(): string | null {
     return null
 }
 
-export function useProgramacionData() {
+type ProgramacionModuleKind = "laboratorio" | "oficina_tecnica" | "comercial" | "administracion"
+
+export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     const supabase = useMemo(() => createClient(), [])
     const queryClient = useQueryClient()
     const { loading: authLoading } = useCurrentUser()
@@ -312,12 +322,14 @@ export function useProgramacionData() {
     }, [queryClient, supabase])
 
     const insertRow = useCallback(async (newRow: Partial<ProgramacionServicio>) => {
+        const otNumero = extractLeadingNumber(newRow.ot)
         const labData: any = {
             ...newRow,
+            ...(otNumero ? { item_numero: otNumero } : {}),
             estado_trabajo: newRow.estado_trabajo || "PENDIENTE",
         }
 
-        delete labData.item_numero
+        if (!otNumero) delete labData.item_numero
         delete labData.fecha_solicitud_com
         delete labData.fecha_entrega_com
         delete labData.evidencia_solicitud_envio
