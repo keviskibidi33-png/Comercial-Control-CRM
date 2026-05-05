@@ -220,7 +220,15 @@ export function FixedProgramacionEditor({
             </span>
           )}
 
-          {!canWrite && !hasScopedAccess && (
+          {activeViewMode === "LAB" ? (
+            <span
+              className="flex cursor-default items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-700"
+              title="La vista LAB está bloqueada para edición"
+            >
+              <Info className="h-3 w-3" />
+              Solo Lectura
+            </span>
+          ) : !canWrite && !hasScopedAccess ? (
             <span
               className="flex cursor-default items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-600"
               title="Solo lectura para esta vista"
@@ -228,7 +236,7 @@ export function FixedProgramacionEditor({
               <Info className="h-3 w-3" />
               Vista Solo Lectura
             </span>
-          )}
+          ) : null}
           {!canWrite && hasScopedAccess && (
             <span
               className="flex cursor-default items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-700"
