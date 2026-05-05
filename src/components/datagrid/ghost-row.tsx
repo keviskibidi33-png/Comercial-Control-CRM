@@ -247,6 +247,7 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
             fecha_entrega: "DDMM",
             entrega_real: "DDMM",
             cotizacion_lab: "COTIZ.N-XX-26",
+            costo_servicio: "S/. 0.00",
             numero_factura: "FXXX-XXXX",
             estado_trabajo: "Estado",
             dias_atraso_lab: "0",

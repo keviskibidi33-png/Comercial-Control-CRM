@@ -35,7 +35,7 @@ const formatDateToShort = (dateStr: string | null) => {
 }
 
 // Export components for use in other column definitions
-export { EditableCell, OTCell, SmartDateCell, CotizacionCell, AutorizacionCell, PaymentStatusCell, StatusCell }
+export { EditableCell, OTCell, SmartDateCell, CotizacionCell, CostoServicioCell, AutorizacionCell, PaymentStatusCell, StatusCell }
 
 export type EditableCellProps<TData> = {
     getValue: () => unknown
@@ -581,6 +581,129 @@ const CotizacionCell = React.memo(({ getValue, row: { original }, column: { id }
     )
 })
 CotizacionCell.displayName = "CotizacionCell"
+
+const formatServiceCostDisplay = (value: unknown): string => {
+    if (value === null || value === undefined || value === "") return ""
+
+    const raw = String(value).trim()
+    if (!raw) return ""
+
+    const stripped = raw
+        .replace(/s\/\.?/gi, "")
+        .replace(/\s+/g, "")
+
+    const decimalNormalized = stripped.includes(",") && stripped.includes(".")
+        ? stripped.replace(/\./g, "").replace(/,/g, ".")
+        : stripped.replace(/,/g, ".")
+
+    const cleaned = decimalNormalized.replace(/[^0-9.-]/g, "")
+    const parsed = Number(cleaned)
+
+    if (!Number.isFinite(parsed)) return raw
+
+    return `S/. ${parsed.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const normalizeServiceCostInput = (value: string): string => {
+    const raw = value.trim()
+    if (!raw) return ""
+
+    const stripped = raw
+        .replace(/s\/\.?/gi, "")
+        .replace(/\s+/g, "")
+
+    const decimalNormalized = stripped.includes(",") && stripped.includes(".")
+        ? stripped.replace(/\./g, "").replace(/,/g, ".")
+        : stripped.replace(/,/g, ".")
+
+    const cleaned = decimalNormalized.replace(/[^0-9.-]/g, "")
+    if (!cleaned) return ""
+
+    const parsed = Number(cleaned)
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : raw
+}
+
+const CostoServicioCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {
+    const initialValue = getValue()
+    const [isEditing, setIsEditing] = React.useState(false)
+    const [inputValue, setInputValue] = React.useState(String(initialValue ?? ""))
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = table.options.meta as any
+    const userRole = normalizeProgramacionAccessValue(meta?.userRole)
+
+    const canWrite = (() => {
+        if (meta?.canWrite === false) return false
+        if (userRole === 'laboratorio_lector' || userRole.includes('lector')) return false
+        if (userRole === 'laboratorio_tipificador' || userRole.includes('tipificador')) return true
+        if (userRole === 'vendor' || userRole.includes('vendedor') || userRole.includes('asesor') || userRole.includes('comercial')) return true
+        if (userRole === 'administrativo' || userRole.includes('administrativo')) return true
+        return meta?.canWrite ?? false
+    })()
+
+    const onBlur = () => {
+        setIsEditing(false)
+        if (!canWrite) return
+
+        const finalValue = normalizeServiceCostInput(inputValue)
+        const initialNormalized = normalizeServiceCostInput(String(initialValue ?? ""))
+
+        if (finalValue !== initialNormalized) {
+            table.options.meta?.updateData(original.id, id, finalValue)
+        }
+    }
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            e.currentTarget.blur()
+            setTimeout(() => {
+                const allInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select')) as HTMLElement[]
+                const currentIndex = allInputs.indexOf(e.target as HTMLElement)
+                if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
+                    allInputs[currentIndex + 1].focus()
+                    if (allInputs[currentIndex + 1] instanceof HTMLInputElement) {
+                        (allInputs[currentIndex + 1] as HTMLInputElement).select()
+                    }
+                }
+            }, 0)
+        }
+    }
+
+    if (!canWrite) {
+        return (
+            <div className="w-full h-full flex items-center px-1 text-sm text-zinc-900 font-medium bg-zinc-50/50 cursor-not-allowed" title="Costo del servicio con IGV">
+                {formatServiceCostDisplay(initialValue) || <span className="text-zinc-300 italic">-</span>}
+            </div>
+        )
+    }
+
+    if (isEditing) {
+        return (
+            <input
+                autoFocus
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                onBlur={onBlur}
+                onKeyDown={onKeyDown}
+                inputMode="decimal"
+                className="w-full h-full bg-white border border-blue-300 rounded text-sm p-1 text-zinc-900 font-medium"
+                placeholder="Ej: 1500.00"
+            />
+        )
+    }
+
+    return (
+        <div
+            onClick={() => { setInputValue(String(initialValue ?? "")); setIsEditing(true); }}
+            className="w-full h-full cursor-pointer hover:bg-slate-50 flex items-center px-1 text-sm truncate text-zinc-900 font-medium"
+            title={canWrite ? "Click para editar costo con IGV" : "Costo del servicio con IGV"}
+        >
+            {formatServiceCostDisplay(initialValue) || <span className="text-zinc-300 italic">...</span>}
+        </div>
+    )
+})
+CostoServicioCell.displayName = "CostoServicioCell"
 
 // Status Cell (Estado de trabajo) - blocks lector role
 const StatusCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {

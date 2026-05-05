@@ -292,7 +292,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         pendingLocalIds.current.add(rowId)
 
         try {
-            const commercialFields = ['fecha_solicitud_com', 'fecha_entrega_com', 'evidencia_solicitud_envio', 'dias_atraso_envio_coti', 'motivo_dias_atraso_com']
+            const commercialFields = ['fecha_solicitud_com', 'fecha_entrega_com', 'evidencia_solicitud_envio', 'dias_atraso_envio_coti', 'motivo_dias_atraso_com', 'costo_servicio']
             const adminFields = ['numero_factura', 'estado_pago', 'estado_autorizar', 'nota_admin']
 
             let targetTable = "programacion_lab"
@@ -339,6 +339,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         delete labData.estado_autorizar
         delete labData.nota_admin
         delete labData.dias_atraso_envio_coti
+        delete labData.costo_servicio
 
         Object.keys(labData).forEach(key => {
             if (labData[key] === undefined || labData[key] === null || labData[key] === '') {
@@ -368,6 +369,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             if (newRow.fecha_entrega_com) commercialData.fecha_entrega_com = newRow.fecha_entrega_com
             if (newRow.evidencia_solicitud_envio) commercialData.evidencia_solicitud_envio = newRow.evidencia_solicitud_envio
             if (newRow.motivo_dias_atraso_com) commercialData.motivo_dias_atraso_com = newRow.motivo_dias_atraso_com
+            if (newRow.costo_servicio !== undefined && newRow.costo_servicio !== null && newRow.costo_servicio !== '') commercialData.costo_servicio = newRow.costo_servicio
 
             const adminData: any = {}
             if (newRow.numero_factura) adminData.numero_factura = newRow.numero_factura

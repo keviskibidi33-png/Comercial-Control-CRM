@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import {
     EditableCell,
     CotizacionCell,
+    CostoServicioCell,
     AutorizacionCell,
     PaymentStatusCell
 } from "./columns"
@@ -113,10 +114,28 @@ export const columnsAdmin: ColumnDef<ProgramacionServicio>[] = [
         cell: (props: any) => <EditableCell {...props} className="text-zinc-900 wrap-break-word whitespace-normal" />,
     },
     {
+        accessorKey: "descripcion_servicio",
+        header: ({ column }) => <SortableHeader column={column} title="DESCRIPCION DEL SERVICIO" />,
+        size: 180, minSize: 150, maxSize: 420, enableResizing: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        cell: (props: any) => <EditableCell {...props} className="text-zinc-900 wrap-break-word whitespace-normal" />,
+    },
+    {
         accessorKey: "cotizacion_lab",
         header: ({ column }) => <SortableHeader column={column} title="COTIZACION" />,
         size: 160, minSize: 120, maxSize: 300, enableResizing: true,
         cell: CotizacionCell,
+    },
+    {
+        accessorKey: "costo_servicio",
+        header: ({ column }) => (
+            <div className="flex flex-col items-center">
+                <SortableHeader column={column} title={`COSTO DEL\nSERVICIO`} className="text-indigo-700" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-500 -mt-1">IGV</span>
+            </div>
+        ),
+        size: 160, minSize: 140, maxSize: 300, enableResizing: true,
+        cell: CostoServicioCell,
     },
     {
         accessorKey: "numero_factura",

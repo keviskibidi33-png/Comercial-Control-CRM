@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils"
 import {
     EditableCell,
     SmartDateCell,
-    CotizacionCell
+    CotizacionCell,
+    CostoServicioCell
 } from "./columns"
 
 const SortableHeader = ({ column, title, className }: { column: Column<ProgramacionServicio, unknown>, title: string, className?: string }) => {
@@ -72,6 +73,17 @@ export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
         cell: CotizacionCell,
     },
     {
+        accessorKey: "costo_servicio",
+        header: ({ column }) => (
+            <div className="flex flex-col items-center">
+                <SortableHeader column={column} title={`COSTO DEL\nSERVICIO`} className="text-indigo-700" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-500 -mt-1">IGV</span>
+            </div>
+        ),
+        size: 160, minSize: 140, maxSize: 300, enableResizing: true,
+        cell: CostoServicioCell,
+    },
+    {
         accessorKey: "fecha_solicitud_com",
         header: ({ column }) => <SortableHeader column={column} title={`FECHA\nSOLICITUD`} />,
         size: 110, minSize: 110, maxSize: 110,
@@ -120,7 +132,6 @@ export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
         accessorKey: "motivo_dias_atraso_com",
         header: ({ column }) => <SortableHeader column={column} title={`MOTIVO\nDIAS ATRASO`} />,
         size: 400, minSize: 200, maxSize: 800, enableResizing: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         cell: (props: any) => <EditableCell {...props} className="text-zinc-800 text-[12px] whitespace-normal break-words" />,
     },
