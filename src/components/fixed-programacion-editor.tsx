@@ -19,6 +19,7 @@ interface FixedProgramacionEditorProps {
   title: string
   subtitle: string
   viewMode: ViewMode
+  availableViewModes?: ViewMode[]
   exportMode: "lab" | "comercial" | "administracion"
   storageNamespace: string
 }
@@ -28,6 +29,12 @@ const COLUMN_MAP = {
   COM: columnsComercial,
   ADMIN: columnsAdmin,
 } as const
+
+const VIEW_MODE_LABELS: Record<ViewMode, string> = {
+  LAB: "Laboratorio",
+  COM: "Comercial",
+  ADMIN: "Administración",
+}
 
 function normalizeRole(value: string | null | undefined) {
   return String(value || "")
@@ -99,22 +106,40 @@ export function FixedProgramacionEditor({
   title,
   subtitle,
   viewMode,
+  availableViewModes,
   exportMode,
   storageNamespace,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
-  const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData()
+  const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
   const [filteredItems, setFilteredItems] = React.useState<ProgramacionServicio[]>([])
+  const [activeViewMode, setActiveViewMode] = React.useState<ViewMode>(viewMode)
 
-  const currentColumns = React.useMemo(() => COLUMN_MAP[viewMode], [viewMode])
-  const canWrite = React.useMemo(() => getCanWrite(viewMode), [getCanWrite, viewMode])
-  const hasScopedAccess = React.useMemo(() => hasScopedProgramacionViewAccess(email, viewMode), [email, viewMode])
+  const tabViewModes = React.useMemo(
+    () => Array.from(new Set(availableViewModes?.length ? availableViewModes : [viewMode])) as ViewMode[],
+    [availableViewModes, viewMode],
+  )
+
+  React.useEffect(() => {
+    setActiveViewMode(viewMode)
+  }, [viewMode])
+
+  React.useEffect(() => {
+    if (!tabViewModes.includes(activeViewMode)) {
+      setActiveViewMode(tabViewModes[0] ?? viewMode)
+    }
+  }, [activeViewMode, tabViewModes, viewMode])
+
+  const currentColumns = React.useMemo(() => COLUMN_MAP[activeViewMode], [activeViewMode])
+  const canWrite = React.useMemo(() => getCanWrite(activeViewMode), [activeViewMode, getCanWrite])
+  const hasScopedAccess = React.useMemo(() => hasScopedProgramacionViewAccess(email, activeViewMode), [email, activeViewMode])
   const storageIdentity = React.useMemo(() => userId || email || role || "anonymous", [email, role, userId])
   const tableStateStorageKey = React.useMemo(
-    () => `${storageNamespace}:table-state:v1:${storageIdentity}:${viewMode}`,
-    [storageIdentity, storageNamespace, viewMode],
+    () => `${storageNamespace}:table-state:v1:${storageIdentity}:${activeViewMode}`,
+    [activeViewMode, storageIdentity, storageNamespace],
   )
   const isAuthorized = React.useMemo(() => canAccessModule(kind, role), [kind, role])
+  const currentExportMode = activeViewMode === "LAB" ? "lab" : exportMode
 
   if (authLoading) {
     return (
@@ -169,9 +194,28 @@ export function FixedProgramacionEditor({
             </span>
           </div>
 
-          <span className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-700">
-            {viewMode === "LAB" ? "Vista Laboratorio" : viewMode === "COM" ? "Vista Comercial" : "Vista Administración"}
-          </span>
+          {tabViewModes.length > 1 ? (
+            <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 p-1">
+              {tabViewModes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setActiveViewMode(mode)}
+                  className={`rounded-md px-4 py-1 text-xs font-semibold transition-all ${
+                    activeViewMode === mode
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-700"
+                  }`}
+                >
+                  {VIEW_MODE_LABELS[mode]}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-700">
+              {`Vista ${VIEW_MODE_LABELS[activeViewMode]}`}
+            </span>
+          )}
 
           {!canWrite && !hasScopedAccess && (
             <span
@@ -195,7 +239,7 @@ export function FixedProgramacionEditor({
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => exportToExcel(filteredItems, exportMode)}
+            onClick={() => exportToExcel(filteredItems, currentExportMode)}
             disabled={data.length === 0}
             className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -234,10 +278,10 @@ export function FixedProgramacionEditor({
           userEmail={email || ""}
           canWrite={canWrite}
           permissions={permissions}
-          viewMode={viewMode}
+          viewMode={activeViewMode}
           onFilteredDataChange={setFilteredItems}
           storageKey={tableStateStorageKey}
-          key={`${storageIdentity}:${storageNamespace}:${viewMode}`}
+          key={`${storageIdentity}:${storageNamespace}:${activeViewMode}`}
         />
       </div>
     </div>

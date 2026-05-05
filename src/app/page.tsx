@@ -10,6 +10,7 @@ export default function Home() {
           title="Control Comercial"
           subtitle="Seguimiento comercial, entregas y evidencia de atención."
           viewMode="COM"
+          availableViewModes={["LAB", "COM"]}
           exportMode="comercial"
           storageNamespace="programacion-comercial"
         />
