@@ -22,7 +22,6 @@ const PROGRAMACION_TABLE_STORAGE_PREFIX = "programacion:table-state:v1"
 const roleToViewMap: Record<string, ViewMode> = {
     admin: "ADMIN",
     administrativo: "ADMIN",
-    vendor: "COM",
     auxiliar_comercial: "COM",
     laboratorio_lector: "LAB",
     laboratorio_tipificador: "LAB",
@@ -48,7 +47,7 @@ function inferViewFromRole(roleParam: string): ViewMode {
     if (normalizedRole.includes("admin") || normalizedRole.includes("geren") || normalizedRole.includes("direc") || normalizedRole.includes("jefe")) {
         return "ADMIN"
     }
-    if (normalizedRole.includes("comercial") || normalizedRole.includes("vendedor") || normalizedRole.includes("asesor") || normalizedRole.includes("vendor") || normalizedRole.includes("ventas")) {
+    if (normalizedRole.includes("comercial") || normalizedRole.includes("ventas")) {
         return "COM"
     }
     return "LAB"

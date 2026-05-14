@@ -296,8 +296,8 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
             return true
         }
 
-        // Role: vendor - Can edit everything EXCEPT estado_pago
-        if (userRole === 'vendor' || userRole.includes('vendedor') || userRole.includes('asesor') || userRole.includes('comercial')) {
+        // Role: comercial - Can edit everything EXCEPT estado_pago
+        if (userRole.includes('comercial')) {
             const blockedColumns = ['estado_pago']
             if (blockedColumns.includes(columnId)) return false
             return true
@@ -391,4 +391,3 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
         </tr>
     )
 }
-
