@@ -57,7 +57,7 @@ function isLaboratorioRole(role: string) {
 }
 
 function isComercialRole(role: string) {
-  return role.includes("comercial") || role.includes("vendor") || role.includes("vendedor") || role.includes("asesor")
+  return role.includes("comercial")
 }
 
 function isAdministracionRole(role: string) {

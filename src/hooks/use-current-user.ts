@@ -34,18 +34,49 @@ const CONTROL_ACCESS_REVOKED_EMAILS = new Set([
     "tecnico3@geofal.com.pe",
 ])
 
-function applyRestrictedControlAccess(email: string | null | undefined, perms: PermissionMap): PermissionMap {
-    const normalizedEmail = String(email || "").toLowerCase().trim()
-    if (!CONTROL_ACCESS_REVOKED_EMAILS.has(normalizedEmail)) {
-        return perms
-    }
+const CONTROL_ACCESS_BLOCKED_ROLES = new Set([
+    "tecnico",
+    "tecnico_suelos",
+])
 
+function normalizeRole(value: string | null | undefined) {
+    return String(value || "")
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+}
+
+function isBlockedControlRole(role: string | null | undefined) {
+    return CONTROL_ACCESS_BLOCKED_ROLES.has(normalizeRole(role))
+}
+
+function denyControlAccess(perms: PermissionMap): PermissionMap {
     return {
         ...perms,
         laboratorio: { read: false, write: false, delete: false },
+        programacion: { read: false, write: false, delete: false },
         comercial: { read: false, write: false, delete: false },
         administracion: { read: false, write: false, delete: false },
     }
+}
+
+function applyRestrictedControlAccess(
+    role: string | null | undefined,
+    email: string | null | undefined,
+    perms: PermissionMap,
+): PermissionMap {
+    let result = perms
+    if (isBlockedControlRole(role)) {
+        result = denyControlAccess(result)
+    }
+
+    const normalizedEmail = String(email || "").toLowerCase().trim()
+    if (CONTROL_ACCESS_REVOKED_EMAILS.has(normalizedEmail)) {
+        result = denyControlAccess(result)
+    }
+
+    return result
 }
 
 function getAllowedViewsFromPermissions(perms: PermissionMap | null | undefined): ViewMode[] {
@@ -92,9 +123,19 @@ export function useCurrentUser() {
     const [permissions, setPermissions] = useState<PermissionMap>(() => {
         // Initial permissions: minimal until DB load completes
         const rNorm = (qRole || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        const blockedControlRole = isBlockedControlRole(rNorm)
         const isSuperAdmin = rNorm === 'admin' || qIsAdmin
         const dynamicCanWrite = qCanWrite || isSuperAdmin
         const isLabRole = (rNorm.includes('laboratorio') || rNorm.includes('tipificador')) && !rNorm.includes('lector')
+
+        if (blockedControlRole) {
+            return {
+                laboratorio: { read: false, write: false, delete: false },
+                programacion: { read: false, write: false, delete: false },
+                comercial: { read: false, write: false, delete: false },
+                administracion: { read: false, write: false, delete: false },
+            }
+        }
 
         return {
             laboratorio: {
@@ -108,8 +149,8 @@ export function useCurrentUser() {
                 delete: false
             },
             comercial: {
-                read: isSuperAdmin || rNorm.includes('comercial') || rNorm.includes('vendor') || rNorm.includes('vendedor') || rNorm.includes('asesor'),
-                write: dynamicCanWrite && (isSuperAdmin || rNorm.includes('comercial') || rNorm.includes('vendor') || rNorm.includes('vendedor') || rNorm.includes('asesor')),
+                read: isSuperAdmin || rNorm.includes('comercial'),
+                write: dynamicCanWrite && (isSuperAdmin || rNorm.includes('comercial')),
                 delete: false
             },
             administracion: {
@@ -260,7 +301,7 @@ export function useCurrentUser() {
                             }
                         }
 
-                        const effectivePerms = applyRestrictedControlAccess(typedProfile.email, normalizedPerms)
+                        const effectivePerms = applyRestrictedControlAccess(dbRole, typedProfile.email, normalizedPerms)
 
                         setPermissions(effectivePerms)
                         setAllowedViews(getAllowedViewsFromPermissions(effectivePerms))
@@ -289,6 +330,7 @@ export function useCurrentUser() {
         getCanView: (mode: ViewMode) => allowedViews.includes(mode),
         getCanWrite: (mode: ViewMode) => {
             const rNorm = (role || qRole || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            if (isBlockedControlRole(rNorm)) return false
             const isSuperAdmin = rNorm === 'admin' || qIsAdmin
 
             // Priority 1: Superadmin always has access
