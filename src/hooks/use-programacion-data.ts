@@ -207,9 +207,10 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
                 .order("item_numero", { ascending: true })
 
             if (error) {
-                console.error("Error fetching data:", error)
-                toast.error("Error al cargar datos")
-                throw error
+                const message = error?.message || "No se pudo cargar la programación"
+                console.error("[Programacion] No se pudieron cargar los datos de cuadro_control:", message)
+                toast.error("No se pudo cargar la programación")
+                throw new Error(message)
             }
             return data as ProgramacionServicio[]
         },
@@ -336,8 +337,9 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
             if (error) throw error
         } catch (error) {
-            console.error("Update failed:", error)
-            toast.error("Error al guardar")
+            const message = error instanceof Error ? error.message : "No se pudo guardar el cambio"
+            console.error("[Programacion] Error al actualizar un registro:", message)
+            toast.error("No se pudo guardar el cambio")
             pendingLocalIds.current.delete(rowId)
             // Rollback: refetch true state from DB
             queryClient.invalidateQueries({ queryKey: ["programacion"] })
@@ -377,9 +379,10 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             .single()
 
         if (labError) {
-            console.error("Insert lab failed:", labError)
-            toast.error("Error al crear registro base")
-            throw labError
+            const message = labError?.message || "No se pudo crear el registro base"
+            console.error("[Programacion] Error al crear el registro base:", message)
+            toast.error("No se pudo crear el registro base")
+            throw new Error(message)
         }
 
         if (insertedData) {
@@ -500,13 +503,13 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
             if (!response.ok) {
                 const errorText = await response.text()
-                console.error(`${EXPORT_AUTH_TRACE_PREFIX}[${traceId}] Export endpoint failed`, {
+                const message = errorText || "No se pudo exportar el Excel"
+                console.error(`${EXPORT_AUTH_TRACE_PREFIX}[${traceId}] No se pudo generar el Excel`, {
                     endpoint,
                     status: response.status,
-                    statusText: response.statusText,
                     elapsedMs: Date.now() - startedAt,
                 })
-                throw new Error(errorText || "Error al exportar")
+                throw new Error(message)
             }
 
             const blob = await response.blob()
@@ -524,8 +527,9 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             document.body.removeChild(a)
             toast.success("Excel descargado correctamente", { id: toastId })
         } catch (error) {
-            console.error("Export error:", error)
-            toast.error("Error al generar Excel", { id: toastId })
+            const message = error instanceof Error ? error.message : "No se pudo generar el Excel"
+            console.error("[Programacion] Error al exportar Excel:", message)
+            toast.error("No se pudo generar el Excel", { id: toastId })
         }
     }, [getStoredAccessToken, requestTokenFromParent, supabase])
 

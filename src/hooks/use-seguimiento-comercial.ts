@@ -34,7 +34,26 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "")
-    throw new Error(errText || `API Error: ${res.statusText}`)
+    let serverMessage = errText
+
+    try {
+      if (errText) {
+        const parsed = JSON.parse(errText)
+        serverMessage = typeof parsed?.detail === "string" ? parsed.detail : typeof parsed?.message === "string" ? parsed.message : errText
+      }
+    } catch {
+      // Ignore non-JSON errors.
+    }
+
+    const friendlyMap: Record<number, string> = {
+      401: "Sesión expirada o sin permisos para consultar Seguimiento Comercial.",
+      403: "No tienes permisos para consultar Seguimiento Comercial.",
+      404: "No se encontró el recurso solicitado.",
+      422: "La solicitud no es válida. Revisa los filtros y los datos enviados.",
+      500: "El servidor no pudo completar la operación de Seguimiento Comercial.",
+    }
+
+    throw new Error(friendlyMap[res.status] || serverMessage || `Error HTTP ${res.status}`)
   }
 
   const contentType = res.headers.get("content-type")
@@ -79,7 +98,7 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
   const queryKey = ["seguimiento-comercial", filters]
 
   // Carga de filas del backend
-  const { data, isLoading, refetch } = useQuery<{ total: number; items: SeguimientoRow[] }>({
+  const { data, error: dataError, isLoading, refetch } = useQuery<{ total: number; items: SeguimientoRow[] }>({
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams()
@@ -92,15 +111,31 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       return fetchWithAuth(`/api/seguimiento-comercial?${params.toString()}`)
     },
     staleTime: 15000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   // Carga de catálogos únicos para los selectores dropdown
-  const { data: catalogs } = useQuery<Catalogs>({
+  const { data: catalogs, error: catalogsError } = useQuery<Catalogs>({
     queryKey: ["seguimiento-comercial-catalogs"],
     queryFn: () => fetchWithAuth("/api/seguimiento-comercial/catalogs"),
     staleTime: 60000,
-    initialData: { asesores: [], contactos: [], rubros: [], estados: [] }
+    initialData: { asesores: [], contactos: [], rubros: [], estados: [] },
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
+
+  const errorMessage =
+    (dataError instanceof Error ? dataError.message : null) ||
+    (catalogsError instanceof Error ? catalogsError.message : null)
+
+  const connectionStatus = isLoading
+    ? "CONECTANDO"
+    : errorMessage
+      ? "SIN CONEXIÓN"
+      : "EN LÍNEA"
 
   // Actualización optimista de celdas individuales
   const updateMutation = useMutation({
@@ -223,6 +258,8 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
     catalogs,
     isLoading,
     refetch,
+    errorMessage,
+    connectionStatus,
     updateCell: (id: number, field: keyof SeguimientoRow, value: any) => {
       updateMutation.mutate({ id, data: { [field]: value } })
     },

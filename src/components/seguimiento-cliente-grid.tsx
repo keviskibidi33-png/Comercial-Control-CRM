@@ -1,28 +1,22 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { 
-  RefreshCw, 
   Plus, 
   FileDown, 
-  FileUp, 
   Search, 
-  Trash2, 
   ChevronLeft, 
   ChevronRight, 
   AlertCircle, 
-  User, 
-  Tag, 
-  SlidersHorizontal,
   X,
   ChevronsLeft,
   ChevronsRight,
+  Users,
   Wifi,
   WifiOff,
-  Users
+  RefreshCw
 } from "lucide-react"
-import { toast } from "sonner"
 
 const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   fecha_contacto: new Date().toISOString().split("T")[0],
@@ -42,6 +36,14 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   estado_seguimiento: "Pendiente"
 }
 
+const STORAGE_KEY = "seguimiento-comercial-ui:v1"
+
+type SortDirection = "asc" | "desc"
+type SortConfig = {
+  key: keyof SeguimientoRow
+  direction: SortDirection
+} | null
+
 export default function SeguimientoClienteGrid() {
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
@@ -49,10 +51,67 @@ export default function SeguimientoClienteGrid() {
   const [selectedEstado, setSelectedEstado] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null)
+  const [uiHydrated, setUiHydrated] = useState(false)
 
   // Ghost Row State & Handlers
   const [ghostRow, setGhostRow] = useState<Partial<SeguimientoRow>>({ ...DEFAULT_GHOST_ROW })
   const [isGhostSubmitting, setIsGhostSubmitting] = useState(false)
+
+  const [pageErrorMessage, setPageErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (!raw) {
+        setUiHydrated(true)
+        return
+      }
+
+      const parsed = JSON.parse(raw) as Partial<{
+        search: string
+        selectedAsesor: string
+        selectedEstado: string
+        currentPage: number
+        pageSize: number
+        sortKey: keyof SeguimientoRow
+        sortDirection: SortDirection
+      }>
+
+      if (typeof parsed.search === "string") setSearch(parsed.search)
+      if (typeof parsed.selectedAsesor === "string") setSelectedAsesor(parsed.selectedAsesor)
+      if (typeof parsed.selectedEstado === "string") setSelectedEstado(parsed.selectedEstado)
+      if (Number.isInteger(parsed.currentPage) && (parsed.currentPage as number) > 0) setCurrentPage(parsed.currentPage as number)
+      if (Number.isInteger(parsed.pageSize) && (parsed.pageSize as number) > 0) setPageSize(parsed.pageSize as number)
+      if (parsed.sortKey) {
+        setSortConfig({
+          key: parsed.sortKey,
+          direction: parsed.sortDirection === "desc" ? "desc" : "asc",
+        })
+      }
+    } catch {
+      // Ignore malformed persisted state and fall back to defaults.
+    } finally {
+      setUiHydrated(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!uiHydrated || typeof window === "undefined") return
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        search,
+        selectedAsesor,
+        selectedEstado,
+        currentPage,
+        pageSize,
+        sortKey: sortConfig?.key ?? null,
+        sortDirection: sortConfig?.direction ?? null,
+      }),
+    )
+  }, [search, selectedAsesor, selectedEstado, currentPage, pageSize, sortConfig, uiHydrated])
 
   // Sync advisor filter with ghost row advisor if filter changes
   useEffect(() => {
@@ -128,18 +187,18 @@ export default function SeguimientoClienteGrid() {
     catalogs,
     isLoading,
     refetch,
+    errorMessage,
+    connectionStatus,
     updateCell,
     insertRow,
-    deleteRow,
-    importFromExcel,
     exportToExcel,
     isMutating
   } = useSeguimientoComercial({
     search: debouncedSearch,
     asesor: selectedAsesor,
     estado_cliente: selectedEstado,
-    limit: pageSize,
-    offset: offset
+    limit: 10000,
+    offset: 0
   })
 
   // Local state for active autocomplete cell
@@ -147,9 +206,6 @@ export default function SeguimientoClienteGrid() {
   const [suggestionQuery, setSuggestionQuery] = useState("")
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1)
   const autocompleteRef = useRef<HTMLDivElement>(null)
-
-  // File import ref
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Close suggestion menu when clicking outside
   useEffect(() => {
@@ -171,35 +227,66 @@ export default function SeguimientoClienteGrid() {
     }
   }, [total, totalPages, currentPage])
 
-  // Handles Excel upload change
-  const handleImportChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    
-    // Check extension
-    if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
-      toast.error("Por favor suba un archivo Excel (.xlsx o .xls)")
-      return
+  const compareValues = (left: unknown, right: unknown) => {
+    const leftValue = left ?? ""
+    const rightValue = right ?? ""
+
+    const leftNumber = typeof leftValue === "number" ? leftValue : Number(String(leftValue).replace(/[^0-9.-]/g, ""))
+    const rightNumber = typeof rightValue === "number" ? rightValue : Number(String(rightValue).replace(/[^0-9.-]/g, ""))
+
+    const leftLooksNumeric = Number.isFinite(leftNumber) && String(leftValue).trim() !== ""
+    const rightLooksNumeric = Number.isFinite(rightNumber) && String(rightValue).trim() !== ""
+
+    if (leftLooksNumeric && rightLooksNumeric) {
+      return leftNumber - rightNumber
     }
 
-    toast.promise(
-      new Promise((resolve, reject) => {
-        try {
-          importFromExcel(file)
-          resolve(true)
-        } catch (err) {
-          reject(err)
-        }
-      }),
-      {
-        loading: "Importando base de datos de clientes...",
-        success: "Base de datos importada exitosamente",
-        error: "Ocurrió un error al importar"
+    const leftDate = Date.parse(String(leftValue))
+    const rightDate = Date.parse(String(rightValue))
+    const leftLooksDate = Number.isFinite(leftDate) && String(leftValue).includes("-")
+    const rightLooksDate = Number.isFinite(rightDate) && String(rightValue).includes("-")
+
+    if (leftLooksDate && rightLooksDate) {
+      return leftDate - rightDate
+    }
+
+    return String(leftValue).localeCompare(String(rightValue), "es", {
+      numeric: true,
+      sensitivity: "base",
+    })
+  }
+
+  const sortedRows = useMemo(() => {
+    const baseRows = [...rows]
+    if (!sortConfig) return baseRows
+
+    const { key, direction } = sortConfig
+    return baseRows.sort((leftRow, rightRow) => {
+      const result = compareValues(leftRow[key], rightRow[key])
+      return direction === "asc" ? result : -result
+    })
+  }, [rows, sortConfig])
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return sortedRows.slice(start, start + pageSize)
+  }, [currentPage, pageSize, sortedRows])
+
+  useEffect(() => {
+    setPageErrorMessage(errorMessage || null)
+  }, [errorMessage])
+
+  const toggleSort = (field: keyof SeguimientoRow) => {
+    setCurrentPage(1)
+    setSortConfig((current) => {
+      if (current?.key !== field) {
+        return { key: field, direction: "asc" }
       }
-    )
-    
-    // Clear input
-    if (e.target) e.target.value = ""
+      if (current.direction === "asc") {
+        return { key: field, direction: "desc" }
+      }
+      return null
+    })
   }
 
   // Handle cell edit save
@@ -255,29 +342,81 @@ export default function SeguimientoClienteGrid() {
     { key: "observaciones", label: "Observaciones", width: "w-64 min-w-[256px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "text" },
-    { key: "actions", label: "Acciones", width: "w-20 min-w-[80px] text-center" }
   ] as const
 
   return (
-    <div className="flex h-full flex-col bg-white overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
+      {/* Module Header */}
+      <div className="z-10 flex h-11 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <div className="rounded-md bg-blue-600 p-1 text-white shadow-sm">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+            <div className="leading-tight">
+              <h1 className="text-[14px] font-extrabold tracking-tight text-zinc-900">Seguimiento Clientes</h1>
+              <p className="text-[10px] font-medium text-zinc-600">
+                Seguimiento comercial, entregas y evidencia de atención.
+              </p>
+            </div>
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-zinc-700">
+              {total}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportToExcel}
+            disabled={isMutating || isLoading || total === 0}
+            className="flex items-center gap-1.5 h-7 rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <FileDown className="h-3 w-3" />
+            <span>Exportar Excel</span>
+          </button>
+
+          <div
+            className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 shadow-inner"
+            title={connectionStatus}
+          >
+            {connectionStatus === "EN LÍNEA" ? (
+              <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+            ) : connectionStatus === "SIN CONEXIÓN" ? (
+              <WifiOff className="h-3.5 w-3.5 text-red-500" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-500" />
+            )}
+            <span className="hidden text-[10px] font-bold uppercase text-zinc-500 sm:inline">
+              {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN LÍNEA" ? "En Línea" : "Sin Conexión"}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Toolbar Area */}
-      <div className="z-20 shrink-0 border-b border-zinc-200 bg-white p-2 shadow-sm overflow-visible">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between overflow-visible">
+      <div className="z-20 shrink-0 border-b border-zinc-200 bg-white px-4 py-1 shadow-sm overflow-visible">
+        <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between overflow-visible">
           {/* Left search & selections */}
           <div className="flex flex-1 flex-wrap items-center gap-2 overflow-visible">
             {/* Search Input */}
-            <div className="relative w-[250px] lg:w-[300px]">
+            <div className="relative w-[250px] lg:w-[320px]">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Buscar en todo..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-7 text-xs outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-400 text-zinc-900"
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-7 text-xs font-medium outline-none transition-all placeholder:text-zinc-400 text-zinc-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
               />
               {search && (
                 <button
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("")
+                    setCurrentPage(1)
+                  }}
                   className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-600"
                 >
                   <X className="h-4 w-4" />
@@ -293,7 +432,7 @@ export default function SeguimientoClienteGrid() {
                   setSelectedAsesor(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="h-8 border border-zinc-200 rounded-md px-2 pr-7 text-xs outline-none transition-all hover:bg-zinc-50 focus:border-blue-500 bg-white text-zinc-900 cursor-pointer"
+                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
               >
                 <option value="">Todos los Asesores</option>
                 {catalogs?.asesores?.map((name) => (
@@ -312,7 +451,7 @@ export default function SeguimientoClienteGrid() {
                   setSelectedEstado(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="h-8 border border-zinc-200 rounded-md px-2 pr-7 text-xs outline-none transition-all hover:bg-zinc-50 focus:border-blue-500 bg-white text-zinc-900 cursor-pointer"
+                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
               >
                 <option value="">Todos los Estados</option>
                 {catalogs?.estados?.map((est) => (
@@ -323,52 +462,29 @@ export default function SeguimientoClienteGrid() {
               </select>
             </div>
           </div>
-
-          {/* Right Action buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Import Excel Button */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImportChange}
-              accept=".xlsx,.xls"
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isMutating || isLoading}
-              title="Importar base de datos desde un archivo Excel"
-              className="flex items-center gap-1 h-8 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-50"
-            >
-              <FileUp className="h-3.5 w-3.5" />
-              <span>Importar</span>
-            </button>
-
-            {/* Export Excel Button */}
-            <button
-              onClick={exportToExcel}
-              disabled={isMutating || isLoading || total === 0}
-              className="flex items-center gap-1 h-8 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
-            >
-              <FileDown className="h-3.5 w-3.5" />
-              <span>Exportar</span>
-            </button>
-
-            {/* Reload Button */}
-            <button
-              onClick={() => refetch()}
-              disabled={isLoading}
-              className="flex items-center justify-center h-8 w-8 rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
-          </div>
         </div>
       </div>
 
+      {pageErrorMessage && (
+        <div className="border-b border-red-200 bg-red-50 px-4 py-2">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-red-200 bg-white px-3 py-2 text-sm text-red-800 shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <span className="font-medium">{pageErrorMessage}</span>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid View */}
       <div 
-        className="flex-1 w-full overflow-auto relative select-none border-b border-zinc-200 bg-white min-h-0"
+        className="flex-1 w-full overflow-auto relative select-none bg-zinc-50 min-h-0"
         style={{ zoom: '85%' }}
       >
         <table className="min-w-full divide-y divide-zinc-200 table-fixed border-collapse overflow-visible">
@@ -378,15 +494,25 @@ export default function SeguimientoClienteGrid() {
                 <th
                   key={col.key}
                   scope="col"
-                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-200 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0`}
+                  onClick={() => col.key !== "no" && toggleSort(col.key as keyof SeguimientoRow)}
+                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-100 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0 ${
+                    col.key !== "no" ? "cursor-pointer hover:bg-zinc-700/70" : ""
+                  }`}
                 >
-                  {col.label}
+                  <div className="flex items-center gap-1">
+                    <span>{col.label}</span>
+                    {sortConfig?.key === col.key && col.key !== "no" && (
+                      <span className="text-[10px] text-blue-300">
+                        {sortConfig.direction === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-zinc-100 overflow-visible">
-            {rows.map((row) => (
+            {pagedRows.map((row) => (
               <tr
                 key={row.id}
                 className="hover:bg-zinc-50/50 transition-colors group overflow-visible"
@@ -394,39 +520,16 @@ export default function SeguimientoClienteGrid() {
                 {COLUMNS.map((col) => {
                   const cellValue = row[col.key as keyof SeguimientoRow]
                   const isNo = col.key === "no"
-                  const isAction = col.key === "actions"
 
                   // Renders Read-Only 'N°' cell
                   if (isNo) {
                     return (
                       <td
                         key={col.key}
-                        className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs text-zinc-400 bg-zinc-50/40 select-none"
+                        className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs font-semibold text-zinc-500 bg-zinc-50/40 select-none"
                         title={String(cellValue ?? row.id)}
                       >
                         {cellValue ?? row.id}
-                      </td>
-                    )
-                  }
-
-                  // Renders 'Actions' cell
-                  if (isAction) {
-                    return (
-                      <td
-                        key={col.key}
-                        className="px-3 py-2 text-center select-none"
-                      >
-                        <button
-                          onClick={() => {
-                            if (confirm("¿Está seguro que desea eliminar este registro?")) {
-                              deleteRow(row.id)
-                            }
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-400 hover:text-red-600 rounded hover:bg-red-50"
-                          title="Eliminar registro"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </td>
                     )
                   }
@@ -561,33 +664,16 @@ export default function SeguimientoClienteGrid() {
             <tr className="bg-zinc-50 hover:bg-zinc-100/70 transition-colors overflow-visible border-t-2 border-zinc-200">
               {COLUMNS.map((col, idx) => {
                 const isNo = col.key === "no"
-                const isAction = col.key === "actions"
                 
                 if (isNo) {
                   return (
                     <td
                       key="ghost-no"
-                      className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs text-zinc-400 bg-zinc-100/40 select-none font-bold"
+                      className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs text-blue-700 bg-zinc-100/40 select-none font-bold cursor-pointer hover:bg-zinc-200"
+                      onClick={submitGhostRow}
+                      title="Agregar registro (Enter / Ctrl+Enter)"
                     >
-                      +
-                    </td>
-                  )
-                }
-                
-                if (isAction) {
-                  return (
-                    <td
-                      key="ghost-action"
-                      className="px-3 py-2 text-center select-none"
-                    >
-                      <button
-                        onClick={submitGhostRow}
-                        disabled={isGhostSubmitting}
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded disabled:opacity-50"
-                        title="Agregar registro (Enter / Ctrl+Enter)"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                      <Plus className="mx-auto h-3.5 w-3.5" />
                     </td>
                   )
                 }
@@ -671,7 +757,7 @@ export default function SeguimientoClienteGrid() {
       {/* Pagination Footer */}
       <div className="z-10 shrink-0 border-t border-zinc-200 bg-white px-4 py-2 flex items-center justify-between">
         <div className="text-xs text-zinc-500">
-          0 of {total} row(s) selected.
+          Mostrando {Math.min((currentPage - 1) * pageSize + 1, total)}-{Math.min(currentPage * pageSize, total)} de {total} registro(s).
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -689,7 +775,7 @@ export default function SeguimientoClienteGrid() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-xs text-zinc-600">
-            Page {currentPage} of {totalPages}
+            Página {currentPage} de {totalPages}
           </span>
           <button
             className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
