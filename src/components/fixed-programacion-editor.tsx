@@ -14,6 +14,13 @@ import type { ProgramacionServicio } from "@/types/programacion"
 import { hasScopedProgramacionViewAccess } from "@/lib/programacion-column-access"
 
 type FixedModuleKind = "laboratorio" | "oficina_tecnica" | "comercial" | "administracion"
+type ModulePermission = {
+  read?: boolean
+  write?: boolean
+  delete?: boolean
+}
+
+type PermissionMap = Record<string, ModulePermission>
 
 interface FixedProgramacionEditorProps {
   kind: FixedModuleKind
@@ -68,7 +75,11 @@ function isAdministracionRole(role: string) {
   return role.includes("administracion") || role.includes("administrativo")
 }
 
-function canAccessModule(kind: FixedModuleKind, roleValue: string | null | undefined) {
+function canAccessModule(
+  kind: FixedModuleKind,
+  roleValue: string | null | undefined,
+  permissions?: PermissionMap | null,
+) {
   const role = normalizeRole(roleValue)
 
   if (isAdminRole(role)) {
@@ -77,13 +88,13 @@ function canAccessModule(kind: FixedModuleKind, roleValue: string | null | undef
 
   switch (kind) {
     case "laboratorio":
-      return isLaboratorioRole(role)
+      return permissions?.laboratorio?.read === true || isLaboratorioRole(role)
     case "oficina_tecnica":
-      return isOficinaTecnicaRole(role)
+      return permissions?.programacion?.read === true || isOficinaTecnicaRole(role)
     case "comercial":
-      return isComercialRole(role)
+      return permissions?.comercial?.read === true || isComercialRole(role)
     case "administracion":
-      return isAdministracionRole(role)
+      return permissions?.administracion?.read === true || isAdministracionRole(role)
     default:
       return false
   }
@@ -148,7 +159,7 @@ export function FixedProgramacionEditor({
     () => `${storageNamespace}:table-state:v1:${storageIdentity}:${activeViewMode}`,
     [activeViewMode, storageIdentity, storageNamespace],
   )
-  const isAuthorized = React.useMemo(() => canAccessModule(kind, role), [kind, role])
+  const isAuthorized = React.useMemo(() => canAccessModule(kind, role, permissions), [kind, permissions, role])
   const currentExportMode = activeViewMode === "LAB" ? "lab" : exportMode
 
   if (authLoading) {
