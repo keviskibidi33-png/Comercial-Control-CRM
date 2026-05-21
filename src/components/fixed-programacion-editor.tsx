@@ -5,6 +5,7 @@ import { DataTable } from "@/components/datagrid/data-table"
 import { columnsLab } from "@/components/datagrid/columns"
 import { columnsComercial } from "@/components/datagrid/columns-comercial"
 import { columnsAdmin } from "@/components/datagrid/columns-admin"
+import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useProgramacionData } from "@/hooks/use-programacion-data"
 import { RefreshCw, Wifi, WifiOff, FileDown, Info, Lock, ShieldAlert } from "lucide-react"
 import { LoginButton } from "@/components/login-button"
@@ -23,6 +24,8 @@ interface FixedProgramacionEditorProps {
   exportMode: "lab" | "comercial" | "administracion"
   storageNamespace: string
   showViewTabs?: boolean
+  activeModuleTab?: CommercialModuleTab
+  onModuleTabChange?: (tab: CommercialModuleTab) => void
 }
 
 const COLUMN_MAP = {
@@ -111,6 +114,8 @@ export function FixedProgramacionEditor({
   exportMode,
   storageNamespace,
   showViewTabs = true,
+  activeModuleTab = "com",
+  onModuleTabChange,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
   const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
@@ -185,12 +190,12 @@ export function FixedProgramacionEditor({
   return (
     <div className="flex h-full flex-col bg-white">
       <div className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <RefreshCw className="h-4 w-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-semibold tracking-tight text-zinc-800">{title}</h1>
               <p className="text-[11px] text-zinc-500">{subtitle}</p>
             </div>
@@ -198,6 +203,14 @@ export function FixedProgramacionEditor({
               {data.length}
             </span>
           </div>
+
+          {onModuleTabChange ? (
+            <CommercialModuleTabs
+              activeTab={activeModuleTab}
+              onTabChange={onModuleTabChange}
+              className="shrink-0"
+            />
+          ) : null}
 
           {showViewTabs ? (
             tabViewModes.length > 1 ? (

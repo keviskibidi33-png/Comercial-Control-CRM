@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { 
   Plus, 
   FileDown, 
@@ -38,13 +39,22 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
 
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
 
+interface SeguimientoClienteGridProps {
+  activeModuleTab: CommercialModuleTab
+  onModuleTabChange: (tab: CommercialModuleTab) => void
+}
+
 type SortDirection = "asc" | "desc"
 type SortConfig = {
   key: keyof SeguimientoRow
   direction: SortDirection
 } | null
 
-export default function SeguimientoClienteGrid() {
+export default function SeguimientoClienteGrid({
+  activeModuleTab,
+  onModuleTabChange,
+}: SeguimientoClienteGridProps) {
+
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
   const [selectedAsesor, setSelectedAsesor] = useState("")
@@ -347,8 +357,8 @@ export default function SeguimientoClienteGrid() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       {/* Module Header */}
-      <div className="z-10 flex h-11 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
-        <div className="flex items-center gap-2.5">
+      <div className="z-10 flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-2 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1 text-white shadow-sm">
               <Users className="h-3.5 w-3.5" />
@@ -363,6 +373,8 @@ export default function SeguimientoClienteGrid() {
               {total}
             </span>
           </div>
+
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="shrink-0" />
         </div>
 
         <div className="flex items-center gap-2">
