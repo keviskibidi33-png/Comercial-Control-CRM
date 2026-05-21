@@ -181,7 +181,7 @@ export function FixedProgramacionEditor({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-white">
+    <div className="flex h-full flex-col bg-white">
       <div className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">

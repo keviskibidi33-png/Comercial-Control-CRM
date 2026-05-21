@@ -1,0 +1,812 @@
+"use client"
+
+import React, { useState, useEffect, useMemo, useRef } from "react"
+import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { 
+  Plus, 
+  FileDown, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight, 
+  AlertCircle, 
+  X,
+  ChevronsLeft,
+  ChevronsRight,
+  Users,
+  Wifi,
+  WifiOff,
+  RefreshCw
+} from "lucide-react"
+
+const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
+  fecha_contacto: new Date().toISOString().split("T")[0],
+  persona_contacto: "",
+  numero_celular: "",
+  email: "",
+  razon_social: "",
+  ruc: "",
+  asesor: "",
+  contacto: "WHATSAPP",
+  rubro: "LABORATORIO",
+  estado_cliente: "1. SOLICITUD INFORMACION",
+  servicio_solicitado: "",
+  fecha_ultimo_contacto: "",
+  observaciones: "",
+  numero_cotizacion: "",
+  estado_seguimiento: "Pendiente"
+}
+
+const STORAGE_KEY = "seguimiento-comercial-ui:v1"
+
+type SortDirection = "asc" | "desc"
+type SortConfig = {
+  key: keyof SeguimientoRow
+  direction: SortDirection
+} | null
+
+export default function SeguimientoClienteGrid() {
+  // Query Filters & Pagination State
+  const [search, setSearch] = useState("")
+  const [selectedAsesor, setSelectedAsesor] = useState("")
+  const [selectedEstado, setSelectedEstado] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(500)
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null)
+  const [uiHydrated, setUiHydrated] = useState(false)
+
+  // Ghost Row State & Handlers
+  const [ghostRow, setGhostRow] = useState<Partial<SeguimientoRow>>({ ...DEFAULT_GHOST_ROW })
+  const [isGhostSubmitting, setIsGhostSubmitting] = useState(false)
+
+  const [pageErrorMessage, setPageErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (!raw) {
+        setUiHydrated(true)
+        return
+      }
+
+      const parsed = JSON.parse(raw) as Partial<{
+        search: string
+        selectedAsesor: string
+        selectedEstado: string
+        currentPage: number
+        pageSize: number
+        sortKey: keyof SeguimientoRow
+        sortDirection: SortDirection
+      }>
+
+      if (typeof parsed.search === "string") setSearch(parsed.search)
+      if (typeof parsed.selectedAsesor === "string") setSelectedAsesor(parsed.selectedAsesor)
+      if (typeof parsed.selectedEstado === "string") setSelectedEstado(parsed.selectedEstado)
+      if (Number.isInteger(parsed.currentPage) && (parsed.currentPage as number) > 0) setCurrentPage(parsed.currentPage as number)
+      if (Number.isInteger(parsed.pageSize) && (parsed.pageSize as number) > 0) setPageSize(parsed.pageSize as number)
+      if (parsed.sortKey) {
+        setSortConfig({
+          key: parsed.sortKey,
+          direction: parsed.sortDirection === "desc" ? "desc" : "asc",
+        })
+      }
+    } catch {
+      // Ignore malformed persisted state and fall back to defaults.
+    } finally {
+      setUiHydrated(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!uiHydrated || typeof window === "undefined") return
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        search,
+        selectedAsesor,
+        selectedEstado,
+        currentPage,
+        pageSize,
+        sortKey: sortConfig?.key ?? null,
+        sortDirection: sortConfig?.direction ?? null,
+      }),
+    )
+  }, [search, selectedAsesor, selectedEstado, currentPage, pageSize, sortConfig, uiHydrated])
+
+  // Sync advisor filter with ghost row advisor if filter changes
+  useEffect(() => {
+    setGhostRow(prev => ({ ...prev, asesor: selectedAsesor || "" }))
+  }, [selectedAsesor])
+
+  const handleGhostChange = (field: keyof SeguimientoRow, val: any) => {
+    setGhostRow(prev => ({ ...prev, [field]: val }))
+  }
+
+  const submitGhostRow = () => {
+    if (isGhostSubmitting) return
+    setIsGhostSubmitting(true)
+    
+    insertRow(ghostRow, {
+      onSuccess: () => {
+        setGhostRow({
+          ...DEFAULT_GHOST_ROW,
+          asesor: selectedAsesor || ""
+        })
+        setIsGhostSubmitting(false)
+        // Focus first input after query update
+        setTimeout(() => {
+          const firstInput = document.querySelector(".ghost-input") as HTMLElement
+          if (firstInput) {
+            firstInput.focus()
+          }
+        }, 50)
+      },
+      onError: () => {
+        setIsGhostSubmitting(false)
+      }
+    })
+  }
+
+  const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>, index: number) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      if (e.ctrlKey) {
+        submitGhostRow()
+        return
+      }
+      
+      const inputs = Array.from(document.querySelectorAll(".ghost-input")) as HTMLElement[]
+      const nextInput = inputs[index + 1]
+      if (nextInput) {
+        nextInput.focus()
+        if (nextInput instanceof HTMLInputElement) {
+          nextInput.select()
+        }
+      } else {
+        submitGhostRow()
+      }
+    }
+  }
+
+  // Debounced search term
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search)
+      setCurrentPage(1) // Reset to page 1 on search
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [search])
+
+  const offset = (currentPage - 1) * pageSize
+
+  // Fetch tracking hook
+  const {
+    rows,
+    total,
+    catalogs,
+    isLoading,
+    refetch,
+    errorMessage,
+    connectionStatus,
+    updateCell,
+    insertRow,
+    exportToExcel,
+    isMutating
+  } = useSeguimientoComercial({
+    search: debouncedSearch,
+    asesor: selectedAsesor,
+    estado_cliente: selectedEstado,
+    limit: 10000,
+    offset: 0
+  })
+
+  // Local state for active autocomplete cell
+  const [activeCell, setActiveCell] = useState<{ id: number; field: keyof SeguimientoRow } | null>(null)
+  const [suggestionQuery, setSuggestionQuery] = useState("")
+  const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1)
+  const autocompleteRef = useRef<HTMLDivElement>(null)
+
+  // Close suggestion menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
+        setActiveCell(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+  // Keep page within boundaries if total changes
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [total, totalPages, currentPage])
+
+  const compareValues = (left: unknown, right: unknown) => {
+    const leftValue = left ?? ""
+    const rightValue = right ?? ""
+
+    const leftNumber = typeof leftValue === "number" ? leftValue : Number(String(leftValue).replace(/[^0-9.-]/g, ""))
+    const rightNumber = typeof rightValue === "number" ? rightValue : Number(String(rightValue).replace(/[^0-9.-]/g, ""))
+
+    const leftLooksNumeric = Number.isFinite(leftNumber) && String(leftValue).trim() !== ""
+    const rightLooksNumeric = Number.isFinite(rightNumber) && String(rightValue).trim() !== ""
+
+    if (leftLooksNumeric && rightLooksNumeric) {
+      return leftNumber - rightNumber
+    }
+
+    const leftDate = Date.parse(String(leftValue))
+    const rightDate = Date.parse(String(rightValue))
+    const leftLooksDate = Number.isFinite(leftDate) && String(leftValue).includes("-")
+    const rightLooksDate = Number.isFinite(rightDate) && String(rightValue).includes("-")
+
+    if (leftLooksDate && rightLooksDate) {
+      return leftDate - rightDate
+    }
+
+    return String(leftValue).localeCompare(String(rightValue), "es", {
+      numeric: true,
+      sensitivity: "base",
+    })
+  }
+
+  const sortedRows = useMemo(() => {
+    const baseRows = [...rows]
+    if (!sortConfig) return baseRows
+
+    const { key, direction } = sortConfig
+    return baseRows.sort((leftRow, rightRow) => {
+      const result = compareValues(leftRow[key], rightRow[key])
+      return direction === "asc" ? result : -result
+    })
+  }, [rows, sortConfig])
+
+  const pagedRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return sortedRows.slice(start, start + pageSize)
+  }, [currentPage, pageSize, sortedRows])
+
+  useEffect(() => {
+    setPageErrorMessage(errorMessage || null)
+  }, [errorMessage])
+
+  const toggleSort = (field: keyof SeguimientoRow) => {
+    setCurrentPage(1)
+    setSortConfig((current) => {
+      if (current?.key !== field) {
+        return { key: field, direction: "asc" }
+      }
+      if (current.direction === "asc") {
+        return { key: field, direction: "desc" }
+      }
+      return null
+    })
+  }
+
+  // Handle cell edit save
+  const handleCellBlur = (id: number, field: keyof SeguimientoRow, currentValue: any, newValue: any) => {
+    if (currentValue !== newValue) {
+      updateCell(id, field, newValue)
+    }
+  }
+
+  // Handles Autocomplete cell keyboard navigation
+  const handleAutocompleteKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    id: number,
+    field: keyof SeguimientoRow,
+    options: string[]
+  ) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault()
+      setFocusedSuggestionIndex((prev) => (prev < options.length - 1 ? prev + 1 : prev))
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      setFocusedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1))
+    } else if (e.key === "Enter") {
+      e.preventDefault()
+      if (focusedSuggestionIndex >= 0 && focusedSuggestionIndex < options.length) {
+        updateCell(id, field, options[focusedSuggestionIndex])
+        setActiveCell(null)
+      } else {
+        // Just save input value on Enter
+        updateCell(id, field, e.currentTarget.value)
+        setActiveCell(null)
+      }
+    } else if (e.key === "Escape") {
+      setActiveCell(null)
+    }
+  }
+
+  // Grid columns definition
+  const COLUMNS = [
+    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text" },
+    { key: "numero_celular", label: "Celular", width: "w-32 min-w-[128px]", type: "text" },
+    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text" },
+    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text" },
+    { key: "asesor", label: "Asesor", width: "w-44 min-w-[176px]", type: "catalog", catalogKey: "asesores" },
+    { key: "contacto", label: "Contacto", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "contactos" },
+    { key: "rubro", label: "Rubro", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "rubros" },
+    { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
+    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "text" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
+    { key: "observaciones", label: "Observaciones", width: "w-64 min-w-[256px]", type: "text" },
+    { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
+    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "text" },
+  ] as const
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
+      {/* Module Header */}
+      <div className="z-10 flex h-11 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <div className="rounded-md bg-blue-600 p-1 text-white shadow-sm">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+            <div className="leading-tight">
+              <h1 className="text-[14px] font-extrabold tracking-tight text-zinc-900">Seguimiento Clientes</h1>
+              <p className="text-[10px] font-medium text-zinc-600">
+                Seguimiento comercial, entregas y evidencia de atención.
+              </p>
+            </div>
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-zinc-700">
+              {total}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportToExcel}
+            disabled={isMutating || isLoading || total === 0}
+            className="flex items-center gap-1.5 h-7 rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <FileDown className="h-3 w-3" />
+            <span>Exportar Excel</span>
+          </button>
+
+          <div
+            className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 shadow-inner"
+            title={connectionStatus}
+          >
+            {connectionStatus === "EN LÍNEA" ? (
+              <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+            ) : connectionStatus === "SIN CONEXIÓN" ? (
+              <WifiOff className="h-3.5 w-3.5 text-red-500" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-500" />
+            )}
+            <span className="hidden text-[10px] font-bold uppercase text-zinc-500 sm:inline">
+              {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN LÍNEA" ? "En Línea" : "Sin Conexión"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar Area */}
+      <div className="z-20 shrink-0 border-b border-zinc-200 bg-white px-4 py-1 shadow-sm overflow-visible">
+        <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between overflow-visible">
+          {/* Left search & selections */}
+          <div className="flex flex-1 flex-wrap items-center gap-2 overflow-visible">
+            {/* Search Input */}
+            <div className="relative w-[250px] lg:w-[320px]">
+              <Search className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Buscar en todo..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-7 text-xs font-medium outline-none transition-all placeholder:text-zinc-400 text-zinc-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
+              />
+              {search && (
+                <button
+                  onClick={() => {
+                    setSearch("")
+                    setCurrentPage(1)
+                  }}
+                  className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Asesor Filter */}
+            <div className="relative">
+              <select
+                value={selectedAsesor}
+                onChange={(e) => {
+                  setSelectedAsesor(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
+              >
+                <option value="">Todos los Asesores</option>
+                {catalogs?.asesores?.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Estado Cliente Filter */}
+            <div className="relative">
+              <select
+                value={selectedEstado}
+                onChange={(e) => {
+                  setSelectedEstado(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
+              >
+                <option value="">Todos los Estados</option>
+                {catalogs?.estados?.map((est) => (
+                  <option key={est} value={est}>
+                    {est}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {pageErrorMessage && (
+        <div className="border-b border-red-200 bg-red-50 px-4 py-2">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-red-200 bg-white px-3 py-2 text-sm text-red-800 shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <span className="font-medium">{pageErrorMessage}</span>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid View */}
+      <div 
+        className="flex-1 w-full overflow-auto relative select-none bg-zinc-50 min-h-0"
+        style={{ zoom: '85%' }}
+      >
+        <table className="min-w-full divide-y divide-zinc-200 table-fixed border-collapse overflow-visible">
+          <thead className="bg-zinc-800 sticky top-0 z-30">
+            <tr>
+              {COLUMNS.map((col) => (
+                <th
+                  key={col.key}
+                  scope="col"
+                  onClick={() => col.key !== "no" && toggleSort(col.key as keyof SeguimientoRow)}
+                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-100 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0 ${
+                    col.key !== "no" ? "cursor-pointer hover:bg-zinc-700/70" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>{col.label}</span>
+                    {sortConfig?.key === col.key && col.key !== "no" && (
+                      <span className="text-[10px] text-blue-300">
+                        {sortConfig.direction === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-zinc-100 overflow-visible">
+            {pagedRows.map((row) => (
+              <tr
+                key={row.id}
+                className="hover:bg-zinc-50/50 transition-colors group overflow-visible"
+              >
+                {COLUMNS.map((col) => {
+                  const cellValue = row[col.key as keyof SeguimientoRow]
+                  const isNo = col.key === "no"
+
+                  // Renders Read-Only 'N°' cell
+                  if (isNo) {
+                    return (
+                      <td
+                        key={col.key}
+                        className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs font-semibold text-zinc-500 bg-zinc-50/40 select-none"
+                        title={String(cellValue ?? row.id)}
+                      >
+                        {cellValue ?? row.id}
+                      </td>
+                    )
+                  }
+
+                  // Renders Autocomplete suggestion dropdowns cell
+                  if (col.type === "catalog") {
+                    const catalogList = catalogs[col.catalogKey as keyof typeof catalogs] || []
+                    const isActive = activeCell?.id === row.id && activeCell?.field === col.key
+                    
+                    // Filter suggestions: show all if query matches the current cell value exactly, otherwise filter
+                    const filteredSuggestions = catalogList.filter((opt) => {
+                      if (suggestionQuery === (cellValue || "")) {
+                        return true
+                      }
+                      return opt.toLowerCase().includes(suggestionQuery.toLowerCase())
+                    })
+
+                    return (
+                      <td
+                        key={col.key}
+                        className="px-2 py-1 border-r border-zinc-100 overflow-visible relative group/cell"
+                      >
+                        {isActive ? (
+                          <div ref={autocompleteRef} className="relative w-full z-40 overflow-visible">
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              data-lpignore="true"
+                              value={suggestionQuery}
+                              onChange={(e) => {
+                                setSuggestionQuery(e.target.value)
+                                setFocusedSuggestionIndex(-1)
+                              }}
+                              onBlur={(e) => {
+                                // Delay blur slightly so click on suggestions executes first
+                                setTimeout(() => {
+                                  if (activeCell?.id === row.id && activeCell?.field === col.key) {
+                                    handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value)
+                                    setActiveCell(null)
+                                  }
+                                }, 150)
+                              }}
+                              onKeyDown={(e) => handleAutocompleteKeyDown(e, row.id, col.key as keyof SeguimientoRow, filteredSuggestions)}
+                              className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              autoFocus
+                              title={suggestionQuery}
+                            />
+                            {filteredSuggestions.length > 0 && (
+                              <div className="absolute left-0 top-full mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-zinc-200 bg-white shadow-lg z-50">
+                                {filteredSuggestions.map((opt, idx) => (
+                                  <div
+                                    key={opt}
+                                    onMouseDown={() => {
+                                      updateCell(row.id, col.key as keyof SeguimientoRow, opt)
+                                      setActiveCell(null)
+                                    }}
+                                    className={`px-2 py-1.5 text-xs cursor-pointer select-none ${
+                                      focusedSuggestionIndex === idx
+                                        ? "bg-blue-50 text-blue-700"
+                                        : "text-zinc-700 hover:bg-zinc-50"
+                                    }`}
+                                  >
+                                    {opt}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => {
+                              setActiveCell({ id: row.id, field: col.key as keyof SeguimientoRow })
+                              setSuggestionQuery((cellValue as string) || "")
+                              setFocusedSuggestionIndex(-1)
+                            }}
+                            title={String(cellValue || "")}
+                            className="w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
+                          >
+                            <span className="truncate">{cellValue || <span className="text-zinc-300">-</span>}</span>
+                            <span className="opacity-0 group-hover/cell:opacity-40 text-zinc-500 text-[10px]">▼</span>
+                          </div>
+                        )}
+                      </td>
+                    )
+                  }
+
+                  // Renders Date cell input
+                  if (col.type === "date") {
+                    const dateValue = cellValue ? (cellValue as string).split("T")[0] : ""
+                    return (
+                      <td
+                        key={col.key}
+                        className="px-2 py-1 border-r border-zinc-100"
+                      >
+                        <input
+                          type="date"
+                          value={dateValue}
+                          title={dateValue}
+                          onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
+                          className="w-full bg-transparent border-none outline-none text-xs text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500"
+                        />
+                      </td>
+                    )
+                  }
+
+                  // Renders standard Input cell (text/long content)
+                  return (
+                    <td
+                      key={col.key}
+                      className="px-2 py-1 border-r border-zinc-100"
+                    >
+                      <input
+                        type="text"
+                        key={`${row.id}-${col.key}-${cellValue ?? ""}`}
+                        defaultValue={(cellValue as string) ?? ""}
+                        title={String(cellValue ?? "")}
+                        onBlur={(e) => handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.currentTarget.blur()
+                          }
+                        }}
+                        className="w-full bg-transparent border-none outline-none text-xs text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 truncate"
+                      />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+
+            {/* Ghost Row for Quick Inline Adding */}
+            <tr className="bg-zinc-50 hover:bg-zinc-100/70 transition-colors overflow-visible border-t-2 border-zinc-200">
+              {COLUMNS.map((col, idx) => {
+                const isNo = col.key === "no"
+                
+                if (isNo) {
+                  return (
+                    <td
+                      key="ghost-no"
+                      className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs text-blue-700 bg-zinc-100/40 select-none font-bold cursor-pointer hover:bg-zinc-200"
+                      onClick={submitGhostRow}
+                      title="Agregar registro (Enter / Ctrl+Enter)"
+                    >
+                      <Plus className="mx-auto h-3.5 w-3.5" />
+                    </td>
+                  )
+                }
+                
+                if (col.type === "catalog") {
+                  const catalogList = catalogs[col.catalogKey as keyof typeof catalogs] || []
+                  return (
+                    <td
+                      key={`ghost-${col.key}`}
+                      className="px-2 py-1 border-r border-zinc-100 overflow-visible relative"
+                    >
+                      <select
+                        value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
+                        onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                        onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
+                        className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-7"
+                      >
+                        <option value="">- Seleccione -</option>
+                        {catalogList.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  )
+                }
+                
+                if (col.type === "date") {
+                  return (
+                    <td
+                      key={`ghost-${col.key}`}
+                      className="px-2 py-1 border-r border-zinc-100"
+                    >
+                      <input
+                        type="date"
+                        value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
+                        onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                        onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
+                        className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7"
+                      />
+                    </td>
+                  )
+                }
+                
+                // Standard text inputs
+                return (
+                  <td
+                    key={`ghost-${col.key}`}
+                    className="px-2 py-1 border-r border-zinc-100"
+                  >
+                    <input
+                      type="text"
+                      placeholder={`${col.label}...`}
+                      value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
+                      onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                      onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
+                      className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7"
+                    />
+                  </td>
+                )
+              })}
+            </tr>
+
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={COLUMNS.length} className="px-6 py-12 text-center text-zinc-500">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <AlertCircle className="h-8 w-8 text-zinc-300" />
+                    <span className="text-sm font-medium">
+                      {isLoading ? "Cargando registros..." : "No se encontraron registros de seguimiento."}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination Footer */}
+      <div className="z-10 shrink-0 border-t border-zinc-200 bg-white px-4 py-2 flex items-center justify-between">
+        <div className="text-xs text-zinc-500">
+          Mostrando {Math.min((currentPage - 1) * pageSize + 1, total)}-{Math.min(currentPage * pageSize, total)} de {total} registro(s).
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1 || isLoading}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </button>
+          <button
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1 || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-xs text-zinc-600">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages || isLoading}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages || isLoading}
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </button>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value))
+              setCurrentPage(1)
+            }}
+            className="h-6 w-16 text-xs border border-zinc-200 rounded"
+          >
+            {[100, 500, 1000, 2000, 5000, 8000].map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
