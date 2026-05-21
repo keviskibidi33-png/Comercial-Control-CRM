@@ -22,6 +22,7 @@ interface FixedProgramacionEditorProps {
   availableViewModes?: ViewMode[]
   exportMode: "lab" | "comercial" | "administracion"
   storageNamespace: string
+  showViewTabs?: boolean
 }
 
 const COLUMN_MAP = {
@@ -109,6 +110,7 @@ export function FixedProgramacionEditor({
   availableViewModes,
   exportMode,
   storageNamespace,
+  showViewTabs = true,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
   const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
@@ -197,28 +199,30 @@ export function FixedProgramacionEditor({
             </span>
           </div>
 
-          {tabViewModes.length > 1 ? (
-            <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 p-1">
-              {tabViewModes.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setActiveViewMode(mode)}
-                  className={`rounded-md px-4 py-1 text-xs font-semibold transition-all ${
-                    activeViewMode === mode
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700"
-                  }`}
-                >
-                  {VIEW_MODE_LABELS[mode]}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <span className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-700">
-              {`Vista ${VIEW_MODE_LABELS[activeViewMode]}`}
-            </span>
-          )}
+          {showViewTabs ? (
+            tabViewModes.length > 1 ? (
+              <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-100 p-1">
+                {tabViewModes.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setActiveViewMode(mode)}
+                    className={`rounded-md px-4 py-1 text-xs font-semibold transition-all ${
+                      activeViewMode === mode
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    }`}
+                  >
+                    {VIEW_MODE_LABELS[mode]}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase text-blue-700">
+                {`Vista ${VIEW_MODE_LABELS[activeViewMode]}`}
+              </span>
+            )
+          ) : null}
 
           {activeViewMode === "LAB" ? (
             <span
