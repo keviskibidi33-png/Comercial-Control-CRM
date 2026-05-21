@@ -1,16 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-const getApiBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL
-  }
-  if (typeof window !== "undefined") {
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return "http://localhost:8000"
+const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "")
+
+const getApiBaseUrls = () => {
+  const candidates = new Set<string>()
+
+  const envBase = process.env.NEXT_PUBLIC_API_URL ? normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL) : ""
+  if (envBase) {
+    candidates.add(envBase)
+    if (envBase.endsWith("/v1")) {
+      candidates.add(envBase.slice(0, -3))
+    } else {
+      candidates.add(`${envBase}/v1`)
     }
   }
-  return "https://api.geofal.com.pe/v1"
+
+  if (typeof window !== "undefined") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      candidates.add("http://localhost:8000")
+    } else {
+      candidates.add("https://api.geofal.com.pe")
+      candidates.add("https://api.geofal.com.pe/v1")
+    }
+  } else if (!envBase) {
+    candidates.add("https://api.geofal.com.pe")
+  }
+
+  return Array.from(candidates)
 }
 
 const getStoredToken = (): string | null => {
@@ -26,13 +43,30 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
   }
-  
-  const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
-    ...options,
-    headers,
-  })
 
-  if (!res.ok) {
+  const baseUrls = getApiBaseUrls()
+  let lastError: Error | null = null
+
+  for (let i = 0; i < baseUrls.length; i += 1) {
+    const baseUrl = baseUrls[i]
+    const res = await fetch(`${baseUrl}${endpoint}`, {
+      ...options,
+      headers,
+    })
+
+    if (res.ok) {
+      const contentType = res.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        return res.json()
+      }
+      return res
+    }
+
+    if (res.status === 404 && i < baseUrls.length - 1) {
+      lastError = new Error("No se encontró el recurso solicitado.")
+      continue
+    }
+
     const errText = await res.text().catch(() => "")
     let serverMessage = errText
 
@@ -56,11 +90,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     throw new Error(friendlyMap[res.status] || serverMessage || `Error HTTP ${res.status}`)
   }
 
-  const contentType = res.headers.get("content-type")
-  if (contentType && contentType.includes("application/json")) {
-    return res.json()
-  }
-  return res
+  throw lastError || new Error("No se encontró el recurso solicitado.")
 }
 
 export type SeguimientoRow = {
@@ -235,10 +265,26 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       if (token) {
         headers["Authorization"] = `Bearer ${token}`
       }
-      const res = await fetch(`${getApiBaseUrl()}/api/seguimiento-comercial/export`, { headers })
-      if (!res.ok) throw new Error("No se pudo exportar")
-      
-      const blob = await res.blob()
+      const baseUrls = getApiBaseUrls()
+      let response: Response | null = null
+
+      for (let i = 0; i < baseUrls.length; i += 1) {
+        const res = await fetch(`${baseUrls[i]}/api/seguimiento-comercial/export`, { headers })
+        if (res.ok) {
+          response = res
+          break
+        }
+        if (res.status === 404 && i < baseUrls.length - 1) {
+          continue
+        }
+        throw new Error("No se pudo exportar")
+      }
+
+      if (!response) {
+        throw new Error("No se pudo exportar")
+      }
+
+      const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
