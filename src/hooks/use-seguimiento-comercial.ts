@@ -123,6 +123,22 @@ export type Catalogs = {
   estados: string[]
 }
 
+const DEFAULT_CATALOGS: Catalogs = {
+  asesores: ["Silvia Peralta", "Juan Garcia"],
+  contactos: ["WHATSAPP", "LLAMADA", "CORREO", "EN PROSPECTO"],
+  rubros: ["LABORATORIO", "INGENIERÍA", "ALQUILER", "EN ESPERA"],
+  estados: [
+    "EN ESPERA DE ATENCIÓN",
+    "SE SOLICITÓ INFORMACIÓN",
+    "EN ESPERA DE INFORMACIÓN",
+    "NO ENVIÓ LA INFORMACIÓN",
+    "DESCARTO EL SERVICIO",
+    "COTIZACIÓN REALIZADA",
+    "PROSPECTO",
+    "CONTACTADO",
+  ],
+}
+
 export function useSeguimientoComercial(filters: { search?: string; asesor?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
   const queryClient = useQueryClient()
   const queryKey = ["seguimiento-comercial", filters]
@@ -151,7 +167,7 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
     queryKey: ["seguimiento-comercial-catalogs"],
     queryFn: () => fetchWithAuth("/api/seguimiento-comercial/catalogs"),
     staleTime: 60000,
-    initialData: { asesores: [], contactos: [], rubros: [], estados: [] },
+    initialData: DEFAULT_CATALOGS,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -301,7 +317,7 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
   return {
     rows: data?.items || [],
     total: data?.total || 0,
-    catalogs,
+    catalogs: catalogs ?? DEFAULT_CATALOGS,
     isLoading,
     refetch,
     errorMessage,

@@ -29,7 +29,7 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   asesor: "",
   contacto: "WHATSAPP",
   rubro: "LABORATORIO",
-  estado_cliente: "1. SOLICITUD INFORMACION",
+  estado_cliente: "EN ESPERA DE ATENCIÓN",
   servicio_solicitado: "",
   fecha_ultimo_contacto: "",
   observaciones: "",
