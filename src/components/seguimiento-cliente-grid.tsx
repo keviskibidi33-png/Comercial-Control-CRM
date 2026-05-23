@@ -535,14 +535,12 @@ export default function SeguimientoClienteGrid({
                 <th
                   key={col.key}
                   scope="col"
-                  onClick={() => col.key !== "no" && toggleSort(col.key as keyof SeguimientoRow)}
-                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-100 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0 ${
-                    col.key !== "no" ? "cursor-pointer hover:bg-zinc-700/70" : ""
-                  }`}
+                  onClick={() => toggleSort(col.key as keyof SeguimientoRow)}
+                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-100 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0 cursor-pointer hover:bg-zinc-700/70`}
                 >
                   <div className="flex items-center gap-1">
                     <span>{col.label}</span>
-                    {sortConfig?.key === col.key && col.key !== "no" && (
+                    {sortConfig?.key === col.key && (
                       <span className="text-[10px] text-blue-300">
                         {sortConfig.direction === "asc" ? "▲" : "▼"}
                       </span>
@@ -553,10 +551,12 @@ export default function SeguimientoClienteGrid({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-zinc-100 overflow-visible">
-            {pagedRows.map((row) => (
+            {pagedRows.map((row, idx) => (
               <tr
                 key={row.id}
-                className="hover:bg-zinc-50/50 transition-colors group overflow-visible"
+                className={`transition-colors group overflow-visible ${
+                  idx % 2 === 0 ? "bg-white hover:bg-zinc-50/50" : "bg-sky-50/45 hover:bg-sky-100/40"
+                }`}
               >
                 {COLUMNS.map((col) => {
                   const cellValue = row[col.key as keyof SeguimientoRow]
