@@ -180,7 +180,7 @@ EditableCell.displayName = "EditableCell"
 // OT Cell (Auto-adds -26 when user enters just digits)
 const OTCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {
     const rawValue = getValue() as string
-    const cleanValue = (val: string) => val ? val.replace(/LEM/i, '').replace(/-26$/, '').trim() : ""
+    const cleanValue = (val: string) => val ? val.replace(/LEM/i, '').trim() : ""
     const [value, setValue] = React.useState(cleanValue(rawValue))
 
     React.useEffect(() => {
