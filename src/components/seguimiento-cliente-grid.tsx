@@ -202,6 +202,7 @@ export default function SeguimientoClienteGrid({
     updateCell,
     insertRow,
     exportToExcel,
+    importFromExcel,
     isMutating
   } = useSeguimientoComercial({
     search: debouncedSearch,
@@ -210,6 +211,18 @@ export default function SeguimientoClienteGrid({
     limit: 10000,
     offset: 0
   })
+
+  // Ref and handler for file import
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      importFromExcel(file)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
 
   // Local state for active autocomplete cell
   const [activeCell, setActiveCell] = useState<{ id: number; field: keyof SeguimientoRow } | null>(null)
@@ -378,6 +391,22 @@ export default function SeguimientoClienteGrid({
         </div>
 
         <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFileChange}
+            accept=".xlsx,.xls,.csv,.txt"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isMutating || isLoading}
+            className="flex items-center gap-1.5 h-7 rounded-md bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:opacity-50"
+          >
+            <FileDown className="h-3 w-3 rotate-180" />
+            <span>Importar Excel/CSV</span>
+          </button>
+
           <button
             onClick={exportToExcel}
             disabled={isMutating || isLoading || total === 0}
