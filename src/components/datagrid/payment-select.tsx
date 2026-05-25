@@ -14,6 +14,7 @@ const PAYMENT_OPTIONS = [
     { value: "PENDIENTE", label: "PENDIENTE", color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" },
     { value: "EN PROCESO", label: "EN PROCESO", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
     { value: "PAGADO", label: "PAGADO", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+    { value: "ANULADO", label: "ANULADO", color: "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100" },
 ]
 
 const getStatusColor = (status: string) => {
@@ -21,6 +22,7 @@ const getStatusColor = (status: string) => {
     if (s.includes("PAGADO")) return "bg-emerald-50 text-emerald-700 border-emerald-200"
     if (s.includes("PROCESO")) return "bg-amber-50 text-amber-700 border-amber-200"
     if (s.includes("PENDIENTE")) return "bg-red-50 text-red-700 border-red-200"
+    if (s.includes("ANULADO")) return "bg-zinc-50 text-zinc-600 border-zinc-200"
     return "bg-white text-zinc-700 border-zinc-200"
 }
 

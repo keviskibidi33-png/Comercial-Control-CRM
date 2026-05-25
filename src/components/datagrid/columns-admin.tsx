@@ -144,6 +144,18 @@ export const columnsAdmin: ColumnDef<ProgramacionServicio>[] = [
         cell: CostoServicioCell,
     },
     {
+        accessorKey: "orden_servicio",
+        header: ({ column }) => <SortableHeader column={column} title={`N°Orden de\nServicio`} className="text-indigo-700" />,
+        size: 160, minSize: 120, maxSize: 250, enableResizing: true,
+        cell: props => <EditableCell {...props} className="text-zinc-900 font-medium" />,
+    },
+    {
+        accessorKey: "numero_valorizacion",
+        header: ({ column }) => <SortableHeader column={column} title={`N° Valorizacion`} className="text-indigo-700" />,
+        size: 160, minSize: 120, maxSize: 250, enableResizing: true,
+        cell: props => <EditableCell {...props} className="text-zinc-900 font-medium" />,
+    },
+    {
         accessorKey: "numero_factura",
         header: ({ column }) => <SortableHeader column={column} title="FACTURACION" className="text-blue-700" />,
         size: 160, minSize: 120, maxSize: 250, enableResizing: true,

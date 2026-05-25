@@ -317,7 +317,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
         try {
             const commercialFields = ['fecha_solicitud_com', 'fecha_entrega_com', 'evidencia_solicitud_envio', 'dias_atraso_envio_coti', 'motivo_dias_atraso_com', 'costo_servicio']
-            const adminFields = ['numero_factura', 'estado_pago', 'estado_autorizar', 'nota_admin']
+            const adminFields = ['numero_factura', 'estado_pago', 'estado_autorizar', 'nota_admin', 'orden_servicio', 'numero_valorizacion']
 
             let targetTable = "programacion_lab"
             let idField = "id"
@@ -363,6 +363,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         delete labData.estado_pago
         delete labData.estado_autorizar
         delete labData.nota_admin
+        delete labData.orden_servicio
+        delete labData.numero_valorizacion
         delete labData.dias_atraso_envio_coti
         delete labData.costo_servicio
 
@@ -402,6 +404,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             if (newRow.estado_pago) adminData.estado_pago = newRow.estado_pago
             if (newRow.estado_autorizar) adminData.estado_autorizar = newRow.estado_autorizar
             if (newRow.nota_admin) adminData.nota_admin = newRow.nota_admin
+            if (newRow.orden_servicio) adminData.orden_servicio = newRow.orden_servicio
+            if (newRow.numero_valorizacion) adminData.numero_valorizacion = newRow.numero_valorizacion
 
             if (Object.keys(commercialData).length > 0) {
                 await (supabase.from("programacion_comercial") as any).update(commercialData).eq("programacion_id", rowId)

@@ -20,6 +20,7 @@ interface AuthorizationSelectProps {
 const DEFAULT_AUTH_OPTIONS: SelectOption[] = [
     { value: "ENTREGADO", label: "ENTREGAR", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" },
     { value: "NO ENTREGADO", label: "NO ENTREGAR", color: "bg-red-50 text-red-800 border-red-100 hover:bg-red-100" },
+    { value: "ANULADO", label: "ANULADO", color: "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100" },
 ]
 
 export function AuthorizationSelect({ value, onChange, disabled, options = DEFAULT_AUTH_OPTIONS }: AuthorizationSelectProps) {
