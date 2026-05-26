@@ -334,25 +334,35 @@ export default function SeguimientoClienteGrid({
     }
   }
 
+  interface GridColumn {
+    readonly key: string
+    readonly label: string
+    readonly width: string
+    readonly type?: "text" | "date" | "catalog"
+    readonly catalogKey?: "asesores" | "contactos" | "rubros" | "estados" | "servicios"
+    readonly stickyLeft?: string
+    readonly isLastPinned?: boolean
+  }
+
   // Grid columns definition
-  const COLUMNS = [
-    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text" },
-    { key: "numero_celular", label: "Celular", width: "w-32 min-w-[128px]", type: "text" },
-    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text" },
-    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text" },
+  const COLUMNS: readonly GridColumn[] = [
+    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0rem" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date", stickyLeft: "3.5rem" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "12.5rem" },
+    { key: "numero_celular", label: "Celular", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "24.5rem" },
+    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "32.5rem" },
+    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "44.5rem" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "58.5rem", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-44 min-w-[176px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
-    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "text" },
+    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
     { key: "observaciones", label: "Observaciones", width: "w-64 min-w-[256px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "text" },
-  ] as const
+  ]
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
@@ -500,25 +510,42 @@ export default function SeguimientoClienteGrid({
         style={{ zoom: '85%' }}
       >
         <table className="min-w-full divide-y divide-zinc-200 table-fixed border-collapse overflow-visible">
-          <thead className="bg-zinc-800 sticky top-0 z-30">
+          <thead className="bg-white sticky top-0 z-30 border-b border-zinc-200 shadow-sm">
             <tr>
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  scope="col"
-                  onClick={() => toggleSort(col.key as keyof SeguimientoRow)}
-                  className={`${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-100 uppercase tracking-wider select-none border-r border-zinc-700/60 last:border-0 cursor-pointer hover:bg-zinc-700/70`}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>{col.label}</span>
-                    {sortConfig?.key === col.key && (
-                      <span className="text-[10px] text-blue-300">
-                        {sortConfig.direction === "asc" ? "▲" : "▼"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
+              {COLUMNS.map((col) => {
+                const isPinned = col.stickyLeft !== undefined
+                const isLastPinned = col.isLastPinned === true
+                return (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    onClick={() => toggleSort(col.key as keyof SeguimientoRow)}
+                    style={
+                      isPinned
+                        ? {
+                            position: "sticky",
+                            left: col.stickyLeft,
+                            zIndex: 35,
+                          }
+                        : undefined
+                    }
+                    className={`
+                      ${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-700 uppercase tracking-wider select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200/80 transition-colors
+                      ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
+                      ${isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : ""}
+                    `}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>{col.label}</span>
+                      {sortConfig?.key === col.key && (
+                        <span className="text-[10px] text-blue-600">
+                          {sortConfig.direction === "asc" ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-zinc-100 overflow-visible">
@@ -532,13 +559,23 @@ export default function SeguimientoClienteGrid({
                 {COLUMNS.map((col) => {
                   const cellValue = row[col.key as keyof SeguimientoRow]
                   const isNo = col.key === "no"
+                  const isPinned = col.stickyLeft !== undefined
+                  const isLastPinned = col.isLastPinned === true
+                  const baseCellClass = `
+                    py-1 overflow-visible relative
+                    ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-white" : "bg-sky-50/80"} group-hover:bg-sky-100/70 border-r border-zinc-200` : "border-r border-zinc-100"}
+                    ${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.1)] border-r-zinc-300" : ""}
+                  `
 
                   // Renders Read-Only 'N°' cell
                   if (isNo) {
                     return (
                       <td
                         key={col.key}
-                        className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs font-semibold text-zinc-500 bg-zinc-50/40 select-none"
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-3 py-2 text-center font-mono text-xs font-semibold text-zinc-500 select-none
+                          ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100/70"} group-hover:bg-sky-100/70 border-r border-zinc-200` : "border-r border-zinc-100 bg-zinc-50/40"}
+                        `}
                         title={String(cellValue ?? row.id)}
                       >
                         {cellValue ?? row.id}
@@ -562,7 +599,8 @@ export default function SeguimientoClienteGrid({
                     return (
                       <td
                         key={col.key}
-                        className="px-2 py-1 border-r border-zinc-100 overflow-visible relative group/cell"
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-2 ${baseCellClass} group/cell`}
                       >
                         {isActive ? (
                           <div ref={autocompleteRef} className="relative w-full z-40 overflow-visible">
@@ -634,7 +672,8 @@ export default function SeguimientoClienteGrid({
                     return (
                       <td
                         key={col.key}
-                        className="px-2 py-1 border-r border-zinc-100"
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-2 ${baseCellClass}`}
                       >
                         <input
                           type="date"
@@ -651,7 +690,8 @@ export default function SeguimientoClienteGrid({
                   return (
                     <td
                       key={col.key}
-                      className="px-2 py-1 border-r border-zinc-100"
+                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                      className={`px-2 ${baseCellClass}`}
                     >
                       <input
                         type="text"
@@ -673,15 +713,25 @@ export default function SeguimientoClienteGrid({
             ))}
 
             {/* Ghost Row for Quick Inline Adding */}
-            <tr className="bg-zinc-50 hover:bg-zinc-100/70 transition-colors overflow-visible border-t-2 border-zinc-200">
+            <tr className="bg-zinc-50 hover:bg-zinc-100/70 transition-colors overflow-visible border-t-2 border-zinc-200 group">
               {COLUMNS.map((col, idx) => {
                 const isNo = col.key === "no"
+                const isPinned = col.stickyLeft !== undefined
+                const isLastPinned = col.isLastPinned === true
+                const baseGhostClass = `
+                  py-1 overflow-visible relative
+                  ${isPinned ? "sticky z-10 bg-zinc-50 group-hover:bg-zinc-100/70 border-r border-zinc-200" : "border-r border-zinc-100"}
+                  ${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.1)] border-r-zinc-300" : ""}
+                `
                 
                 if (isNo) {
                   return (
                     <td
                       key="ghost-no"
-                      className="px-3 py-2 border-r border-zinc-100 text-center font-mono text-xs text-blue-700 bg-zinc-100/40 select-none font-bold cursor-pointer hover:bg-zinc-200"
+                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                      className={`px-3 py-2 text-center font-mono text-xs text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
+                        ${isPinned ? "sticky z-10 bg-zinc-100/40 group-hover:bg-zinc-200 border-r border-zinc-200" : "border-r border-zinc-100 bg-zinc-100/40"}
+                      `}
                       onClick={submitGhostRow}
                       title="Agregar registro (Enter / Ctrl+Enter)"
                     >
@@ -695,7 +745,8 @@ export default function SeguimientoClienteGrid({
                   return (
                     <td
                       key={`ghost-${col.key}`}
-                      className="px-2 py-1 border-r border-zinc-100 overflow-visible relative"
+                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                      className={`px-2 ${baseGhostClass}`}
                     >
                       <select
                         value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
@@ -718,7 +769,8 @@ export default function SeguimientoClienteGrid({
                   return (
                     <td
                       key={`ghost-${col.key}`}
-                      className="px-2 py-1 border-r border-zinc-100"
+                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                      className={`px-2 ${baseGhostClass}`}
                     >
                       <input
                         type="date"
@@ -735,7 +787,8 @@ export default function SeguimientoClienteGrid({
                 return (
                   <td
                     key={`ghost-${col.key}`}
-                    className="px-2 py-1 border-r border-zinc-100"
+                    style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                    className={`px-2 ${baseGhostClass}`}
                   >
                     <input
                       type="text"

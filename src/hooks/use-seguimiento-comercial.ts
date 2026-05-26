@@ -121,21 +121,36 @@ export type Catalogs = {
   contactos: string[]
   rubros: string[]
   estados: string[]
+  servicios: string[]
 }
 
 const DEFAULT_CATALOGS: Catalogs = {
   asesores: ["Silvia Peralta", "Juan Garcia"],
-  contactos: ["WHATSAPP", "LLAMADA", "CORREO", "EN PROSPECTO"],
+  contactos: ["WHATSAPP", "LLAMADA", "CORREO"],
   rubros: ["LABORATORIO", "INGENIERÍA", "ALQUILER", "EN ESPERA"],
   estados: [
     "EN ESPERA DE ATENCIÓN",
     "SE SOLICITÓ INFORMACIÓN",
     "EN ESPERA DE INFORMACIÓN",
+    "INFORMACIÓN RECIBIDA",
+    "COTIZACIÓN EN PROCESO",
+    "COTIZACIÓN REALIZADA",
+    "COTIZACIÓN ENVIADA",
     "NO ENVIÓ LA INFORMACIÓN",
     "DESCARTO EL SERVICIO",
-    "COTIZACIÓN REALIZADA",
-    "PROSPECTO",
-    "CONTACTADO",
+  ],
+  servicios: [
+    "Ensayos de Laboratorio",
+    "Densidades",
+    "Probetas",
+    "Morteros",
+    "Extracción de Diamantina",
+    "Laboratorio en Obra",
+    "Estudios de Suelos",
+    "EMS – CIMENTACIÓN",
+    "EMS – PAVIMENTACIÓN",
+    "EMS – ALCANTARILLADO",
+    "Estudios Geotécnicos",
   ],
 }
 
