@@ -122,6 +122,7 @@ export type Catalogs = {
   rubros: string[]
   estados: string[]
   servicios: string[]
+  estados_seguimiento: string[]
 }
 
 const DEFAULT_CATALOGS: Catalogs = {
@@ -151,6 +152,12 @@ const DEFAULT_CATALOGS: Catalogs = {
     "EMS – PAVIMENTACIÓN",
     "EMS – ALCANTARILLADO",
     "Estudios Geotécnicos",
+  ],
+  estados_seguimiento: [
+    "En Negociación",
+    "Se Genero una Versión",
+    "Cotización Rechazada",
+    "Se Genero Venta",
   ],
 }
 

@@ -339,7 +339,7 @@ export default function SeguimientoClienteGrid({
     readonly label: string
     readonly width: string
     readonly type?: "text" | "date" | "catalog"
-    readonly catalogKey?: "asesores" | "contactos" | "rubros" | "estados" | "servicios"
+    readonly catalogKey?: "asesores" | "contactos" | "rubros" | "estados" | "servicios" | "estados_seguimiento"
     readonly stickyLeft?: string
     readonly isLastPinned?: boolean
   }
@@ -361,7 +361,7 @@ export default function SeguimientoClienteGrid({
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
     { key: "observaciones", label: "Observaciones", width: "w-64 min-w-[256px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
-    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "text" },
+    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
 
   return (
