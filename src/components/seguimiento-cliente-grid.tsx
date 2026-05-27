@@ -530,7 +530,7 @@ export default function SeguimientoClienteGrid({
                         : undefined
                     }
                     className={`
-                      ${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-700 uppercase tracking-wider select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200/80 transition-colors
+                      ${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-700 uppercase tracking-wider select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200 transition-colors
                       ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       ${isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : ""}
                     `}
