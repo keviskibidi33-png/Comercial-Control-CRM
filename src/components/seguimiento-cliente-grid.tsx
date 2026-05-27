@@ -563,8 +563,8 @@ export default function SeguimientoClienteGrid({
                   const isLastPinned = col.isLastPinned === true
                   const baseCellClass = `
                     py-1 overflow-visible relative
-                    \${isPinned ? \`sticky z-10 \${idx % 2 === 0 ? "bg-white" : "bg-sky-50"} group-hover:bg-sky-100 border-r border-zinc-200\` : "border-r border-zinc-100"}
-                    \${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.15)] border-r-zinc-300" : ""}
+                    ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-white" : "bg-sky-50"} group-hover:bg-sky-100 border-r border-zinc-200` : "border-r border-zinc-100"}
+                    ${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.15)] border-r-zinc-300" : ""}
                   `
 
                   // Renders Read-Only 'N°' cell
@@ -574,7 +574,7 @@ export default function SeguimientoClienteGrid({
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
                         className={`px-3 py-2 text-center font-mono text-xs font-semibold text-zinc-500 select-none
-                          \${isPinned ? \`sticky z-10 \${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100 border-r border-zinc-200\` : "border-r border-zinc-100 bg-zinc-50"}
+                          ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100 border-r border-zinc-200` : "border-r border-zinc-100 bg-zinc-50"}
                         `}
                         title={String(cellValue ?? row.id)}
                       >
@@ -720,8 +720,8 @@ export default function SeguimientoClienteGrid({
                 const isLastPinned = col.isLastPinned === true
                 const baseGhostClass = `
                   py-1 overflow-visible relative
-                  \${isPinned ? "sticky z-10 bg-zinc-50 group-hover:bg-zinc-100 border-r border-zinc-200" : "border-r border-zinc-100"}
-                  \${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.15)] border-r-zinc-300" : ""}
+                  ${isPinned ? "sticky z-10 bg-zinc-50 group-hover:bg-zinc-100 border-r border-zinc-200" : "border-r border-zinc-100"}
+                  ${isLastPinned ? "shadow-[4px_0_5px_-2px_rgba(0,0,0,0.15)] border-r-zinc-300" : ""}
                 `
                 
                 if (isNo) {
@@ -730,7 +730,7 @@ export default function SeguimientoClienteGrid({
                       key="ghost-no"
                       style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
                       className={`px-3 py-2 text-center font-mono text-xs text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
-                        \${isPinned ? "sticky z-10 bg-zinc-100 group-hover:bg-zinc-200 border-r border-zinc-200" : "border-r border-zinc-100 bg-zinc-100"}
+                        ${isPinned ? "sticky z-10 bg-zinc-100 group-hover:bg-zinc-200 border-r border-zinc-200" : "border-r border-zinc-100 bg-zinc-100"}
                       `}
                       onClick={submitGhostRow}
                       title="Agregar registro (Enter / Ctrl+Enter)"
