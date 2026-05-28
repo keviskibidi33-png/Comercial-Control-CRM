@@ -1045,11 +1045,11 @@ export default function SeguimientoClienteGrid({
       {commentModalRow && activeCommentField && (
         <div
           onClick={closeCommentsModal}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh]"
+            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[90vh]"
           >
             <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
               <div className="min-w-0">
@@ -1074,7 +1074,7 @@ export default function SeguimientoClienteGrid({
 
             <div className="space-y-4 px-6 py-5">
               <div className="flex items-center justify-between gap-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
                   Comentario
                 </label>
                 <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commentSyncState.className}`}>
@@ -1086,11 +1086,11 @@ export default function SeguimientoClienteGrid({
                 value={commentDraft}
                 onChange={(e) => handleCommentDraftChange(e.target.value)}
                 placeholder="Escribe aquí la observación o comentario..."
-                className="min-h-[280px] w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+                className="min-h-[280px] w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-blue-100 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[11px] text-muted-foreground">
                 {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todavía"}
               </div>
