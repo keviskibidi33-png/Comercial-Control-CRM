@@ -367,19 +367,19 @@ export default function SeguimientoClienteGrid({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       {/* Module Header */}
-      <div className="z-10 flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-2 shadow-sm">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <div className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="rounded-md bg-blue-600 p-1 text-white shadow-sm">
-              <Users className="h-3.5 w-3.5" />
+            <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
+              <Users className="h-4 w-4" />
             </div>
-            <div className="leading-tight">
-              <h1 className="text-[14px] font-extrabold tracking-tight text-zinc-900">Seguimiento Clientes</h1>
-              <p className="text-[10px] font-medium text-zinc-600">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento Clientes</h1>
+              <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
               </p>
             </div>
-            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-[9px] font-semibold text-zinc-700">
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">
               {total}
             </span>
           </div>
@@ -387,102 +387,101 @@ export default function SeguimientoClienteGrid({
           <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="shrink-0" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={exportToExcel}
             disabled={isMutating || isLoading || total === 0}
-            className="flex items-center gap-1.5 h-7 rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <FileDown className="h-3 w-3" />
+            <FileDown className="h-3.5 w-3.5" />
             <span>Exportar Excel</span>
           </button>
 
-          <div
-            className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 shadow-inner"
-            title={connectionStatus}
-          >
-            {connectionStatus === "EN LÍNEA" ? (
-              <Wifi className="h-3.5 w-3.5 text-emerald-500" />
-            ) : connectionStatus === "SIN CONEXIÓN" ? (
-              <WifiOff className="h-3.5 w-3.5 text-red-500" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-500" />
-            )}
-            <span className="hidden text-[10px] font-bold uppercase text-zinc-500 sm:inline">
-              {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN LÍNEA" ? "En Línea" : "Sin Conexión"}
-            </span>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 shadow-inner"
+              title={connectionStatus}
+            >
+              {connectionStatus === "EN LÍNEA" ? (
+                <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+              ) : connectionStatus === "SIN CONEXIÓN" ? (
+                <WifiOff className="h-3.5 w-3.5 text-red-500" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-500" />
+              )}
+              <span className="hidden text-[10px] font-bold uppercase text-zinc-500 sm:inline">
+                {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN LÍNEA" ? "En Línea" : "Sin Conexión"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Toolbar Area */}
-      <div className="z-20 shrink-0 border-b border-zinc-200 bg-white px-4 py-1 shadow-sm overflow-visible">
-        <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between overflow-visible">
-          {/* Left search & selections */}
-          <div className="flex flex-1 flex-wrap items-center gap-2 overflow-visible">
-            {/* Search Input */}
-            <div className="relative w-[250px] lg:w-[320px]">
-              <Search className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Buscar en todo..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
+      <div className="flex items-center justify-between p-2 border-b border-zinc-200 bg-white gap-2 z-20 shrink-0 overflow-visible">
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
+          {/* Search Input */}
+          <div className="relative w-[200px] lg:w-[250px]">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Buscar en todo..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 w-full border border-zinc-200 rounded-md pl-8 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-zinc-50 text-zinc-900 placeholder:text-zinc-400"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("")
                   setCurrentPage(1)
                 }}
-                className="h-8 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-7 text-xs font-medium outline-none transition-all placeholder:text-zinc-400 text-zinc-900 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500"
-              />
-              {search && (
-                <button
-                  onClick={() => {
-                    setSearch("")
-                    setCurrentPage(1)
-                  }}
-                  className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Asesor Filter */}
-            <div className="relative">
-              <select
-                value={selectedAsesor}
-                onChange={(e) => {
-                  setSelectedAsesor(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
+                className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-600"
               >
-                <option value="">Todos los Asesores</option>
-                {catalogs?.asesores?.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
 
-            {/* Estado Cliente Filter */}
-            <div className="relative">
-              <select
-                value={selectedEstado}
-                onChange={(e) => {
-                  setSelectedEstado(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="h-8 rounded-md border border-zinc-200 bg-white px-2 pr-7 text-xs font-medium text-zinc-900 outline-none transition-all cursor-pointer hover:bg-zinc-50 focus:border-blue-500"
-              >
-                <option value="">Todos los Estados</option>
-                {catalogs?.estados?.map((est) => (
-                  <option key={est} value={est}>
-                    {est}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Asesor Filter */}
+          <div className="relative">
+            <select
+              value={selectedAsesor}
+              onChange={(e) => {
+                setSelectedAsesor(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
+            >
+              <option value="">Todos los Asesores</option>
+              {catalogs?.asesores?.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Estado Cliente Filter */}
+          <div className="relative">
+            <select
+              value={selectedEstado}
+              onChange={(e) => {
+                setSelectedEstado(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
+            >
+              <option value="">Todos los Estados</option>
+              {catalogs?.estados?.map((est) => (
+                <option key={est} value={est}>
+                  {est}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
