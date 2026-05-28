@@ -256,21 +256,25 @@ export default function SeguimientoClienteGrid({
   const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      if (e.ctrlKey) {
-        submitGhostRow()
-        return
-      }
+      submitGhostRow()
+      return
+    }
+    
+    if (e.key === " ") {
+      const target = e.target as HTMLElement
+      const isTextInput = target.tagName === "INPUT" && (target as HTMLInputElement).type === "text"
       
-      const inputs = Array.from(document.querySelectorAll(".ghost-input")) as HTMLElement[]
-      const currentIndex = inputs.indexOf(document.activeElement as HTMLElement)
-      const nextInput = inputs[currentIndex + 1]
-      if (nextInput) {
-        nextInput.focus()
-        if (nextInput instanceof HTMLInputElement) {
-          nextInput.select()
+      if (!isTextInput) {
+        e.preventDefault()
+        const inputs = Array.from(document.querySelectorAll(".ghost-input")) as HTMLElement[]
+        const currentIndex = inputs.indexOf(document.activeElement as HTMLElement)
+        const nextInput = inputs[currentIndex + 1]
+        if (nextInput) {
+          nextInput.focus()
+          if (nextInput instanceof HTMLInputElement) {
+            nextInput.select()
+          }
         }
-      } else {
-        submitGhostRow()
       }
     }
   }
