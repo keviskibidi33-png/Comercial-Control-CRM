@@ -785,7 +785,7 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className="w-full bg-transparent border-0 border-none outline-none shadow-none text-[10px] text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60"
+                          className="w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[10.5px] font-semibold text-zinc-700 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5"
                         />
                       </td>
                     )
