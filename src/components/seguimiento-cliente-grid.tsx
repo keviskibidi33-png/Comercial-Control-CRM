@@ -34,7 +34,6 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   estado_cliente: "EN ESPERA DE ATENCIÓN",
   servicio_solicitado: "",
   fecha_ultimo_contacto: "",
-  observaciones: "",
   numero_cotizacion: "",
   estado_seguimiento: "Pendiente"
 }
