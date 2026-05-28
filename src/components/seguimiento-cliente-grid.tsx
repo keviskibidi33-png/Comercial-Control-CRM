@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { toast } from "sonner"
 import { 
   Plus, 
   FileDown, 
@@ -66,7 +67,6 @@ export default function SeguimientoClienteGrid({
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [commentInput, setCommentInput] = useState("")
   const [rowComments, setRowComments] = useState<CommentHistoryEntry[]>([])
-  const [showSuccessToast, setShowSuccessToast] = useState(false)
 
   interface CommentHistoryEntry {
     text: string
@@ -91,7 +91,6 @@ export default function SeguimientoClienteGrid({
     const history = loadComments(row.id)
     setRowComments(history)
     setCommentInput("")
-    setShowSuccessToast(false)
   }
 
   const saveComment = () => {
@@ -127,11 +126,8 @@ export default function SeguimientoClienteGrid({
     // Update observations cell
     updateCell(commentModalRow.id, "observaciones", newEntry.text)
 
-    // Show success toast
-    setShowSuccessToast(true)
-    setTimeout(() => {
-      setShowSuccessToast(false)
-    }, 2500)
+    // Show success toast notification using sonner to prevent overlay text/layout shifts
+    toast.success("Comentario guardado localmente en esta máquina.")
   }
 
   // Query Filters & Pagination State
@@ -1036,11 +1032,6 @@ export default function SeguimientoClienteGrid({
 
             {/* Add Comment form - Bottom panel */}
             <div className="border-t border-zinc-200 p-4 bg-zinc-50 flex-shrink-0 space-y-3">
-              {showSuccessToast && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] px-3 py-2 rounded-md flex items-center justify-center gap-1.5 transition-all animate-fade-in">
-                  <span>💾 Guardado localmente en esta máquina.</span>
-                </div>
-              )}
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Nuevo Comentario</label>
