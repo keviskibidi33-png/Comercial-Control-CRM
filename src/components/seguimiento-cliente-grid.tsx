@@ -451,7 +451,7 @@ export default function SeguimientoClienteGrid({
     { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "908px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[130px] min-w-[130px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "contactos" },
-    { key: "rubro", label: "Rubro", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "rubros" },
+    { key: "rubro", label: "Rubro", width: "w-[115px] min-w-[115px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
