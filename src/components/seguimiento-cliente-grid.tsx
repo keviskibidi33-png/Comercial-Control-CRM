@@ -1007,14 +1007,6 @@ export default function SeguimientoClienteGrid({
               </div>
             </div>
 
-            {/* Transient Save Toast/Notification inside the modal */}
-            {showSuccessToast && (
-              <div className="bg-emerald-500 text-white text-xs px-4 py-1.5 flex items-center justify-center gap-1.5 transition-all animate-fade-in flex-shrink-0">
-                <span className="font-semibold">¡Comentario guardado correctamente!</span>
-                <span className="text-[10px] opacity-80">(Sincronizado en base de datos)</span>
-              </div>
-            )}
-
             {/* Comments History list - Scrollable container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white min-h-0">
               <div className="flex items-center justify-between">
@@ -1044,6 +1036,11 @@ export default function SeguimientoClienteGrid({
 
             {/* Add Comment form - Bottom panel */}
             <div className="border-t border-zinc-200 p-4 bg-zinc-50 flex-shrink-0 space-y-3">
+              {showSuccessToast && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] px-3 py-2 rounded-md flex items-center justify-center gap-1.5 transition-all animate-fade-in">
+                  <span>💾 Guardado localmente en esta máquina.</span>
+                </div>
+              )}
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Nuevo Comentario</label>
