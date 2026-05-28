@@ -253,7 +253,7 @@ export default function SeguimientoClienteGrid({
     })
   }
 
-  const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>, index: number) => {
+  const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
       if (e.ctrlKey) {
@@ -262,7 +262,8 @@ export default function SeguimientoClienteGrid({
       }
       
       const inputs = Array.from(document.querySelectorAll(".ghost-input")) as HTMLElement[]
-      const nextInput = inputs[index + 1]
+      const currentIndex = inputs.indexOf(document.activeElement as HTMLElement)
+      const nextInput = inputs[currentIndex + 1]
       if (nextInput) {
         nextInput.focus()
         if (nextInput instanceof HTMLInputElement) {
@@ -451,7 +452,7 @@ export default function SeguimientoClienteGrid({
     { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "908px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[130px] min-w-[130px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "contactos" },
-    { key: "rubro", label: "Rubro", width: "w-[115px] min-w-[115px]", type: "catalog", catalogKey: "rubros" },
+    { key: "rubro", label: "Rubro", width: "w-[120px] min-w-[120px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
@@ -871,50 +872,34 @@ export default function SeguimientoClienteGrid({
                   )
                 }
                 
-                if (col.type === "catalog") {
-                  const catalogList = catalogs[col.catalogKey as keyof typeof catalogs] || []
-                  return (
-                    <td
-                      key={`ghost-${col.key}`}
-                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-2 ${baseGhostClass}`}
+              if (col.type === "catalog") {
+                const catalogList = catalogs[col.catalogKey as keyof typeof catalogs] || []
+                const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
+                return (
+                  <td
+                    key={`ghost-${col.key}`}
+                    style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                    className={`px-2 ${baseGhostClass}`}
+                  >
+                    <select
+                      value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
+                      onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                      onKeyDown={handleGhostKeyDown}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-7`}
                     >
-                      <select
-                        value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
-                        onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
-                        onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
-                        className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-7"
-                      >
-                        <option value="">- Seleccione -</option>
-                        {catalogList.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  )
-                }
+                      <option value="">- Seleccione -</option>
+                      {catalogList.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                )
+              }
                 
-                if (col.type === "date") {
-                  return (
-                    <td
-                      key={`ghost-${col.key}`}
-                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-2 ${baseGhostClass}`}
-                    >
-                      <input
-                        type="date"
-                        value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
-                        onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
-                        onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
-                        className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7"
-                      />
-                    </td>
-                  )
-                }
-                
-                // Standard text inputs
+              if (col.type === "date") {
+                const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
                 return (
                   <td
                     key={`ghost-${col.key}`}
@@ -922,15 +907,34 @@ export default function SeguimientoClienteGrid({
                     className={`px-2 ${baseGhostClass}`}
                   >
                     <input
-                      type="text"
-                      placeholder={`${col.label}...`}
+                      type="date"
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
-                      onKeyDown={(e) => handleGhostKeyDown(e, idx - 1)}
-                      className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7"
+                      onKeyDown={handleGhostKeyDown}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
                     />
                   </td>
                 )
+              }
+                
+              // Standard text inputs
+              const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
+              return (
+                <td
+                  key={`ghost-${col.key}`}
+                  style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                  className={`px-2 ${baseGhostClass}`}
+                >
+                  <input
+                    type="text"
+                    placeholder={`${col.label}...`}
+                    value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
+                    onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                    onKeyDown={handleGhostKeyDown}
+                    className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
+                  />
+                </td>
+              )
               })}
             </tr>
 
