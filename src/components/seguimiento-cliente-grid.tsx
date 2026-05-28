@@ -175,12 +175,10 @@ export default function SeguimientoClienteGrid({
     ? {
         label: "Borrador local",
         className: "border-amber-200 bg-amber-50 text-amber-700",
-        message: "Este comentario está guardado temporalmente en localStorage hasta que presiones Guardar.",
       }
     : {
-        label: "Sin borrador local",
+        label: "Sin cambios",
         className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-        message: "El comentario está sincronizado con la base de datos.",
       }
 
   // Query Filters & Pagination State
@@ -1053,9 +1051,9 @@ export default function SeguimientoClienteGrid({
             onClick={(e) => e.stopPropagation()}
             className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh]"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-border bg-secondary/30 px-6 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-primary/10 bg-gradient-to-r from-primary/10 via-background to-background px-6 py-4">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
                   Geofal CRM · Seguimiento Clientes
                 </p>
                 <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
@@ -1088,12 +1086,8 @@ export default function SeguimientoClienteGrid({
                 value={commentDraft}
                 onChange={(e) => handleCommentDraftChange(e.target.value)}
                 placeholder="Escribe aquí la observación o comentario..."
-                className="min-h-[280px] w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+                className="min-h-[280px] w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
               />
-
-              <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${commentSyncState.className}`}>
-                {commentSyncState.message}
-              </div>
             </div>
 
             <div className="flex flex-col gap-3 border-t border-border bg-secondary/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1112,7 +1106,7 @@ export default function SeguimientoClienteGrid({
                   onClick={saveComment}
                   disabled={isSavingComment}
                 >
-                  {isSavingComment ? "Guardando..." : "Guardar en DB"}
+                  {isSavingComment ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
             </div>
