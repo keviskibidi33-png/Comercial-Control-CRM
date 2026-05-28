@@ -109,6 +109,8 @@ export type SeguimientoRow = {
   servicio_solicitado?: string
   fecha_ultimo_contacto?: string
   observaciones?: string
+  comentarios_asistente?: string
+  comentarios_asesor?: string
   numero_cotizacion?: string
   estado_seguimiento?: string
   creado_por?: string
