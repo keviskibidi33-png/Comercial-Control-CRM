@@ -419,14 +419,14 @@ export default function SeguimientoClienteGrid({
 
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
-    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0rem" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date", stickyLeft: "3.5rem" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "12.5rem" },
-    { key: "numero_celular", label: "Celular", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "24.5rem" },
-    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "32.5rem" },
-    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "44.5rem" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "58.5rem", isLastPinned: true },
-    { key: "asesor", label: "Asesor", width: "w-44 min-w-[176px]", type: "catalog", catalogKey: "asesores" },
+    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0px" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date", stickyLeft: "56px" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "200px" },
+    { key: "numero_celular", label: "Celular", width: "w-[126px] min-w-[126px]", type: "text", stickyLeft: "392px" },
+    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "518px" },
+    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "710px" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "934px", isLastPinned: true },
+    { key: "asesor", label: "Asesor", width: "w-[171px] min-w-[171px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
@@ -989,6 +989,14 @@ export default function SeguimientoClienteGrid({
               >
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* Brief Row Info */}
+            <div className="mt-2 bg-zinc-50 rounded border border-zinc-200 p-2 text-[11px] grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-600">
+              <div><strong>Fecha Contacto:</strong> {commentModalRow.fecha_contacto || "-"}</div>
+              <div><strong>Contacto:</strong> {commentModalRow.persona_contacto || "-"}</div>
+              <div><strong>Celular:</strong> {commentModalRow.numero_celular || "-"}</div>
+              <div><strong>Asesor:</strong> {commentModalRow.asesor || "-"}</div>
             </div>
 
             {/* Warning Banner */}
