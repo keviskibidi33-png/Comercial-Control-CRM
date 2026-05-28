@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { 
   Plus, 
@@ -39,6 +40,35 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
 }
 
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
+const COMMENT_DRAFT_STORAGE_PREFIX = "seguimiento-comercial-comment-draft:v1"
+
+type CommentFieldKey = "comentarios_asistente" | "comentarios_asesor"
+
+const getCommentDraftStorageKey = (rowId: number, field: CommentFieldKey) =>
+  `${COMMENT_DRAFT_STORAGE_PREFIX}:${rowId}:${field}`
+
+const readLegacyCommentValue = (value: string | undefined | null): string => {
+  if (!value) return ""
+
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const lastEntry = parsed[parsed.length - 1]
+      if (typeof lastEntry?.text === "string") {
+        return lastEntry.text
+      }
+    }
+  } catch {
+    // Keep raw text for the new notepad flow and legacy plain strings.
+  }
+
+  return value
+}
+
+const getCommentDisplayValue = (value: string | undefined | null): string => {
+  const normalized = readLegacyCommentValue(value).trim()
+  return normalized.length > 0 ? normalized : "-"
+}
 
 interface SeguimientoClienteGridProps {
   activeModuleTab: CommercialModuleTab
@@ -51,20 +81,6 @@ type SortConfig = {
   direction: SortDirection
 } | null
 
-const getDisplayComment = (value: string | undefined): string => {
-  if (!value) return "-"
-  try {
-    const parsed = JSON.parse(value)
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const last = parsed[parsed.length - 1]
-      return last?.text || "-"
-    }
-  } catch {
-    // If not JSON, it's a legacy comment
-  }
-  return value
-}
-
 export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
@@ -76,78 +92,90 @@ export default function SeguimientoClienteGrid({
     return part.charAt(0).toUpperCase() + part.slice(1)
   }, [email])
 
-  // Modal state for comments
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
-  const [activeCommentField, setActiveCommentField] = useState<"comentarios_asistente" | "comentarios_asesor" | null>(null)
-  const [commentInput, setCommentInput] = useState("")
-  const [rowComments, setRowComments] = useState<CommentHistoryEntry[]>([])
+  const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
+  const [commentDraft, setCommentDraft] = useState("")
+  const [hasStoredCommentDraft, setHasStoredCommentDraft] = useState(false)
+  const [isSavingComment, setIsSavingComment] = useState(false)
 
-  interface CommentHistoryEntry {
-    text: string
-    timestamp: string
-    author: string
-  }
+  const readStoredCommentDraft = (rowId: number, field: CommentFieldKey, fallbackValue: string) => {
+    if (typeof window === "undefined") return fallbackValue
 
-  const loadComments = (row: SeguimientoRow, field: "comentarios_asistente" | "comentarios_asesor") => {
-    const val = row[field]
-    if (!val) return []
     try {
-      const parsed = JSON.parse(val)
-      if (Array.isArray(parsed)) {
-        return parsed as CommentHistoryEntry[]
-      }
-    } catch (e) {
-      // Return single legacy comment
-      return [{
-        text: val,
-        timestamp: "-",
-        author: row.creado_por || "Sistema"
-      }] as CommentHistoryEntry[]
+      const stored = window.localStorage.getItem(getCommentDraftStorageKey(rowId, field))
+      return stored !== null ? stored : fallbackValue
+    } catch {
+      return fallbackValue
     }
-    return []
   }
 
-  const openCommentsModal = (row: SeguimientoRow, field: "comentarios_asistente" | "comentarios_asesor") => {
+  const persistCommentDraft = (rowId: number, field: CommentFieldKey, value: string) => {
+    if (typeof window === "undefined") return
+
+    try {
+      window.localStorage.setItem(getCommentDraftStorageKey(rowId, field), value)
+    } catch {
+      // Ignore localStorage write failures and keep the modal usable.
+    }
+  }
+
+  const clearCommentDraft = (rowId: number, field: CommentFieldKey) => {
+    if (typeof window === "undefined") return
+
+    try {
+      window.localStorage.removeItem(getCommentDraftStorageKey(rowId, field))
+    } catch {
+      // Ignore localStorage cleanup failures.
+    }
+  }
+
+  const openCommentsModal = (row: SeguimientoRow, field: CommentFieldKey) => {
     setCommentModalRow(row)
     setActiveCommentField(field)
-    const history = loadComments(row, field)
-    setRowComments(history)
-    setCommentInput("")
+    const fallbackValue = readLegacyCommentValue(row[field])
+    const draftValue = readStoredCommentDraft(row.id, field, fallbackValue)
+    setCommentDraft(draftValue)
+    let storedDraftExists = false
+    if (typeof window !== "undefined") {
+      try {
+        storedDraftExists = window.localStorage.getItem(getCommentDraftStorageKey(row.id, field)) !== null
+      } catch {
+        storedDraftExists = false
+      }
+    }
+    setHasStoredCommentDraft(storedDraftExists)
   }
 
-  const saveComment = () => {
-    if (!commentModalRow || !activeCommentField || !commentInput.trim()) return
+  const closeCommentsModal = () => {
+    setCommentModalRow(null)
+    setActiveCommentField(null)
+    setIsSavingComment(false)
+  }
 
-    const now = new Date()
-    const formattedDate = now.toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    })
-    const formattedTime = now.toLocaleTimeString("es-PE", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    })
-    const timestamp = `${formattedDate} ${formattedTime}`
-    const author = currentUserName || "Usuario"
+  const saveComment = async () => {
+    if (!commentModalRow || !activeCommentField) return
 
-    const newEntry: CommentHistoryEntry = {
-      text: commentInput.trim(),
-      timestamp,
-      author
+    const payload = commentDraft
+
+    setIsSavingComment(true)
+    try {
+      await updateCellAsync(commentModalRow.id, activeCommentField, payload)
+      clearCommentDraft(commentModalRow.id, activeCommentField)
+      setHasStoredCommentDraft(false)
+      toast.success("Comentario guardado en la base de datos.")
+    } catch {
+      toast.error("No se pudo guardar el comentario. El borrador local se mantuvo.")
+    } finally {
+      setIsSavingComment(false)
     }
+  }
 
-    const updatedHistory = [...rowComments, newEntry]
-    
-    setRowComments(updatedHistory)
-    setCommentInput("")
+  const handleCommentDraftChange = (value: string) => {
+    setCommentDraft(value)
+    if (!commentModalRow || !activeCommentField) return
 
-    // Update active field directly in database with the serialized JSON array
-    updateCell(commentModalRow.id, activeCommentField, JSON.stringify(updatedHistory))
-
-    // Show success toast notification
-    toast.success("Comentario guardado correctamente.")
+    persistCommentDraft(commentModalRow.id, activeCommentField, value)
+    setHasStoredCommentDraft(true)
   }
 
   // Query Filters & Pagination State
@@ -223,7 +251,7 @@ export default function SeguimientoClienteGrid({
     setGhostRow(prev => ({ ...prev, asesor: selectedAsesor || "" }))
   }, [selectedAsesor])
 
-  const handleGhostChange = (field: keyof SeguimientoRow, val: any) => {
+  const handleGhostChange = (field: keyof SeguimientoRow, val: string | number | null) => {
     setGhostRow(prev => ({ ...prev, [field]: val }))
   }
 
@@ -288,8 +316,6 @@ export default function SeguimientoClienteGrid({
     return () => clearTimeout(handler)
   }, [search])
 
-  const offset = (currentPage - 1) * pageSize
-
   // Fetch tracking hook
   const {
     rows,
@@ -300,6 +326,7 @@ export default function SeguimientoClienteGrid({
     errorMessage,
     connectionStatus,
     updateCell,
+    updateCellAsync,
     insertRow,
     exportToExcel,
     isMutating
@@ -400,7 +427,7 @@ export default function SeguimientoClienteGrid({
   }
 
   // Handle cell edit save
-  const handleCellBlur = (id: number, field: keyof SeguimientoRow, currentValue: any, newValue: any) => {
+  const handleCellBlur = (id: number, field: keyof SeguimientoRow, currentValue: unknown, newValue: unknown) => {
     if (currentValue !== newValue) {
       updateCell(id, field, newValue)
     }
@@ -446,22 +473,22 @@ export default function SeguimientoClienteGrid({
 
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
-    { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0px" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[120px] min-w-[120px]", type: "date", stickyLeft: "56px" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "176px" },
-    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px]", type: "text", stickyLeft: "368px" },
-    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "468px" },
-    { key: "razon_social", label: "Razón Social", width: "w-[214px] min-w-[214px]", type: "text", stickyLeft: "660px" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "874px", isLastPinned: true },
-    { key: "asesor", label: "Asesor", width: "w-[130px] min-w-[130px]", type: "catalog", catalogKey: "asesores" },
-    { key: "contacto", label: "Contacto", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "contactos" },
-    { key: "rubro", label: "Rubro", width: "w-[120px] min-w-[120px]", type: "catalog", catalogKey: "rubros" },
-    { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
-    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[120px] min-w-[120px]", type: "date" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[180px] min-w-[180px]", type: "text" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[180px] min-w-[180px]", type: "text" },
-    { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
+    { key: "no", label: "N°", width: "w-12 min-w-[48px] text-center", stickyLeft: "0px" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[104px] min-w-[104px]", type: "date", stickyLeft: "48px" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-40 min-w-[160px]", type: "text", stickyLeft: "152px" },
+    { key: "numero_celular", label: "Celular", width: "w-[92px] min-w-[92px]", type: "text", stickyLeft: "312px" },
+    { key: "email", label: "Email", width: "w-40 min-w-[160px]", type: "text", stickyLeft: "404px" },
+    { key: "razon_social", label: "Razón Social", width: "w-[180px] min-w-[180px]", type: "text", stickyLeft: "564px" },
+    { key: "ruc", label: "RUC", width: "w-[108px] min-w-[108px]", type: "text", stickyLeft: "744px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[104px] min-w-[104px]", type: "date", stickyLeft: "852px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[148px] min-w-[148px]", type: "text", stickyLeft: "956px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[148px] min-w-[148px]", type: "text", stickyLeft: "1104px", isLastPinned: true },
+    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px]", type: "catalog", catalogKey: "asesores" },
+    { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px]", type: "catalog", catalogKey: "contactos" },
+    { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px]", type: "catalog", catalogKey: "rubros" },
+    { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px]", type: "catalog", catalogKey: "estados" },
+    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px]", type: "catalog", catalogKey: "servicios" },
+    { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
 
@@ -630,7 +657,7 @@ export default function SeguimientoClienteGrid({
                         : undefined
                     }
                     className={`
-                      ${col.width} px-3 py-3 text-left text-xs font-bold text-zinc-700 uppercase tracking-wider select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200 transition-colors
+                      ${col.width} px-2 py-2 text-left text-[10.5px] font-bold text-zinc-700 uppercase tracking-wide select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200 transition-colors
                       ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       ${isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : ""}
                     `}
@@ -662,7 +689,7 @@ export default function SeguimientoClienteGrid({
                   const isPinned = col.stickyLeft !== undefined
                   const isLastPinned = col.isLastPinned === true
                   const baseCellClass = `
-                    py-1 overflow-visible relative
+                    py-0.5 overflow-visible relative
                     ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-white" : "bg-sky-50"} group-hover:bg-sky-100` : ""}
                     ${isPinned 
                       ? (isLastPinned 
@@ -677,7 +704,7 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-3 py-2 text-center font-mono text-xs font-semibold text-zinc-500 select-none
+                        className={`px-2 py-1.5 text-center font-mono text-[10px] font-semibold text-zinc-500 select-none
                           ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100` : "bg-zinc-50"}
                           ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                         `}
@@ -705,7 +732,7 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-2 ${baseCellClass} group/cell`}
+                        className={`px-1.5 ${baseCellClass} group/cell`}
                       >
                         {isActive ? (
                           <div ref={autocompleteRef} className="relative w-full z-40 overflow-visible">
@@ -728,7 +755,7 @@ export default function SeguimientoClienteGrid({
                                 }, 150)
                               }}
                               onKeyDown={(e) => handleAutocompleteKeyDown(e, row.id, col.key as keyof SeguimientoRow, filteredSuggestions)}
-                              className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                               autoFocus
                               title={suggestionQuery}
                             />
@@ -785,14 +812,14 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className="w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[10.5px] font-semibold text-zinc-700 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5"
+                          className="w-[88px] bg-transparent border-0 border-none outline-none shadow-none text-[10px] font-semibold text-zinc-700 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5"
                         />
                       </td>
                     )
                   }
 
                   if (col.key === "comentarios_asistente" || col.key === "comentarios_asesor") {
-                    const displayVal = getDisplayComment(cellValue as string)
+                    const displayVal = getCommentDisplayValue(cellValue as string)
                     const isEmpty = !cellValue || displayVal === "-"
                     const commentBoxClass = isEmpty
                       ? "bg-red-100 border-red-300 text-red-800 hover:bg-red-200"
@@ -802,15 +829,15 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-2 ${baseCellClass}`}
+                        className={`px-1.5 ${baseCellClass}`}
                       >
                         <div
                           onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
-                          className={`w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs border flex items-center justify-between transition-colors ${commentBoxClass}`}
+                          className={`w-full min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[10px] border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
                           <span className="truncate">{displayVal}</span>
-                          <span className="text-[10px] opacity-70 shrink-0 ml-1">💬</span>
+                          <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
                         </div>
                       </td>
                     )
@@ -821,7 +848,7 @@ export default function SeguimientoClienteGrid({
                     <td
                       key={col.key}
                       style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-2 ${baseCellClass}`}
+                      className={`px-1.5 ${baseCellClass}`}
                     >
                       <input
                         type="text"
@@ -834,7 +861,7 @@ export default function SeguimientoClienteGrid({
                             e.currentTarget.blur()
                           }
                         }}
-                        className="w-full bg-transparent border-none outline-none text-xs text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 truncate"
+                        className="w-full bg-transparent border-none outline-none text-[11px] text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 truncate"
                       />
                     </td>
                   )
@@ -844,12 +871,12 @@ export default function SeguimientoClienteGrid({
 
             {/* Ghost Row for Quick Inline Adding */}
             <tr className="bg-zinc-50 hover:bg-zinc-100/70 transition-colors overflow-visible border-t-2 border-zinc-200 group">
-              {COLUMNS.map((col, idx) => {
+              {COLUMNS.map((col) => {
                 const isNo = col.key === "no"
                 const isPinned = col.stickyLeft !== undefined
                 const isLastPinned = col.isLastPinned === true
                 const baseGhostClass = `
-                  py-1 overflow-visible relative
+                  py-0.5 overflow-visible relative
                   ${isPinned ? "sticky z-10 bg-zinc-50 group-hover:bg-zinc-100" : ""}
                   ${isPinned 
                     ? (isLastPinned 
@@ -863,7 +890,7 @@ export default function SeguimientoClienteGrid({
                     <td
                       key="ghost-no"
                       style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-3 py-2 text-center font-mono text-xs text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
+                      className={`px-2 py-1.5 text-center font-mono text-[10px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
                         ${isPinned ? "sticky z-10 bg-zinc-100 group-hover:bg-zinc-200" : "bg-zinc-100"}
                         ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       `}
@@ -888,7 +915,7 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-7`}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-6`}
                     >
                       <option value="">- Seleccione -</option>
                       {catalogList.map((opt) => (
@@ -914,7 +941,7 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60`}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-5 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60`}
                     />
                   </td>
                 )
@@ -934,7 +961,7 @@ export default function SeguimientoClienteGrid({
                     value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                     onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                     onKeyDown={handleGhostKeyDown}
-                    className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
+                    className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6`}
                   />
                 </td>
               )
@@ -1013,87 +1040,115 @@ export default function SeguimientoClienteGrid({
 
       {/* Comments Modal */}
       {commentModalRow && activeCommentField && (
-        <div 
-          onClick={() => setCommentModalRow(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        <div
+          onClick={closeCommentsModal}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-[1px]"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-lg border border-zinc-200 bg-white shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+            className="flex w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-amber-200 bg-[#fffdf7] shadow-2xl max-h-[90vh]"
           >
-            {/* Fixed Header */}
-            <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                  <span>💬 {activeCommentField === "comentarios_asistente" ? "Asistente Comentario" : "Asesor Comentario"}</span>
+            <div className="flex items-start justify-between gap-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-white px-5 py-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
+                  Bloc de notas · {activeCommentField === "comentarios_asistente" ? "Asistente" : "Asesor"}
+                </p>
+                <h2 className="mt-1 truncate text-lg font-bold text-zinc-800">
+                  {commentModalRow.razon_social || "Sin razón social"}
                 </h2>
-                <button 
-                  onClick={() => setCommentModalRow(null)}
-                  className="rounded-full p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <p className="text-xs text-zinc-500">
+                  RUC: {commentModalRow.ruc || "-"} · {commentModalRow.persona_contacto || "Sin contacto"}
+                </p>
               </div>
+              <button
+                onClick={closeCommentsModal}
+                className="rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+                aria-label="Cerrar comentario"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Comments History list - Scrollable container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white min-h-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Historial de Cambios / Comentarios</h3>
-                <span className="text-[9px] text-zinc-400 italic">Almacenado en la Base de Datos</span>
-              </div>
-              
-              {rowComments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center text-zinc-400">
-                  <span className="text-lg">💬</span>
-                  <p className="text-xs italic mt-1">Sin comentarios para este registro.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {rowComments.map((comment, index) => (
-                    <div key={index} className="rounded border border-zinc-100 bg-zinc-50 p-2 text-xs shadow-sm transition-all hover:border-zinc-200">
-                      <div className="flex justify-between items-center text-[10px] text-zinc-500 mb-1 font-medium border-b border-zinc-100/50 pb-0.5">
-                        <span>Por: <strong className="text-zinc-700">{comment.author}</strong></span>
-                        <span>{comment.timestamp}</span>
-                      </div>
-                      <p className="text-zinc-800 whitespace-pre-wrap leading-relaxed text-[11px]">{comment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Add Comment form - Bottom panel */}
-            <div className="border-t border-zinc-200 p-4 bg-zinc-50 flex-shrink-0 space-y-3">
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Nuevo Comentario</label>
-                  <span className="text-[10px] text-zinc-500">
-                    Registrando como: <strong className="text-blue-600">{currentUserName}</strong>
+            <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
+                    Nota principal
+                  </label>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                      hasStoredCommentDraft
+                        ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {hasStoredCommentDraft ? "Borrador local activo" : "Sin borrador pendiente"}
                   </span>
                 </div>
+
                 <textarea
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  rows={2}
-                  className="w-full rounded border border-zinc-300 p-2 text-xs bg-white text-zinc-800 placeholder-zinc-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none"
-                  placeholder="Escriba un comentario para guardar..."
+                  value={commentDraft}
+                  onChange={(e) => handleCommentDraftChange(e.target.value)}
+                  placeholder="Escribe aquí la observación o comentario..."
+                  className="min-h-[380px] w-full rounded-3xl border border-amber-200 bg-white px-5 py-4 text-sm leading-7 text-zinc-800 shadow-inner outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70 resize-none"
                 />
+
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-[11px] leading-relaxed text-amber-900/80">
+                  Lo que escribas se conserva en localStorage mientras no guardes.
+                  Presiona <span className="font-bold">Guardar en DB</span> para sincronizarlo con la base de datos.
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setCommentModalRow(null)}
-                  className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-sm"
+
+              <div className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="space-y-2 border-b border-zinc-100 pb-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Detalles</p>
+                  <div className="space-y-1 text-xs text-zinc-600">
+                    <p>
+                      <span className="font-semibold text-zinc-500">Cliente:</span>{" "}
+                      <span className="font-medium text-zinc-800">{commentModalRow.razon_social || "-"}</span>
+                    </p>
+                    <p>
+                      <span className="font-semibold text-zinc-500">RUC:</span>{" "}
+                      <span className="font-mono text-[11px] text-zinc-800">{commentModalRow.ruc || "-"}</span>
+                    </p>
+                    <p>
+                      <span className="font-semibold text-zinc-500">Contacto:</span>{" "}
+                      <span className="text-zinc-800">{commentModalRow.persona_contacto || "-"}</span>
+                    </p>
+                    <p>
+                      <span className="font-semibold text-zinc-500">Usuario:</span>{" "}
+                      <span className="text-zinc-800">{currentUserName}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Acciones</p>
+                  <p className="text-[11px] leading-relaxed text-zinc-500">
+                    Puedes cerrar la ventana sin guardar: el texto queda como borrador local para retomarlo luego.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-amber-100 bg-white/90 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-[11px] text-zinc-500">
+                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Comentario vacío"}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-9 px-4 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                  onClick={closeCommentsModal}
                 >
                   Cerrar
-                </button>
-                <button
+                </Button>
+                <Button
+                  className="h-9 px-5 text-xs font-bold shadow-lg shadow-amber-500/10"
                   onClick={saveComment}
-                  disabled={!commentInput.trim()}
-                  className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-1"
+                  disabled={isSavingComment}
                 >
-                  <span>Guardar</span>
-                </button>
+                  {isSavingComment ? "Guardando..." : "Guardar en DB"}
+                </Button>
               </div>
             </div>
           </div>

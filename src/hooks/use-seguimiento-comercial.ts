@@ -95,9 +95,10 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
             numero_cotizacion: "N° Cotización",
             estado_seguimiento: "Estado Seguimiento"
           }
-          const fieldErrors = parsed.detail.map((err: any) => {
+          const fieldErrors = (parsed.detail as ErrorDetailItem[]).map((err) => {
             const fieldName = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : err.loc
-            const fieldLabel = fieldTranslations[fieldName] || fieldName
+            const fieldKey = String(fieldName ?? "")
+            const fieldLabel = fieldTranslations[fieldKey] || fieldKey
             return `${fieldLabel}: ${err.msg}`
           })
           validationDetail = fieldErrors.join(", ")
@@ -186,6 +187,11 @@ const DEFAULT_CATALOGS: Catalogs = {
   ],
 }
 
+type ErrorDetailItem = {
+  loc?: Array<string | number> | string
+  msg: string
+}
+
 export function useSeguimientoComercial(filters: { search?: string; asesor?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
   const queryClient = useQueryClient()
   const queryKey = ["seguimiento-comercial", filters]
@@ -258,7 +264,8 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       if (context?.previousData) {
         queryClient.setQueryData(queryKey, context.previousData)
       }
-      toast.error(`Error al guardar: ${err.message}`)
+      const message = err instanceof Error ? err.message : "Error al guardar la celda"
+      toast.error(`Error al guardar: ${message}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial-catalogs"] })
@@ -280,7 +287,8 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial-catalogs"] })
     },
     onError: (err) => {
-      toast.error(`Error al crear registro: ${err.message}`)
+      const message = err instanceof Error ? err.message : "Error al crear registro"
+      toast.error(`Error al crear registro: ${message}`)
     },
   })
 
@@ -296,7 +304,8 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial"] })
     },
     onError: (err) => {
-      toast.error(`Error al eliminar registro: ${err.message}`)
+      const message = err instanceof Error ? err.message : "Error al eliminar registro"
+      toast.error(`Error al eliminar registro: ${message}`)
     },
   })
 
@@ -316,7 +325,8 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial-catalogs"] })
     },
     onError: (err) => {
-      toast.error(`Error de importación: ${err.message}`)
+      const message = err instanceof Error ? err.message : "Error de importación"
+      toast.error(`Error de importación: ${message}`)
     },
   })
 
@@ -356,8 +366,9 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       a.click()
       a.remove()
       toast.success("Spreadsheet exportado con éxito")
-    } catch (err: any) {
-      toast.error(`Error de exportación: ${err.message}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error de exportación"
+      toast.error(`Error de exportación: ${message}`)
     }
   }
 
@@ -369,10 +380,13 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
     refetch,
     errorMessage,
     connectionStatus,
-    updateCell: (id: number, field: keyof SeguimientoRow, value: any) => {
+    updateCell: (id: number, field: keyof SeguimientoRow, value: unknown) => {
       updateMutation.mutate({ id, data: { [field]: value } })
     },
-    insertRow: (newRow: Partial<SeguimientoRow>, options?: { onSuccess?: () => void; onError?: (err: any) => void }) => {
+    updateCellAsync: async (id: number, field: keyof SeguimientoRow, value: unknown) => {
+      await updateMutation.mutateAsync({ id, data: { [field]: value } })
+    },
+    insertRow: (newRow: Partial<SeguimientoRow>, options?: { onSuccess?: () => void; onError?: (err: unknown) => void }) => {
       insertMutation.mutate(newRow, options)
     },
     deleteRow: (id: number) => {
