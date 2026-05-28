@@ -65,8 +65,8 @@ export default function SeguimientoClienteGrid({
   // Modal state for comments
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [commentInput, setCommentInput] = useState("")
-  const [commentAuthor, setCommentAuthor] = useState("")
   const [rowComments, setRowComments] = useState<CommentHistoryEntry[]>([])
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
 
   interface CommentHistoryEntry {
     text: string
@@ -91,7 +91,7 @@ export default function SeguimientoClienteGrid({
     const history = loadComments(row.id)
     setRowComments(history)
     setCommentInput("")
-    setCommentAuthor(currentUserName)
+    setShowSuccessToast(false)
   }
 
   const saveComment = () => {
@@ -109,7 +109,7 @@ export default function SeguimientoClienteGrid({
       second: "2-digit"
     })
     const timestamp = `${formattedDate} ${formattedTime}`
-    const author = commentAuthor.trim() || "Anónimo"
+    const author = currentUserName || "Usuario"
 
     const newEntry: CommentHistoryEntry = {
       text: commentInput.trim(),
@@ -126,6 +126,12 @@ export default function SeguimientoClienteGrid({
 
     // Update observations cell
     updateCell(commentModalRow.id, "observaciones", newEntry.text)
+
+    // Show success toast
+    setShowSuccessToast(true)
+    setTimeout(() => {
+      setShowSuccessToast(false)
+    }, 2500)
   }
 
   // Query Filters & Pagination State
@@ -422,11 +428,11 @@ export default function SeguimientoClienteGrid({
     { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0px" },
     { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date", stickyLeft: "56px" },
     { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "200px" },
-    { key: "numero_celular", label: "Celular", width: "w-[126px] min-w-[126px]", type: "text", stickyLeft: "392px" },
-    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "518px" },
-    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "710px" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "934px", isLastPinned: true },
-    { key: "asesor", label: "Asesor", width: "w-[171px] min-w-[171px]", type: "catalog", catalogKey: "asesores" },
+    { key: "numero_celular", label: "Celular", width: "w-[124px] min-w-[124px]", type: "text", stickyLeft: "392px" },
+    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "516px" },
+    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "708px" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "932px", isLastPinned: true },
+    { key: "asesor", label: "Asesor", width: "w-[169px] min-w-[169px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
@@ -977,91 +983,95 @@ export default function SeguimientoClienteGrid({
       {/* Comments Modal */}
       {commentModalRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-lg border border-zinc-200 bg-white p-6 shadow-2xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                <span>💬 Comentarios - Razón Social:</span>
-                <span className="text-blue-600 font-semibold truncate max-w-[200px]">{commentModalRow.razon_social || "N/A"}</span>
-              </h2>
-              <button 
-                onClick={() => setCommentModalRow(null)}
-                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Brief Row Info */}
-            <div className="mt-2 bg-zinc-50 rounded border border-zinc-200 p-2 text-[11px] grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-600">
-              <div><strong>Fecha Contacto:</strong> {commentModalRow.fecha_contacto || "-"}</div>
-              <div><strong>Contacto:</strong> {commentModalRow.persona_contacto || "-"}</div>
-              <div><strong>Celular:</strong> {commentModalRow.numero_celular || "-"}</div>
-              <div><strong>Asesor:</strong> {commentModalRow.asesor || "-"}</div>
-            </div>
-
-            {/* Warning Banner */}
-            <div className="mt-3 rounded-md bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-800 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-              <div>
-                <span className="font-bold">Aviso del Sistema:</span> El historial detallado de comentarios se almacena de forma <strong>local en esta máquina/navegador</strong>. El último comentario guardado se sincronizará con la base de datos central.
+          <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+            {/* Fixed Header */}
+            <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                  <span>💬 Detalle de Fila & Comentarios</span>
+                </h2>
+                <button 
+                  onClick={() => setCommentModalRow(null)}
+                  className="rounded-full p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              
+              {/* Row Info - Sticky/Fixed at the top of the modal */}
+              <div className="mt-2 bg-white rounded border border-zinc-200 p-2 text-[11px] grid grid-cols-2 gap-x-3 gap-y-1 text-zinc-600 shadow-sm">
+                <div className="truncate"><strong>Razón Social:</strong> <span className="text-zinc-900 font-medium">{commentModalRow.razon_social || "-"}</span></div>
+                <div className="truncate"><strong>Asesor:</strong> <span className="text-zinc-900 font-medium">{commentModalRow.asesor || "-"}</span></div>
+                <div className="truncate"><strong>Contacto:</strong> <span className="text-zinc-900">{commentModalRow.persona_contacto || "-"}</span></div>
+                <div className="truncate"><strong>Celular:</strong> <span className="text-zinc-900">{commentModalRow.numero_celular || "-"}</span></div>
               </div>
             </div>
 
-            {/* Comments History list */}
-            <div className="flex-1 overflow-y-auto my-4 space-y-3 pr-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Historial de Comentarios</h3>
+            {/* Transient Save Toast/Notification inside the modal */}
+            {showSuccessToast && (
+              <div className="bg-emerald-500 text-white text-xs px-4 py-1.5 flex items-center justify-center gap-1.5 transition-all animate-fade-in flex-shrink-0">
+                <span className="font-semibold">¡Comentario guardado correctamente!</span>
+                <span className="text-[10px] opacity-80">(Sincronizado en base de datos)</span>
+              </div>
+            )}
+
+            {/* Comments History list - Scrollable container */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white min-h-0">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Historial de Cambios / Comentarios</h3>
+                <span className="text-[9px] text-zinc-400 italic">Guardado local en máquina</span>
+              </div>
+              
               {rowComments.length === 0 ? (
-                <p className="text-xs text-zinc-400 italic py-4 text-center">No hay comentarios registrados para esta fila en este equipo.</p>
+                <div className="flex flex-col items-center justify-center py-6 text-center text-zinc-400">
+                  <span className="text-lg">💬</span>
+                  <p className="text-xs italic mt-1">Sin comentarios en este equipo.</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {rowComments.map((comment, index) => (
-                    <div key={index} className="rounded-md border border-zinc-100 bg-zinc-50 p-2.5 text-xs">
-                      <div className="flex justify-between items-center text-zinc-500 mb-1 font-medium">
+                    <div key={index} className="rounded border border-zinc-100 bg-zinc-50 p-2 text-xs shadow-sm transition-all hover:border-zinc-200">
+                      <div className="flex justify-between items-center text-[10px] text-zinc-500 mb-1 font-medium border-b border-zinc-100/50 pb-0.5">
                         <span>Por: <strong className="text-zinc-700">{comment.author}</strong></span>
                         <span>{comment.timestamp}</span>
                       </div>
-                      <p className="text-zinc-800 whitespace-pre-wrap">{comment.text}</p>
+                      <p className="text-zinc-800 whitespace-pre-wrap leading-relaxed text-[11px]">{comment.text}</p>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Add Comment form */}
-            <div className="border-t border-zinc-100 pt-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-zinc-700 w-16">Usuario:</label>
-                <input
-                  type="text"
-                  value={commentAuthor}
-                  onChange={(e) => setCommentAuthor(e.target.value)}
-                  className="flex-1 rounded border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nombre del autor"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700">Nuevo Comentario:</label>
+            {/* Add Comment form - Bottom panel */}
+            <div className="border-t border-zinc-200 p-4 bg-zinc-50 flex-shrink-0 space-y-3">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Nuevo Comentario</label>
+                  <span className="text-[10px] text-zinc-500">
+                    Registrando como: <strong className="text-blue-600">{currentUserName}</strong>
+                  </span>
+                </div>
                 <textarea
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
-                  rows={3}
-                  className="w-full rounded border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Escriba aquí su comentario..."
+                  rows={2}
+                  className="w-full rounded border border-zinc-300 p-2 text-xs bg-white text-zinc-800 placeholder-zinc-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none"
+                  placeholder="Escriba un comentario para guardar..."
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-1">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setCommentModalRow(null)}
-                  className="rounded border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-50"
+                  className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors shadow-sm"
                 >
                   Cerrar
                 </button>
                 <button
                   onClick={saveComment}
                   disabled={!commentInput.trim()}
-                  className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-1"
                 >
-                  Guardar Comentario
+                  <span>Guardar</span>
                 </button>
               </div>
             </div>
