@@ -1045,7 +1045,7 @@ export default function SeguimientoClienteGrid({
       {commentModalRow && activeCommentField && (
         <div
           onClick={closeCommentsModal}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
