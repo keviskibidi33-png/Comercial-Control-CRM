@@ -447,18 +447,18 @@ export default function SeguimientoClienteGrid({
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-14 min-w-[56px] text-center", stickyLeft: "0px" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-36 min-w-[144px]", type: "date", stickyLeft: "56px" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "200px" },
-    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px]", type: "text", stickyLeft: "392px" },
-    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "492px" },
-    { key: "razon_social", label: "Razón Social", width: "w-[214px] min-w-[214px]", type: "text", stickyLeft: "684px" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "898px", isLastPinned: true },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[120px] min-w-[120px]", type: "date", stickyLeft: "56px" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "176px" },
+    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px]", type: "text", stickyLeft: "368px" },
+    { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "468px" },
+    { key: "razon_social", label: "Razón Social", width: "w-[214px] min-w-[214px]", type: "text", stickyLeft: "660px" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "874px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[130px] min-w-[130px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[120px] min-w-[120px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[120px] min-w-[120px]", type: "date" },
     { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[180px] min-w-[180px]", type: "text" },
     { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[180px] min-w-[180px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
@@ -778,15 +778,14 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-2 ${baseCellClass}`}
+                        className={`px-1 ${baseCellClass}`}
                       >
                         <input
                           type="date"
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          onBlur={(e) => e.currentTarget.blur()}
-                          className="w-[105px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                          className="w-full bg-transparent border-0 border-none outline-none shadow-none text-[10px] text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60"
                         />
                       </td>
                     )
@@ -915,8 +914,7 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      onBlur={(e) => e.currentTarget.blur()}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60`}
                     />
                   </td>
                 )
