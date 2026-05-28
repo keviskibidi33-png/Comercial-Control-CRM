@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { 
   Plus, 
@@ -54,6 +55,78 @@ export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
 }: SeguimientoClienteGridProps) {
+  const { email } = useCurrentUser()
+  const currentUserName = useMemo(() => {
+    if (!email) return "Usuario"
+    const part = email.split("@")[0]
+    return part.charAt(0).toUpperCase() + part.slice(1)
+  }, [email])
+
+  // Modal state for comments
+  const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
+  const [commentInput, setCommentInput] = useState("")
+  const [commentAuthor, setCommentAuthor] = useState("")
+  const [rowComments, setRowComments] = useState<CommentHistoryEntry[]>([])
+
+  interface CommentHistoryEntry {
+    text: string
+    timestamp: string
+    author: string
+  }
+
+  const loadComments = (rowId: number) => {
+    try {
+      const raw = localStorage.getItem(`seguimiento-comentarios:${rowId}`)
+      if (raw) {
+        return JSON.parse(raw) as CommentHistoryEntry[]
+      }
+    } catch (e) {
+      console.error("Error loading comments", e)
+    }
+    return []
+  }
+
+  const openCommentsModal = (row: SeguimientoRow) => {
+    setCommentModalRow(row)
+    const history = loadComments(row.id)
+    setRowComments(history)
+    setCommentInput("")
+    setCommentAuthor(currentUserName)
+  }
+
+  const saveComment = () => {
+    if (!commentModalRow || !commentInput.trim()) return
+
+    const now = new Date()
+    const formattedDate = now.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    })
+    const formattedTime = now.toLocaleTimeString("es-PE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+    const timestamp = `${formattedDate} ${formattedTime}`
+    const author = commentAuthor.trim() || "Anónimo"
+
+    const newEntry: CommentHistoryEntry = {
+      text: commentInput.trim(),
+      timestamp,
+      author
+    }
+
+    const updatedHistory = [...rowComments, newEntry]
+    
+    // Save to localStorage
+    localStorage.setItem(`seguimiento-comentarios:${commentModalRow.id}`, JSON.stringify(updatedHistory))
+    setRowComments(updatedHistory)
+    setCommentInput("")
+
+    // Update observations cell
+    updateCell(commentModalRow.id, "observaciones", newEntry.text)
+  }
 
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
@@ -359,7 +432,7 @@ export default function SeguimientoClienteGrid({
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
-    { key: "observaciones", label: "Observaciones", width: "w-64 min-w-[256px]", type: "text" },
+    { key: "observaciones", label: "Comentarios", width: "w-64 min-w-[256px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
@@ -690,6 +763,25 @@ export default function SeguimientoClienteGrid({
                     )
                   }
 
+                  if (col.key === "observaciones") {
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-2 ${baseCellClass}`}
+                      >
+                        <div
+                          onClick={() => openCommentsModal(row)}
+                          title="Haga clic para ver/editar comentarios"
+                          className="w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
+                        >
+                          <span className="truncate">{ (cellValue as string) || <span className="text-zinc-300">-</span> }</span>
+                          <span className="text-[10px] text-zinc-400 shrink-0 ml-1">💬</span>
+                        </div>
+                      </td>
+                    )
+                  }
+
                   // Renders standard Input cell (text/long content)
                   return (
                     <td
@@ -881,6 +973,93 @@ export default function SeguimientoClienteGrid({
           </select>
         </div>
       </div>
+
+      {/* Comments Modal */}
+      {commentModalRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-zinc-200 bg-white p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <span>💬 Comentarios - Razón Social:</span>
+                <span className="text-blue-600 font-semibold truncate max-w-[200px]">{commentModalRow.razon_social || "N/A"}</span>
+              </h2>
+              <button 
+                onClick={() => setCommentModalRow(null)}
+                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Warning Banner */}
+            <div className="mt-3 rounded-md bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-800 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+              <div>
+                <span className="font-bold">Aviso del Sistema:</span> El historial detallado de comentarios se almacena de forma <strong>local en esta máquina/navegador</strong>. El último comentario guardado se sincronizará con la base de datos central.
+              </div>
+            </div>
+
+            {/* Comments History list */}
+            <div className="flex-1 overflow-y-auto my-4 space-y-3 pr-1">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Historial de Comentarios</h3>
+              {rowComments.length === 0 ? (
+                <p className="text-xs text-zinc-400 italic py-4 text-center">No hay comentarios registrados para esta fila en este equipo.</p>
+              ) : (
+                <div className="space-y-2">
+                  {rowComments.map((comment, index) => (
+                    <div key={index} className="rounded-md border border-zinc-100 bg-zinc-50 p-2.5 text-xs">
+                      <div className="flex justify-between items-center text-zinc-500 mb-1 font-medium">
+                        <span>Por: <strong className="text-zinc-700">{comment.author}</strong></span>
+                        <span>{comment.timestamp}</span>
+                      </div>
+                      <p className="text-zinc-800 whitespace-pre-wrap">{comment.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add Comment form */}
+            <div className="border-t border-zinc-100 pt-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-zinc-700 w-16">Usuario:</label>
+                <input
+                  type="text"
+                  value={commentAuthor}
+                  onChange={(e) => setCommentAuthor(e.target.value)}
+                  className="flex-1 rounded border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Nombre del autor"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-700">Nuevo Comentario:</label>
+                <textarea
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  rows={3}
+                  className="w-full rounded border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Escriba aquí su comentario..."
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setCommentModalRow(null)}
+                  className="rounded border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-50"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={saveComment}
+                  disabled={!commentInput.trim()}
+                  className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Guardar Comentario
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
