@@ -785,7 +785,8 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className="w-28 bg-transparent border-0 border-none outline-none shadow-none text-xs text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500"
+                          onBlur={(e) => e.currentTarget.blur()}
+                          className="w-[105px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500"
                         />
                       </td>
                     )
@@ -914,7 +915,8 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-xs text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
+                      onBlur={(e) => e.currentTarget.blur()}
+                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-7`}
                     />
                   </td>
                 )
@@ -1013,8 +1015,14 @@ export default function SeguimientoClienteGrid({
 
       {/* Comments Modal */}
       {commentModalRow && activeCommentField && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+        <div 
+          onClick={() => setCommentModalRow(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-lg border border-zinc-200 bg-white shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+          >
             {/* Fixed Header */}
             <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-3 flex-shrink-0">
               <div className="flex items-center justify-between">

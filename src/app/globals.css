@@ -29,6 +29,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.4;
   cursor: pointer;
   transition: opacity 0.2s;
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
