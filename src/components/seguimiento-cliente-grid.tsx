@@ -52,6 +52,20 @@ type SortConfig = {
   direction: SortDirection
 } | null
 
+const getDisplayComment = (value: string | undefined): string => {
+  if (!value) return "-"
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const last = parsed[parsed.length - 1]
+      return last?.text || "-"
+    }
+  } catch {
+    // If not JSON, it's a legacy comment
+  }
+  return value
+}
+
 export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
@@ -74,21 +88,28 @@ export default function SeguimientoClienteGrid({
     author: string
   }
 
-  const loadComments = (rowId: number) => {
+  const loadComments = (row: SeguimientoRow) => {
+    const val = row.observaciones
+    if (!val) return []
     try {
-      const raw = localStorage.getItem(`seguimiento-comentarios:${rowId}`)
-      if (raw) {
-        return JSON.parse(raw) as CommentHistoryEntry[]
+      const parsed = JSON.parse(val)
+      if (Array.isArray(parsed)) {
+        return parsed as CommentHistoryEntry[]
       }
     } catch (e) {
-      console.error("Error loading comments", e)
+      // Return single legacy comment
+      return [{
+        text: val,
+        timestamp: "-",
+        author: row.creado_por || "Sistema"
+      }] as CommentHistoryEntry[]
     }
     return []
   }
 
   const openCommentsModal = (row: SeguimientoRow) => {
     setCommentModalRow(row)
-    const history = loadComments(row.id)
+    const history = loadComments(row)
     setRowComments(history)
     setCommentInput("")
   }
@@ -118,16 +139,14 @@ export default function SeguimientoClienteGrid({
 
     const updatedHistory = [...rowComments, newEntry]
     
-    // Save to localStorage
-    localStorage.setItem(`seguimiento-comentarios:${commentModalRow.id}`, JSON.stringify(updatedHistory))
     setRowComments(updatedHistory)
     setCommentInput("")
 
-    // Update observations cell
-    updateCell(commentModalRow.id, "observaciones", newEntry.text)
+    // Update observations cell directly in the database with the serialized JSON array
+    updateCell(commentModalRow.id, "observaciones", JSON.stringify(updatedHistory))
 
     // Show success toast notification using sonner to prevent overlay text/layout shifts
-    toast.success("Comentario guardado localmente en esta máquina.")
+    toast.success("Comentario guardado correctamente.")
   }
 
   // Query Filters & Pagination State
@@ -777,7 +796,7 @@ export default function SeguimientoClienteGrid({
                           title="Haga clic para ver/editar comentarios"
                           className="w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
                         >
-                          <span className="truncate">{ (cellValue as string) || <span className="text-zinc-300">-</span> }</span>
+                          <span className="truncate">{ getDisplayComment(cellValue as string) }</span>
                           <span className="text-[10px] text-zinc-400 shrink-0 ml-1">💬</span>
                         </div>
                       </td>
@@ -1007,13 +1026,13 @@ export default function SeguimientoClienteGrid({
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white min-h-0">
               <div className="flex items-center justify-between">
                 <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Historial de Cambios / Comentarios</h3>
-                <span className="text-[9px] text-zinc-400 italic">Guardado local en máquina</span>
+                <span className="text-[9px] text-zinc-400 italic">Almacenado en la Base de Datos</span>
               </div>
               
               {rowComments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center text-zinc-400">
                   <span className="text-lg">💬</span>
-                  <p className="text-xs italic mt-1">Sin comentarios en este equipo.</p>
+                  <p className="text-xs italic mt-1">Sin comentarios para este registro.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
