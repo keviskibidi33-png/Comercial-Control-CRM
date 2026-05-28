@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
-import { useCurrentUser } from "@/hooks/use-current-user"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -85,13 +84,6 @@ export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
 }: SeguimientoClienteGridProps) {
-  const { email } = useCurrentUser()
-  const currentUserName = useMemo(() => {
-    if (!email) return "Usuario"
-    const part = email.split("@")[0]
-    return part.charAt(0).toUpperCase() + part.slice(1)
-  }, [email])
-
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
   const [commentDraft, setCommentDraft] = useState("")
@@ -162,7 +154,7 @@ export default function SeguimientoClienteGrid({
       await updateCellAsync(commentModalRow.id, activeCommentField, payload)
       clearCommentDraft(commentModalRow.id, activeCommentField)
       setHasStoredCommentDraft(false)
-      toast.success("Comentario guardado en la base de datos.")
+      toast.success("Comentario guardado correctamente.")
     } catch {
       toast.error("No se pudo guardar el comentario. El borrador local se mantuvo.")
     } finally {
@@ -177,6 +169,19 @@ export default function SeguimientoClienteGrid({
     persistCommentDraft(commentModalRow.id, activeCommentField, value)
     setHasStoredCommentDraft(true)
   }
+
+  const activeCommentTitle = activeCommentField === "comentarios_asistente" ? "Asistente" : "Asesor"
+  const commentSyncState = hasStoredCommentDraft
+    ? {
+        label: "Borrador local",
+        className: "border-amber-200 bg-amber-50 text-amber-700",
+        message: "Este comentario está guardado temporalmente en localStorage hasta que presiones Guardar.",
+      }
+    : {
+        label: "Sin borrador local",
+        className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        message: "El comentario está sincronizado con la base de datos.",
+      }
 
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
@@ -1042,108 +1047,68 @@ export default function SeguimientoClienteGrid({
       {commentModalRow && activeCommentField && (
         <div
           onClick={closeCommentsModal}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-amber-200 bg-[#fffdf7] shadow-2xl max-h-[90vh]"
+            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh]"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-white px-5 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-border bg-secondary/30 px-6 py-4">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
-                  Bloc de notas · {activeCommentField === "comentarios_asistente" ? "Asistente" : "Asesor"}
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                  Geofal CRM · Seguimiento Clientes
                 </p>
-                <h2 className="mt-1 truncate text-lg font-bold text-zinc-800">
-                  {commentModalRow.razon_social || "Sin razón social"}
+                <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
+                  Comentario {activeCommentTitle}
                 </h2>
-                <p className="text-xs text-zinc-500">
-                  RUC: {commentModalRow.ruc || "-"} · {commentModalRow.persona_contacto || "Sin contacto"}
+                <p className="text-xs text-muted-foreground">
+                  {commentModalRow.razon_social || "Sin razón social"} · RUC: {commentModalRow.ruc || "-"}
                 </p>
               </div>
               <button
                 onClick={closeCommentsModal}
-                className="rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Cerrar comentario"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
-                    Nota principal
-                  </label>
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                      hasStoredCommentDraft
-                        ? "border-amber-200 bg-amber-50 text-amber-700"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
-                    {hasStoredCommentDraft ? "Borrador local activo" : "Sin borrador pendiente"}
-                  </span>
-                </div>
-
-                <textarea
-                  value={commentDraft}
-                  onChange={(e) => handleCommentDraftChange(e.target.value)}
-                  placeholder="Escribe aquí la observación o comentario..."
-                  className="min-h-[380px] w-full rounded-3xl border border-amber-200 bg-white px-5 py-4 text-sm leading-7 text-zinc-800 shadow-inner outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200/70 resize-none"
-                />
-
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-[11px] leading-relaxed text-amber-900/80">
-                  Lo que escribas se conserva en localStorage mientras no guardes.
-                  Presiona <span className="font-bold">Guardar en DB</span> para sincronizarlo con la base de datos.
-                </div>
+            <div className="space-y-4 px-6 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  Comentario
+                </label>
+                <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commentSyncState.className}`}>
+                  {commentSyncState.label}
+                </span>
               </div>
 
-              <div className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="space-y-2 border-b border-zinc-100 pb-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Detalles</p>
-                  <div className="space-y-1 text-xs text-zinc-600">
-                    <p>
-                      <span className="font-semibold text-zinc-500">Cliente:</span>{" "}
-                      <span className="font-medium text-zinc-800">{commentModalRow.razon_social || "-"}</span>
-                    </p>
-                    <p>
-                      <span className="font-semibold text-zinc-500">RUC:</span>{" "}
-                      <span className="font-mono text-[11px] text-zinc-800">{commentModalRow.ruc || "-"}</span>
-                    </p>
-                    <p>
-                      <span className="font-semibold text-zinc-500">Contacto:</span>{" "}
-                      <span className="text-zinc-800">{commentModalRow.persona_contacto || "-"}</span>
-                    </p>
-                    <p>
-                      <span className="font-semibold text-zinc-500">Usuario:</span>{" "}
-                      <span className="text-zinc-800">{currentUserName}</span>
-                    </p>
-                  </div>
-                </div>
+              <textarea
+                value={commentDraft}
+                onChange={(e) => handleCommentDraftChange(e.target.value)}
+                placeholder="Escribe aquí la observación o comentario..."
+                className="min-h-[280px] w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+              />
 
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Acciones</p>
-                  <p className="text-[11px] leading-relaxed text-zinc-500">
-                    Puedes cerrar la ventana sin guardar: el texto queda como borrador local para retomarlo luego.
-                  </p>
-                </div>
+              <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${commentSyncState.className}`}>
+                {commentSyncState.message}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-amber-100 bg-white/90 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-[11px] text-zinc-500">
-                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Comentario vacío"}
+            <div className="flex flex-col gap-3 border-t border-border bg-secondary/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-[11px] text-muted-foreground">
+                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todavía"}
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  className="h-9 px-4 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                  className="h-9 px-4 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                   onClick={closeCommentsModal}
                 >
                   Cerrar
                 </Button>
                 <Button
-                  className="h-9 px-5 text-xs font-bold shadow-lg shadow-amber-500/10"
+                  className="h-9 px-5 text-xs font-bold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                   onClick={saveComment}
                   disabled={isSavingComment}
                 >
