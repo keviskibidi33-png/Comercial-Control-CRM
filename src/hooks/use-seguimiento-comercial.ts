@@ -69,11 +69,39 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
     const errText = await res.text().catch(() => "")
     let serverMessage = errText
+    let validationDetail = ""
 
     try {
       if (errText) {
         const parsed = JSON.parse(errText)
-        serverMessage = typeof parsed?.detail === "string" ? parsed.detail : typeof parsed?.message === "string" ? parsed.message : errText
+        if (typeof parsed?.detail === "string") {
+          serverMessage = parsed.detail
+        } else if (typeof parsed?.message === "string") {
+          serverMessage = parsed.message
+        } else if (Array.isArray(parsed?.detail)) {
+          const fieldTranslations: Record<string, string> = {
+            fecha_contacto: "Fecha Contacto",
+            persona_contacto: "Persona Contacto",
+            numero_celular: "Celular",
+            email: "Email",
+            razon_social: "Razón Social",
+            ruc: "RUC",
+            asesor: "Asesor",
+            contacto: "Contacto",
+            rubro: "Rubro",
+            estado_cliente: "Estado Cliente",
+            servicio_solicitado: "Servicio Solicitado",
+            fecha_ultimo_contacto: "Fecha Último Contacto",
+            numero_cotizacion: "N° Cotización",
+            estado_seguimiento: "Estado Seguimiento"
+          }
+          const fieldErrors = parsed.detail.map((err: any) => {
+            const fieldName = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : err.loc
+            const fieldLabel = fieldTranslations[fieldName] || fieldName
+            return `${fieldLabel}: ${err.msg}`
+          })
+          validationDetail = fieldErrors.join(", ")
+        }
       }
     } catch {
       // Ignore non-JSON errors.
@@ -83,7 +111,9 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
       401: "Sesión expirada o sin permisos para consultar Seguimiento Comercial.",
       403: "No tienes permisos para consultar Seguimiento Comercial.",
       404: "No se encontró el recurso solicitado.",
-      422: "La solicitud no es válida. Revisa los filtros y los datos enviados.",
+      422: validationDetail 
+        ? `La solicitud no es válida. Detalles: ${validationDetail}`
+        : "La solicitud no es válida. Revisa los filtros y los datos enviados.",
       500: "El servidor no pudo completar la operación de Seguimiento Comercial.",
     }
 

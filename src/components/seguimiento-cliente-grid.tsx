@@ -452,8 +452,8 @@ export default function SeguimientoClienteGrid({
     { key: "persona_contacto", label: "Persona Contacto", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "200px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px]", type: "text", stickyLeft: "392px" },
     { key: "email", label: "Email", width: "w-48 min-w-[192px]", type: "text", stickyLeft: "492px" },
-    { key: "razon_social", label: "Razón Social", width: "w-56 min-w-[224px]", type: "text", stickyLeft: "684px" },
-    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "908px", isLastPinned: true },
+    { key: "razon_social", label: "Razón Social", width: "w-[214px] min-w-[214px]", type: "text", stickyLeft: "684px" },
+    { key: "ruc", label: "RUC", width: "w-32 min-w-[128px]", type: "text", stickyLeft: "898px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[130px] min-w-[130px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[110px] min-w-[110px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[120px] min-w-[120px]", type: "catalog", catalogKey: "rubros" },
@@ -786,7 +786,7 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className="w-full bg-transparent border-none outline-none text-xs text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500"
+                          className="w-28 bg-transparent border-0 border-none outline-none shadow-none text-xs text-zinc-800 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500"
                         />
                       </td>
                     )
