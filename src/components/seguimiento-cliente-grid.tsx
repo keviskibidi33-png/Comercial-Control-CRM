@@ -79,6 +79,7 @@ export default function SeguimientoClienteGrid({
 
   // Modal state for comments
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
+  const [activeCommentField, setActiveCommentField] = useState<"comentarios_asistente" | "comentarios_asesor" | null>(null)
   const [commentInput, setCommentInput] = useState("")
   const [rowComments, setRowComments] = useState<CommentHistoryEntry[]>([])
 
@@ -88,8 +89,8 @@ export default function SeguimientoClienteGrid({
     author: string
   }
 
-  const loadComments = (row: SeguimientoRow) => {
-    const val = row.observaciones
+  const loadComments = (row: SeguimientoRow, field: "comentarios_asistente" | "comentarios_asesor") => {
+    const val = row[field]
     if (!val) return []
     try {
       const parsed = JSON.parse(val)
@@ -107,15 +108,16 @@ export default function SeguimientoClienteGrid({
     return []
   }
 
-  const openCommentsModal = (row: SeguimientoRow) => {
+  const openCommentsModal = (row: SeguimientoRow, field: "comentarios_asistente" | "comentarios_asesor") => {
     setCommentModalRow(row)
-    const history = loadComments(row)
+    setActiveCommentField(field)
+    const history = loadComments(row, field)
     setRowComments(history)
     setCommentInput("")
   }
 
   const saveComment = () => {
-    if (!commentModalRow || !commentInput.trim()) return
+    if (!commentModalRow || !activeCommentField || !commentInput.trim()) return
 
     const now = new Date()
     const formattedDate = now.toLocaleDateString("es-PE", {
@@ -142,10 +144,10 @@ export default function SeguimientoClienteGrid({
     setRowComments(updatedHistory)
     setCommentInput("")
 
-    // Update observations cell directly in the database with the serialized JSON array
-    updateCell(commentModalRow.id, "observaciones", JSON.stringify(updatedHistory))
+    // Update active field directly in database with the serialized JSON array
+    updateCell(commentModalRow.id, activeCommentField, JSON.stringify(updatedHistory))
 
-    // Show success toast notification using sonner to prevent overlay text/layout shifts
+    // Show success toast notification
     toast.success("Comentario guardado correctamente.")
   }
 
@@ -453,7 +455,8 @@ export default function SeguimientoClienteGrid({
     { key: "estado_cliente", label: "Estado Cliente", width: "w-52 min-w-[208px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-56 min-w-[224px]", type: "catalog", catalogKey: "servicios" },
     { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-36 min-w-[144px]", type: "date" },
-    { key: "observaciones", label: "Comentarios", width: "w-64 min-w-[256px]", type: "text" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-64 min-w-[256px]", type: "text" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-64 min-w-[256px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-36 min-w-[144px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
@@ -784,7 +787,13 @@ export default function SeguimientoClienteGrid({
                     )
                   }
 
-                  if (col.key === "observaciones") {
+                  if (col.key === "comentarios_asistente" || col.key === "comentarios_asesor") {
+                    const displayVal = getDisplayComment(cellValue as string)
+                    const isEmpty = !cellValue || displayVal === "-"
+                    const commentBoxClass = isEmpty
+                      ? "bg-red-100 border-red-300 text-red-800 hover:bg-red-200"
+                      : "bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200"
+
                     return (
                       <td
                         key={col.key}
@@ -792,12 +801,12 @@ export default function SeguimientoClienteGrid({
                         className={`px-2 ${baseCellClass}`}
                       >
                         <div
-                          onClick={() => openCommentsModal(row)}
-                          title="Haga clic para ver/editar comentarios"
-                          className="w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
+                          onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
+                          title={`Haga clic para ver/editar ${col.label}`}
+                          className={`w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
-                          <span className="truncate">{ getDisplayComment(cellValue as string) }</span>
-                          <span className="text-[10px] text-zinc-400 shrink-0 ml-1">💬</span>
+                          <span className="truncate">{displayVal}</span>
+                          <span className="text-[10px] opacity-70 shrink-0 ml-1">💬</span>
                         </div>
                       </td>
                     )
@@ -996,14 +1005,14 @@ export default function SeguimientoClienteGrid({
       </div>
 
       {/* Comments Modal */}
-      {commentModalRow && (
+      {commentModalRow && activeCommentField && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
             {/* Fixed Header */}
             <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                  <span>💬 Detalle de Fila & Comentarios</span>
+                  <span>💬 {activeCommentField === "comentarios_asistente" ? "Asistente Comentario" : "Asesor Comentario"}</span>
                 </h2>
                 <button 
                   onClick={() => setCommentModalRow(null)}
@@ -1011,14 +1020,6 @@ export default function SeguimientoClienteGrid({
                 >
                   <X className="h-4 w-4" />
                 </button>
-              </div>
-              
-              {/* Row Info - Sticky/Fixed at the top of the modal */}
-              <div className="mt-2 bg-white rounded border border-zinc-200 p-2 text-[11px] grid grid-cols-2 gap-x-3 gap-y-1 text-zinc-600 shadow-sm">
-                <div className="truncate"><strong>Razón Social:</strong> <span className="text-zinc-900 font-medium">{commentModalRow.razon_social || "-"}</span></div>
-                <div className="truncate"><strong>Asesor:</strong> <span className="text-zinc-900 font-medium">{commentModalRow.asesor || "-"}</span></div>
-                <div className="truncate"><strong>Contacto:</strong> <span className="text-zinc-900">{commentModalRow.persona_contacto || "-"}</span></div>
-                <div className="truncate"><strong>Celular:</strong> <span className="text-zinc-900">{commentModalRow.numero_celular || "-"}</span></div>
               </div>
             </div>
 
