@@ -1051,7 +1051,7 @@ export default function SeguimientoClienteGrid({
             onClick={(e) => e.stopPropagation()}
             className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh]"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-primary/10 bg-gradient-to-r from-primary/10 via-background to-background px-6 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
                   Geofal CRM · Seguimiento Clientes
@@ -1090,7 +1090,7 @@ export default function SeguimientoClienteGrid({
               />
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-border bg-secondary/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-blue-100 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[11px] text-muted-foreground">
                 {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todavía"}
               </div>
