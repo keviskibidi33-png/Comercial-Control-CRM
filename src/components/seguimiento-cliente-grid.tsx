@@ -284,6 +284,11 @@ export default function SeguimientoClienteGrid({
   }
 
   const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      submitGhostRow()
+      return
+    }
     
     if (e.key === " ") {
       const target = e.target as HTMLElement
@@ -901,7 +906,6 @@ export default function SeguimientoClienteGrid({
                 
               if (col.type === "catalog") {
                 const catalogList = catalogs[col.catalogKey as keyof typeof catalogs] || []
-                const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
                 return (
                   <td
                     key={`ghost-${col.key}`}
@@ -912,7 +916,7 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-6`}
+                      className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 cursor-pointer h-6"
                     >
                       <option value="">- Seleccione -</option>
                       {catalogList.map((opt) => (
@@ -926,7 +930,6 @@ export default function SeguimientoClienteGrid({
               }
                 
               if (col.type === "date") {
-                const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
                 return (
                   <td
                     key={`ghost-${col.key}`}
@@ -938,14 +941,13 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-5 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60`}
+                      className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-5 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60"
                     />
                   </td>
                 )
               }
                 
               // Standard text inputs
-              const isCommentField = col.key === "comentarios_asistente" || col.key === "comentarios_asesor"
               return (
                 <td
                   key={`ghost-${col.key}`}
@@ -958,7 +960,7 @@ export default function SeguimientoClienteGrid({
                     value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                     onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                     onKeyDown={handleGhostKeyDown}
-                    className={`${isCommentField ? "" : "ghost-input"} w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6`}
+                    className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6"
                   />
                 </td>
               )
