@@ -18,7 +18,8 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
-  Copy
+  Copy,
+  Mail
 } from "lucide-react"
 
 const getWhatsAppUrl = (phone: string): string => {
@@ -290,9 +291,9 @@ export default function PublicidadGeofalGrid({
     { key: "id_cliente", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
     { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "48px" },
     { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
-    { key: "telefono_2", label: "Teléfono 2", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "278px" },
-    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "408px" },
-    { key: "razon_social_referencial", label: "Razón\nSocial", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "528px", isLastPinned: true },
+    { key: "telefono_2", label: "Teléfono 2", width: "w-[132px] min-w-[132px] max-w-[132px]", stickyLeft: "278px" },
+    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "410px" },
+    { key: "razon_social_referencial", label: "Razón\nSocial", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "570px", isLastPinned: true },
     
     // Monthly comments
     { key: "junio_asistente", label: "JUNIO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
@@ -480,6 +481,9 @@ export default function PublicidadGeofalGrid({
                   const isPhone = col.key === "telefono" || col.key === "telefono_2"
                   const hasPhoneValue = isPhone && cellValue && String(cellValue).trim().length > 0
 
+                  const isEmail = col.key === "correo_referencial"
+                  const hasEmailValue = isEmail && cellValue && String(cellValue).trim().length > 0
+
                   return (
                     <td
                       key={col.key}
@@ -522,6 +526,28 @@ export default function PublicidadGeofalGrid({
                               }}
                               className="flex items-center justify-center p-0.5 rounded hover:bg-blue-50 text-zinc-400 hover:text-blue-600 shrink-0 select-none"
                               title="Copiar teléfono"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
+                        {hasEmailValue && (
+                          <>
+                            <a
+                              href={`mailto:${String(cellValue)}`}
+                              className="flex items-center justify-center p-0.5 rounded hover:bg-blue-50 text-zinc-400 hover:text-blue-600 shrink-0 select-none mr-0.5"
+                              title="Enviar correo (Outlook/Mail)"
+                            >
+                              <Mail className="h-3.5 w-3.5" />
+                            </a>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(String(cellValue))
+                                  .then(() => toast.success("Correo copiado al portapapeles."))
+                                  .catch(() => toast.error("Error al copiar al portapapeles."))
+                              }}
+                              className="flex items-center justify-center p-0.5 rounded hover:bg-blue-50 text-zinc-400 hover:text-blue-600 shrink-0 select-none"
+                              title="Copiar correo"
                             >
                               <Copy className="h-3.5 w-3.5" />
                             </button>
