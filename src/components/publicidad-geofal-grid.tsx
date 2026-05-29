@@ -258,12 +258,12 @@ export default function PublicidadGeofalGrid({
   }
 
   const COLUMNS: readonly GridColumn[] = [
-    { key: "id_cliente", label: "ID CLIENTE", width: "w-24 min-w-[96px] max-w-[96px] text-center", stickyLeft: "0px" },
-    { key: "contacto", label: "CONTACTO", width: "w-[180px] min-w-[180px] max-w-[180px]", stickyLeft: "96px" },
-    { key: "telefono", label: "TELÉFONO", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "276px" },
-    { key: "telefono_2", label: "TELÉFONO 2", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "396px" },
-    { key: "correo_referencial", label: "CORREO REFERENCIAL", width: "w-[180px] min-w-[180px] max-w-[180px]", stickyLeft: "516px" },
-    { key: "razon_social_referencial", label: "RAZON SOCIAL REFERENCIAL", width: "w-[220px] min-w-[220px] max-w-[220px]", stickyLeft: "696px", isLastPinned: true },
+    { key: "id_cliente", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
+    { key: "contacto", label: "CONTACTO", width: "w-[180px] min-w-[180px] max-w-[180px]", stickyLeft: "48px" },
+    { key: "telefono", label: "TELÉFONO", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "228px" },
+    { key: "telefono_2", label: "TELÉFONO 2", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "348px" },
+    { key: "correo_referencial", label: "CORREO REFERENCIAL", width: "w-[180px] min-w-[180px] max-w-[180px]", stickyLeft: "468px" },
+    { key: "razon_social_referencial", label: "RAZON SOCIAL REFERENCIAL", width: "w-[220px] min-w-[220px] max-w-[220px]", stickyLeft: "648px", isLastPinned: true },
     
     // Monthly comments
     { key: "junio_asistente", label: "JUNIO (Aux)", width: "w-[140px] min-w-[140px] max-w-[140px]" },
