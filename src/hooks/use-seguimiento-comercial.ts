@@ -1,4 +1,6 @@
+import { useEffect, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
 const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "")
@@ -195,6 +197,24 @@ type ErrorDetailItem = {
 export function useSeguimientoComercial(filters: { search?: string; asesor?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
   const queryClient = useQueryClient()
   const queryKey = ["seguimiento-comercial", filters]
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("seguimiento_cliente_comercial_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "seguimiento_cliente_comercial" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial"] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, queryClient])
 
   // Carga de filas del backend
   const { data, error: dataError, isLoading, refetch } = useQuery<{ total: number; items: SeguimientoRow[] }>({
