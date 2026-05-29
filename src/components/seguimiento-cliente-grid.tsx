@@ -18,7 +18,8 @@ import {
   Users,
   Wifi,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  Copy
 } from "lucide-react"
 
 const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
@@ -870,6 +871,9 @@ export default function SeguimientoClienteGrid({
                   const isCelular = col.key === "numero_celular"
                   const hasPhone = isCelular && cellValue && String(cellValue).trim().length > 0
 
+                  const isEmail = col.key === "email"
+                  const hasEmail = isEmail && cellValue && String(cellValue).trim().length > 0
+
                   // Renders standard Input cell (text/long content)
                   return (
                     <td
@@ -903,6 +907,19 @@ export default function SeguimientoClienteGrid({
                           >
                             <WhatsAppIcon />
                           </a>
+                        )}
+                        {hasEmail && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(String(cellValue))
+                                .then(() => toast.success("Correo copiado al portapapeles."))
+                                .catch(() => toast.error("Error al copiar al portapapeles."))
+                            }}
+                            className="flex items-center justify-center p-0.5 rounded hover:bg-blue-50 text-zinc-400 hover:text-blue-600 shrink-0 select-none mr-0.5"
+                            title="Copiar correo"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
                         )}
                       </div>
                     </td>
