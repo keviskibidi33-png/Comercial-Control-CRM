@@ -284,11 +284,6 @@ export default function SeguimientoClienteGrid({
   }
 
   const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      submitGhostRow()
-      return
-    }
     
     if (e.key === " ") {
       const target = e.target as HTMLElement
@@ -637,7 +632,6 @@ export default function SeguimientoClienteGrid({
       {/* Main Grid View */}
       <div 
         className="flex-1 w-full overflow-auto relative select-none bg-zinc-50 min-h-0"
-        style={{ zoom: '85%' }}
       >
         <table className="min-w-full divide-y divide-zinc-200 table-fixed border-collapse overflow-visible">
           <thead className="bg-white sticky top-0 z-30 border-b border-zinc-200 shadow-sm">
