@@ -257,6 +257,7 @@ export default function PublicidadGeofalGrid({
 
   // Check if a field is editable based on role
   const isFieldEditable = (field: keyof PublicidadRow): boolean => {
+    if (field === "id_cliente") return false
     const isAdmin = ["admin", "admin_general", "administrativo"].includes(userRole)
     if (isAdmin) return true
 
@@ -288,10 +289,10 @@ export default function PublicidadGeofalGrid({
   const COLUMNS: readonly GridColumn[] = [
     { key: "id_cliente", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
     { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "48px" },
-    { key: "telefono", label: "Teléfono", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "148px" },
-    { key: "telefono_2", label: "Teléfono 2", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "248px" },
-    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "348px" },
-    { key: "razon_social_referencial", label: "Razón\nSocial", width: "w-[150px] min-w-[150px] max-w-[150px]", stickyLeft: "468px", isLastPinned: true },
+    { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
+    { key: "telefono_2", label: "Teléfono 2", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "278px" },
+    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "408px" },
+    { key: "razon_social_referencial", label: "Razón\nSocial", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "528px", isLastPinned: true },
     
     // Monthly comments
     { key: "junio_asistente", label: "JUNIO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
