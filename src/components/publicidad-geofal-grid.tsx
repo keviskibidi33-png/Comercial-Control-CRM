@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { usePublicidadGeofal, type PublicidadRow } from "@/hooks/use-publicidad-geofal"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { 
   Plus, 
@@ -531,45 +530,37 @@ export default function PublicidadGeofalGrid({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
-            className="h-7 w-7"
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
           >
             <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
+          </button>
+          <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="h-7 w-7"
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
           >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
+          </button>
           <span className="px-2">
             Página <b>{currentPage}</b> de <b>{totalPages}</b>
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="h-7 w-7"
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
           >
             <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
+          </button>
+          <button
             onClick={() => setCurrentPage(totalPages)}
             disabled={currentPage === totalPages}
-            className="h-7 w-7"
+            className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
           >
             <ChevronsRight className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>
