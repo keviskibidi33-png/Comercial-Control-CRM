@@ -499,14 +499,14 @@ export default function SeguimientoClienteGrid({
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
     { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "date", stickyLeft: "48px" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "148px" },
-    { key: "numero_celular", label: "Celular", width: "w-[116px] min-w-[116px] max-w-[116px]", type: "text", stickyLeft: "298px" },
-    { key: "email", label: "Email", width: "w-[168px] min-w-[168px] max-w-[168px]", type: "text", stickyLeft: "414px" },
-    { key: "razon_social", label: "Razón Social", width: "w-[152px] min-w-[152px] max-w-[152px]", type: "text", stickyLeft: "582px" },
-    { key: "ruc", label: "RUC", width: "w-[112px] min-w-[112px] max-w-[112px]", type: "text", stickyLeft: "734px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[104px] min-w-[104px] max-w-[104px]", type: "date", stickyLeft: "846px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "950px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "1086px", isLastPinned: true },
+    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[120px] min-w-[120px] max-w-[120px]", type: "text", stickyLeft: "148px" },
+    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "268px" },
+    { key: "email", label: "Email", width: "w-[120px] min-w-[120px] max-w-[120px]", type: "text", stickyLeft: "368px" },
+    { key: "razon_social", label: "Razón\nSocial", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "488px" },
+    { key: "ruc", label: "RUC", width: "w-[85px] min-w-[85px] max-w-[85px]", type: "text", stickyLeft: "638px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[95px] min-w-[95px] max-w-[95px]", type: "date", stickyLeft: "723px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "818px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "948px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
@@ -680,7 +680,7 @@ export default function SeguimientoClienteGrid({
                         : undefined
                     }
                     className={`
-                      ${col.width} px-2 py-2 text-left text-[10.5px] font-bold text-zinc-700 uppercase tracking-wide select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200 transition-colors
+                      ${col.width} px-2 py-2 text-left text-[10.5px] font-bold text-zinc-700 uppercase tracking-wide select-none cursor-pointer bg-[#f4f4f5] hover:bg-zinc-200 transition-colors whitespace-pre-line
                       ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       ${isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : ""}
                     `}
