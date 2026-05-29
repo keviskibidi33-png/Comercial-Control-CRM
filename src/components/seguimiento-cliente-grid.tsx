@@ -706,7 +706,7 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-2 py-1.5 ${col.width} text-center font-mono text-[10px] font-semibold text-zinc-500 select-none
+                        className={`px-2 py-1.5 ${col.width} text-center font-mono text-[11px] font-bold text-zinc-800 select-none
                           ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100` : "bg-zinc-50"}
                           ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                         `}
@@ -814,7 +814,9 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className="w-[88px] bg-transparent border-0 border-none outline-none shadow-none text-[10px] font-semibold text-zinc-700 p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5"
+                          className={`w-[88px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5 ${
+                            isPinned ? "font-bold text-zinc-900" : "font-semibold text-zinc-700"
+                          }`}
                         />
                       </td>
                     )
@@ -836,7 +838,7 @@ export default function SeguimientoClienteGrid({
                         <div
                           onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
-                          className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[10px] border flex items-center justify-between transition-colors ${commentBoxClass}`}
+                          className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
                           <span className="truncate min-w-0">{displayVal}</span>
                           <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
@@ -863,7 +865,9 @@ export default function SeguimientoClienteGrid({
                             e.currentTarget.blur()
                           }
                         }}
-                        className="w-full bg-transparent border-none outline-none text-[11px] text-zinc-800 px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 truncate"
+                        className={`w-full bg-transparent border-none outline-none text-[11px] px-1 py-0.5 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 truncate ${
+                          isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
+                        }`}
                       />
                     </td>
                   )
@@ -892,7 +896,7 @@ export default function SeguimientoClienteGrid({
                     <td
                       key="ghost-no"
                       style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-2 py-1.5 ${col.width} text-center font-mono text-[10px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
+                      className={`px-2 py-1.5 ${col.width} text-center font-mono text-[11px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
                         ${isPinned ? "sticky z-10 bg-zinc-100 group-hover:bg-zinc-200" : "bg-zinc-100"}
                         ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       `}
@@ -941,7 +945,9 @@ export default function SeguimientoClienteGrid({
                       value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                       onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                       onKeyDown={handleGhostKeyDown}
-                      className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[10px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-5 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60"
+                      className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60 ${
+                        isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
+                      }`}
                     />
                   </td>
                 )
@@ -960,7 +966,9 @@ export default function SeguimientoClienteGrid({
                     value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                     onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                     onKeyDown={handleGhostKeyDown}
-                    className="ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] text-zinc-800 focus:bg-white focus:ring-1 focus:ring-blue-500 h-6"
+                    className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
+                      isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
+                    }`}
                   />
                 </td>
               )
