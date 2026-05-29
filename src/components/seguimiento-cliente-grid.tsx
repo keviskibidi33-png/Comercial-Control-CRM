@@ -498,15 +498,15 @@ export default function SeguimientoClienteGrid({
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[92px] min-w-[92px] max-w-[92px]", type: "date", stickyLeft: "48px" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "140px" },
-    { key: "numero_celular", label: "Celular", width: "w-[88px] min-w-[88px] max-w-[88px]", type: "text", stickyLeft: "290px" },
-    { key: "email", label: "Email", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "378px" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "date", stickyLeft: "48px" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "148px" },
+    { key: "numero_celular", label: "Celular", width: "w-[104px] min-w-[104px] max-w-[104px]", type: "text", stickyLeft: "298px" },
+    { key: "email", label: "Email", width: "w-[168px] min-w-[168px] max-w-[168px]", type: "text", stickyLeft: "402px" },
     { key: "razon_social", label: "Razón Social", width: "w-[152px] min-w-[152px] max-w-[152px]", type: "text", stickyLeft: "528px" },
-    { key: "ruc", label: "RUC", width: "w-[96px] min-w-[96px] max-w-[96px]", type: "text", stickyLeft: "680px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[92px] min-w-[92px] max-w-[92px]", type: "date", stickyLeft: "776px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "868px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "1004px", isLastPinned: true },
+    { key: "ruc", label: "RUC", width: "w-[112px] min-w-[112px] max-w-[112px]", type: "text", stickyLeft: "570px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[104px] min-w-[104px] max-w-[104px]", type: "date", stickyLeft: "722px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "938px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "1074px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
@@ -835,7 +835,7 @@ export default function SeguimientoClienteGrid({
                           value={dateValue}
                           title={dateValue}
                           onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className={`w-[88px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5 ${
+                          className={`w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5 ${
                             isPinned ? "font-bold text-zinc-900" : "font-semibold text-zinc-700"
                           }`}
                         />
