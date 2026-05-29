@@ -3,7 +3,7 @@
 import React from "react"
 import { FlaskConical, Briefcase, Users } from "lucide-react"
 
-export type CommercialModuleTab = "lab" | "com" | "seguimiento"
+export type CommercialModuleTab = "lab" | "com" | "seguimiento" | "publicidad"
 
 interface CommercialModuleTabsProps {
   activeTab: CommercialModuleTab
@@ -24,7 +24,12 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
     label: "Seguimiento Clientes",
     icon: <Users className="h-3.5 w-3.5" />,
   },
+  publicidad: {
+    label: "Publicidad Geofal",
+    icon: <Users className="h-3.5 w-3.5 text-blue-600" />,
+  },
 }
+
 
 export function CommercialModuleTabs({ activeTab, onTabChange, className = "" }: CommercialModuleTabsProps) {
   return (
