@@ -476,23 +476,23 @@ export default function SeguimientoClienteGrid({
 
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
-    { key: "no", label: "N°", width: "w-12 min-w-[48px] text-center", stickyLeft: "0px" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[92px] min-w-[92px]", type: "date", stickyLeft: "48px" },
-    { key: "persona_contacto", label: "Persona Contacto", width: "w-[150px] min-w-[150px]", type: "text", stickyLeft: "140px" },
-    { key: "numero_celular", label: "Celular", width: "w-[88px] min-w-[88px]", type: "text", stickyLeft: "290px" },
-    { key: "email", label: "Email", width: "w-[150px] min-w-[150px]", type: "text", stickyLeft: "378px" },
-    { key: "razon_social", label: "Razón Social", width: "w-[152px] min-w-[152px]", type: "text", stickyLeft: "528px" },
-    { key: "ruc", label: "RUC", width: "w-[96px] min-w-[96px]", type: "text", stickyLeft: "680px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[92px] min-w-[92px]", type: "date", stickyLeft: "776px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[136px] min-w-[136px]", type: "text", stickyLeft: "868px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[136px] min-w-[136px]", type: "text", stickyLeft: "1004px", isLastPinned: true },
-    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px]", type: "catalog", catalogKey: "asesores" },
-    { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px]", type: "catalog", catalogKey: "contactos" },
-    { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px]", type: "catalog", catalogKey: "rubros" },
-    { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px]", type: "catalog", catalogKey: "estados" },
-    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px]", type: "catalog", catalogKey: "servicios" },
-    { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px]", type: "text" },
-    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
+    { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
+    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[92px] min-w-[92px] max-w-[92px]", type: "date", stickyLeft: "48px" },
+    { key: "persona_contacto", label: "Persona Contacto", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "140px" },
+    { key: "numero_celular", label: "Celular", width: "w-[88px] min-w-[88px] max-w-[88px]", type: "text", stickyLeft: "290px" },
+    { key: "email", label: "Email", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "378px" },
+    { key: "razon_social", label: "Razón Social", width: "w-[152px] min-w-[152px] max-w-[152px]", type: "text", stickyLeft: "528px" },
+    { key: "ruc", label: "RUC", width: "w-[96px] min-w-[96px] max-w-[96px]", type: "text", stickyLeft: "680px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[92px] min-w-[92px] max-w-[92px]", type: "date", stickyLeft: "776px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "868px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[136px] min-w-[136px] max-w-[136px]", type: "text", stickyLeft: "1004px", isLastPinned: true },
+    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
+    { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
+    { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
+    { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
+    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px] max-w-[192px]", type: "catalog", catalogKey: "servicios" },
+    { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
+    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
 
   return (
@@ -691,8 +691,8 @@ export default function SeguimientoClienteGrid({
                   const isNo = col.key === "no"
                   const isPinned = col.stickyLeft !== undefined
                   const isLastPinned = col.isLastPinned === true
-                  const baseCellClass = `
-                    py-0.5 overflow-visible relative
+                   const baseCellClass = `
+                    py-0.5 overflow-visible relative ${col.width}
                     ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-white" : "bg-sky-50"} group-hover:bg-sky-100` : ""}
                     ${isPinned 
                       ? (isLastPinned 
@@ -707,7 +707,7 @@ export default function SeguimientoClienteGrid({
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-2 py-1.5 text-center font-mono text-[10px] font-semibold text-zinc-500 select-none
+                        className={`px-2 py-1.5 ${col.width} text-center font-mono text-[10px] font-semibold text-zinc-500 select-none
                           ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100` : "bg-zinc-50"}
                           ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                         `}
@@ -837,9 +837,9 @@ export default function SeguimientoClienteGrid({
                         <div
                           onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
-                          className={`w-full min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[10px] border flex items-center justify-between transition-colors ${commentBoxClass}`}
+                          className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[10px] border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
-                          <span className="truncate">{displayVal}</span>
+                          <span className="truncate min-w-0">{displayVal}</span>
                           <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
                         </div>
                       </td>
@@ -879,7 +879,7 @@ export default function SeguimientoClienteGrid({
                 const isPinned = col.stickyLeft !== undefined
                 const isLastPinned = col.isLastPinned === true
                 const baseGhostClass = `
-                  py-0.5 overflow-visible relative
+                  py-0.5 overflow-visible relative ${col.width}
                   ${isPinned ? "sticky z-10 bg-zinc-50 group-hover:bg-zinc-100" : ""}
                   ${isPinned 
                     ? (isLastPinned 
@@ -893,7 +893,7 @@ export default function SeguimientoClienteGrid({
                     <td
                       key="ghost-no"
                       style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                      className={`px-2 py-1.5 text-center font-mono text-[10px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
+                      className={`px-2 py-1.5 ${col.width} text-center font-mono text-[10px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200
                         ${isPinned ? "sticky z-10 bg-zinc-100 group-hover:bg-zinc-200" : "bg-zinc-100"}
                         ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                       `}
