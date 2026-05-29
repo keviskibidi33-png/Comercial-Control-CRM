@@ -148,6 +148,14 @@ export default function PublicidadGeofalGrid({
     })
   }
 
+  const handleGhostKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      submitGhostRow()
+      return
+    }
+  }
+
   // Debounced search term
   const [debouncedSearch, setDebouncedSearch] = useState("")
   useEffect(() => {
@@ -478,27 +486,41 @@ export default function PublicidadGeofalGrid({
                 const isLastPinned = col.isLastPinned === true
                 const cellValue = ghostRow[col.key]
 
+                if (col.key === "id_cliente") {
+                  return (
+                    <td
+                      key="ghost-id_cliente"
+                      style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                      className={`px-1.5 py-1.5 ${col.width} text-center font-mono text-[11px] text-blue-700 select-none font-bold cursor-pointer hover:bg-zinc-200 bg-zinc-100
+                        ${isPinned ? "sticky z-10" : ""}
+                        ${isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : "shadow-[inset_-1px_0_0_0_#d4d4d8]"}
+                      `}
+                      onClick={submitGhostRow}
+                      title="Agregar registro (Enter)"
+                    >
+                      <Plus className="mx-auto h-3.5 w-3.5" />
+                    </td>
+                  )
+                }
+
                 return (
                   <td
                     key={`ghost-${col.key}`}
                     style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                    className={`px-1.5 py-1.5 ${col.width} sticky z-10 bg-zinc-50 shadow-[inset_-1px_0_0_0_#d4d4d8] ${
+                    className={`px-1.5 py-1.5 ${col.width} bg-zinc-50 shadow-[inset_-1px_0_0_0_#d4d4d8] ${
+                      isPinned ? "sticky z-10" : ""
+                    } ${
                       isLastPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8,4px_0_5px_-2px_rgba(0,0,0,0.15)]" : ""
                     }`}
                   >
                     <input
-                      type={col.key === "id_cliente" ? "number" : "text"}
+                      type="text"
                       placeholder="+"
                       value={cellValue !== undefined && cellValue !== null ? String(cellValue) : ""}
                       onChange={(e) => {
-                        const val = col.key === "id_cliente" ? (e.target.value ? parseInt(e.target.value) : null) : e.target.value
-                        handleGhostChange(col.key, val)
+                        handleGhostChange(col.key, e.target.value)
                       }}
-                      onBlur={(e) => {
-                        if (col.key === "contacto" && e.target.value) {
-                          submitGhostRow()
-                        }
-                      }}
+                      onKeyDown={handleGhostKeyDown}
                       className="w-full bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </td>
