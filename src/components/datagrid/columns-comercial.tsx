@@ -67,6 +67,19 @@ export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
         cell: ({ getValue }) => <div className="text-zinc-900 font-medium whitespace-normal break-words leading-tight max-w-full">{getValue() as string}</div>,
     },
     {
+        accessorKey: "descripcion_servicio",
+        header: ({ column }) => <SortableHeader column={column} title="DESCRIPCION DEL SERVICIO" />,
+        size: 180, minSize: 150, maxSize: 420, enableResizing: true,
+        cell: ({ getValue }) => (
+            <div
+                className="px-1 py-1 text-zinc-900 wrap-break-word whitespace-normal cursor-not-allowed bg-zinc-50/50"
+                title="Campo bloqueado desde laboratorio"
+            >
+                {String(getValue() ?? "").trim() || "-"}
+            </div>
+        ),
+    },
+    {
         accessorKey: "cotizacion_lab",
         header: ({ column }) => <SortableHeader column={column} title="COTIZACION" />,
         size: 160, minSize: 140, maxSize: 300, enableResizing: true,
