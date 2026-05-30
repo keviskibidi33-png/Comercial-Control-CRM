@@ -422,9 +422,9 @@ export default function PublicidadGeofalGrid({
     { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "48px" },
     { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
     { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "278px" },
-    { key: "razon_social_referencial", label: "Razón\nSocial", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "438px" },
-    { key: "observacion_1", label: "OBS. 1", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "548px" },
-    { key: "observacion_2", label: "OBS. 2", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "633px", isLastPinned: true },
+    { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "438px" },
+    { key: "observacion_1", label: "OBS. 1", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "558px" },
+    { key: "observacion_2", label: "OBS. 2", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "643px", isLastPinned: true },
     
     // Monthly comments
     { key: "junio_asistente", label: "JUNIO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
