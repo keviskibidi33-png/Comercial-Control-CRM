@@ -3,7 +3,38 @@
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { usePublicidadGeofal, type PublicidadRow } from "@/hooks/use-publicidad-geofal"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+
+const COMMENT_DRAFT_STORAGE_PREFIX = "publicidad-geofal-comment-draft:v1"
+
+type CommentFieldKey = "observacion_1" | "observacion_2"
+
+const getCommentDraftStorageKey = (rowId: number, field: CommentFieldKey) =>
+  `${COMMENT_DRAFT_STORAGE_PREFIX}:${rowId}:${field}`
+
+const readLegacyCommentValue = (value: string | undefined | null): string => {
+  if (!value) return ""
+
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const lastEntry = parsed[parsed.length - 1]
+      if (typeof lastEntry?.text === "string") {
+        return lastEntry.text
+      }
+    }
+  } catch {
+    // Keep raw text for the new notepad flow and legacy plain strings.
+  }
+
+  return value
+}
+
+const getCommentDisplayValue = (value: string | undefined | null): string => {
+  const normalized = readLegacyCommentValue(value).trim()
+  return normalized.length > 0 ? normalized : "-"
+}
 import { 
   Plus, 
   FileDown, 
@@ -88,6 +119,104 @@ export default function PublicidadGeofalGrid({
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [uiHydrated, setUiHydrated] = useState(false)
   const [userRole, setUserRole] = useState<string>("")
+
+  // Comment Modal States & Handlers
+  const [commentModalRow, setCommentModalRow] = useState<PublicidadRow | null>(null)
+  const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
+  const [commentDraft, setCommentDraft] = useState("")
+  const [hasStoredCommentDraft, setHasStoredCommentDraft] = useState(false)
+  const [isSavingComment, setIsSavingComment] = useState(false)
+
+  const readStoredCommentDraft = (rowId: number, field: CommentFieldKey, fallbackValue: string) => {
+    if (typeof window === "undefined") return fallbackValue
+
+    try {
+      const stored = window.localStorage.getItem(getCommentDraftStorageKey(rowId, field))
+      return stored !== null ? stored : fallbackValue
+    } catch {
+      return fallbackValue
+    }
+  }
+
+  const persistCommentDraft = (rowId: number, field: CommentFieldKey, value: string) => {
+    if (typeof window === "undefined") return
+
+    try {
+      window.localStorage.setItem(getCommentDraftStorageKey(rowId, field), value)
+    } catch {
+      // Ignore localStorage write failures
+    }
+  }
+
+  const clearCommentDraft = (rowId: number, field: CommentFieldKey) => {
+    if (typeof window === "undefined") return
+
+    try {
+      window.localStorage.removeItem(getCommentDraftStorageKey(rowId, field))
+    } catch {
+      // Ignore localStorage cleanup failures
+    }
+  }
+
+  const openCommentsModal = (row: PublicidadRow, field: CommentFieldKey) => {
+    setCommentModalRow(row)
+    setActiveCommentField(field)
+    const fallbackValue = readLegacyCommentValue(row[field])
+    const draftValue = readStoredCommentDraft(row.id, field, fallbackValue)
+    setCommentDraft(draftValue)
+    let storedDraftExists = false
+    if (typeof window !== "undefined") {
+      try {
+        storedDraftExists = window.localStorage.getItem(getCommentDraftStorageKey(row.id, field)) !== null
+      } catch {
+        storedDraftExists = false
+      }
+    }
+    setHasStoredCommentDraft(storedDraftExists)
+  }
+
+  const closeCommentsModal = () => {
+    setCommentModalRow(null)
+    setActiveCommentField(null)
+    setIsSavingComment(false)
+  }
+
+  const saveComment = async () => {
+    if (!commentModalRow || !activeCommentField) return
+
+    const payload = commentDraft
+
+    setIsSavingComment(true)
+    try {
+      await updateCellAsync(commentModalRow.id, activeCommentField, payload)
+      clearCommentDraft(commentModalRow.id, activeCommentField)
+      setHasStoredCommentDraft(false)
+      toast.success("Comentario guardado correctamente.")
+    } catch {
+      toast.error("No se pudo guardar el comentario. El borrador local se mantuvo.")
+    } finally {
+      setIsSavingComment(false)
+    }
+  }
+
+  const handleCommentDraftChange = (value: string) => {
+    setCommentDraft(value)
+    if (!commentModalRow || !activeCommentField) return
+
+    persistCommentDraft(commentModalRow.id, activeCommentField, value)
+    setHasStoredCommentDraft(true)
+  }
+
+  const activeCommentTitle = activeCommentField === "observacion_1" ? "Observación 1" : "Observación 2"
+  const commentSyncState = hasStoredCommentDraft
+    ? {
+        label: "Borrador local",
+        className: "border-amber-200 bg-amber-50 text-amber-700",
+      }
+    : {
+        label: "Sin cambios",
+        className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      }
 
   // Ghost Row State & Handlers
   const [ghostRow, setGhostRow] = useState<Partial<PublicidadRow>>({ ...DEFAULT_GHOST_ROW })
@@ -196,6 +325,7 @@ export default function PublicidadGeofalGrid({
     errorMessage,
     connectionStatus,
     updateCell,
+    updateCellAsync,
     insertRow,
     exportToExcel,
     isMutating
@@ -484,6 +614,31 @@ export default function PublicidadGeofalGrid({
                   const isEmail = col.key === "correo_referencial"
                   const hasEmailValue = isEmail && cellValue && String(cellValue).trim().length > 0
 
+                  if (col.key === "observacion_1" || col.key === "observacion_2") {
+                    const displayVal = getCommentDisplayValue(cellValue as string)
+                    const isEmpty = !cellValue || displayVal === "-"
+                    const commentBoxClass = isEmpty
+                      ? "bg-red-100 border-red-300 text-red-800 hover:bg-red-200"
+                      : "bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200"
+
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        <div
+                          onClick={() => openCommentsModal(row, col.key as "observacion_1" | "observacion_2")}
+                          title={`Haga clic para ver/editar ${col.label}`}
+                          className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
+                        >
+                          <span className="truncate min-w-0">{displayVal}</span>
+                          <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
+                        </div>
+                      </td>
+                    )
+                  }
+
                   return (
                     <td
                       key={col.key}
@@ -666,6 +821,79 @@ export default function PublicidadGeofalGrid({
           </button>
         </div>
       </div>
+
+      {/* Comments/Observation Modal */}
+      {commentModalRow && activeCommentField && (
+        <div
+          onClick={closeCommentsModal}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[90vh]"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
+                  Geofal CRM · Publicidad
+                </p>
+                <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
+                  {activeCommentTitle}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {commentModalRow.razon_social_referencial || "Sin razón social"} · Contacto: {commentModalRow.contacto || "-"}
+                </p>
+              </div>
+              <button
+                onClick={closeCommentsModal}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Cerrar comentario"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
+                  Observación / Nota
+                </label>
+                <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commentSyncState.className}`}>
+                  {commentSyncState.label}
+                </span>
+              </div>
+
+              <textarea
+                value={commentDraft}
+                onChange={(e) => handleCommentDraftChange(e.target.value)}
+                placeholder="Escribe aquí la observación o comentario..."
+                className="min-h-[280px] w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-[11px] text-muted-foreground">
+                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todavía"}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-9 px-4 text-xs text-muted-foreground hover:bg-muted hover:text-foreground border border-zinc-200 bg-white"
+                  onClick={closeCommentsModal}
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  className="h-9 px-5 text-xs font-bold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  onClick={saveComment}
+                  disabled={isSavingComment}
+                >
+                  {isSavingComment ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
