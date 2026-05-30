@@ -674,23 +674,21 @@ export default function PublicidadGeofalGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         {isActive ? (
-                          <div className="relative w-full h-full overflow-visible z-50">
-                            <textarea
-                              autoFocus
-                              defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
-                              onBlur={(e) => {
-                                handleCellBlur(row.id, col.key, cellValue, e.target.value)
-                                setActiveTextEdit(null)
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault()
-                                  e.currentTarget.blur()
-                                }
-                              }}
-                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[240px] min-h-[60px] bg-white border border-blue-500 rounded p-1.5 text-[11px] text-zinc-900 font-bold shadow-xl focus:outline-none focus:ring-1 focus:ring-blue-500 z-50 resize-y"
-                            />
-                          </div>
+                          <input
+                            autoFocus
+                            type="text"
+                            defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
+                            onBlur={(e) => {
+                              handleCellBlur(row.id, col.key, cellValue, e.target.value)
+                              setActiveTextEdit(null)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.currentTarget.blur()
+                              }
+                            }}
+                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold focus:outline-none"
+                          />
                         ) : (
                           <div
                             onClick={() => {
