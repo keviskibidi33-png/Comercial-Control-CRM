@@ -172,6 +172,7 @@ export default function PublicidadGeofalGrid({
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [uiHydrated, setUiHydrated] = useState(false)
   const [userRole, setUserRole] = useState<string>("")
+  const [activeTextEdit, setActiveTextEdit] = useState<{ id: number; field: string } | null>(null)
 
   // Comment Modal States & Handlers
   const [commentModalRow, setCommentModalRow] = useState<PublicidadRow | null>(null)
@@ -475,8 +476,8 @@ export default function PublicidadGeofalGrid({
     { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "48px" },
     { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
     { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "278px" },
-    { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "438px" },
-    { key: "observacion_1", label: "Nota", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "558px", isLastPinned: true },
+    { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[140px] min-w-[140px] max-w-[140px]", stickyLeft: "438px" },
+    { key: "observacion_1", label: "Nota", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "578px", isLastPinned: true },
     
     // Date fields (Fecha 1 to Fecha 14)
     { key: "junio_asistente", label: "FECHA 1", width: "w-[110px] min-w-[110px] max-w-[110px]" },
@@ -663,6 +664,49 @@ export default function PublicidadGeofalGrid({
 
                   const isEmail = col.key === "correo_referencial"
                   const hasEmailValue = isEmail && cellValue && String(cellValue).trim().length > 0
+
+                  if (col.key === "razon_social_referencial") {
+                    const isActive = activeTextEdit?.id === row.id && activeTextEdit?.field === col.key
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: isActive ? 40 : 10 } : undefined}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        {isActive ? (
+                          <div className="relative w-full h-full overflow-visible z-50">
+                            <textarea
+                              autoFocus
+                              defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
+                              onBlur={(e) => {
+                                handleCellBlur(row.id, col.key, cellValue, e.target.value)
+                                setActiveTextEdit(null)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault()
+                                  e.currentTarget.blur()
+                                }
+                              }}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[240px] min-h-[60px] bg-white border border-blue-500 rounded p-1.5 text-[11px] text-zinc-900 font-bold shadow-xl focus:outline-none focus:ring-1 focus:ring-blue-500 z-50 resize-y"
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => {
+                              if (editable) {
+                                setActiveTextEdit({ id: row.id, field: col.key })
+                              }
+                            }}
+                            className={`w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal break-words leading-tight ${editable ? "cursor-pointer hover:bg-zinc-100/50" : ""}`}
+                            title={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
+                          >
+                            {cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== "" ? String(cellValue) : <span className="text-zinc-300">-</span>}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  }
 
                   if (col.key === "observacion_1") {
                     const displayVal = getCommentDisplayValue(cellValue as string)
