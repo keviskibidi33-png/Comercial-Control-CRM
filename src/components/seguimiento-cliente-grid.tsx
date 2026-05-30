@@ -878,20 +878,21 @@ export default function SeguimientoClienteGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         {isActive ? (
-                          <input
+                          <textarea
                             autoFocus
-                            type="text"
+                            rows={3}
                             defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
                             onBlur={(e) => {
                               handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value)
                               setActiveTextEdit(null)
                             }}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
                                 e.currentTarget.blur()
                               }
                             }}
-                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold focus:outline-none"
+                            className="w-full min-h-[52px] bg-white border border-blue-500 rounded px-1.5 py-1 text-[11px] text-zinc-900 font-bold focus:outline-none resize-none leading-tight whitespace-pre-wrap break-words"
                           />
                         ) : (
                           <div
