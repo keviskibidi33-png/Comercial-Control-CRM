@@ -210,6 +210,7 @@ export default function SeguimientoClienteGrid({
   const [pageSize, setPageSize] = useState(500)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [uiHydrated, setUiHydrated] = useState(false)
+  const [activeTextEdit, setActiveTextEdit] = useState<{ id: number; field: string } | null>(null)
 
   // Ghost Row State & Handlers
   const [ghostRow, setGhostRow] = useState<Partial<SeguimientoRow>>({ ...DEFAULT_GHOST_ROW })
@@ -864,6 +865,45 @@ export default function SeguimientoClienteGrid({
                           <span className="truncate min-w-0">{displayVal}</span>
                           <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
                         </div>
+                      </td>
+                    )
+                  }
+
+                  if (col.key === "razon_social") {
+                    const isActive = activeTextEdit?.id === row.id && activeTextEdit?.field === col.key
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        {isActive ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
+                            onBlur={(e) => {
+                              handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value)
+                              setActiveTextEdit(null)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.currentTarget.blur()
+                              }
+                            }}
+                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold focus:outline-none"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => {
+                              setActiveTextEdit({ id: row.id, field: col.key })
+                            }}
+                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal break-words leading-tight cursor-pointer hover:bg-zinc-100/50"
+                            title={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
+                          >
+                            {cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== "" ? String(cellValue) : <span className="text-zinc-300">-</span>}
+                          </div>
+                        )}
                       </td>
                     )
                   }
