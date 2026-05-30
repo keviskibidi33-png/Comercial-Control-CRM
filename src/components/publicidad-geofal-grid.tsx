@@ -8,7 +8,7 @@ import { toast } from "sonner"
 
 const COMMENT_DRAFT_STORAGE_PREFIX = "publicidad-geofal-comment-draft:v1"
 
-type CommentFieldKey = "observacion_1" | "observacion_2"
+type CommentFieldKey = "observacion_1"
 
 const getCommentDraftStorageKey = (rowId: number, field: CommentFieldKey) =>
   `${COMMENT_DRAFT_STORAGE_PREFIX}:${rowId}:${field}`
@@ -34,6 +34,59 @@ const readLegacyCommentValue = (value: string | undefined | null): string => {
 const getCommentDisplayValue = (value: string | undefined | null): string => {
   const normalized = readLegacyCommentValue(value).trim()
   return normalized.length > 0 ? normalized : "-"
+}
+
+const DATE_COLUMN_KEYS = new Set([
+  "junio_asistente", "junio_asesor",
+  "julio_asistente", "julio_asesor",
+  "agosto_asistente", "agosto_asesor",
+  "setiembre_asistente", "setiembre_asesor",
+  "octubre_asistente", "octubre_asesor",
+  "noviembre_asistente", "noviembre_asesor",
+  "diciembre_asistente", "diciembre_asesor"
+])
+
+const autocompleteDateString = (input: string): string => {
+  const clean = input.trim()
+  if (!clean) return ""
+
+  const parts = clean.split(/[\/\-]/)
+  if (parts.length >= 2) {
+    let dayStr = parts[0].trim()
+    let monthStr = parts[1].trim()
+    let yearStr = parts[2] ? parts[2].trim() : ""
+
+    if (dayStr.length === 1) dayStr = "0" + dayStr
+    if (monthStr.length === 1) monthStr = "0" + monthStr
+    if (!yearStr) yearStr = "26"
+    else if (yearStr.length === 4) yearStr = yearStr.substring(2)
+    else if (yearStr.length === 1) yearStr = "2" + yearStr
+
+    return `${dayStr}/${monthStr}/${yearStr}`
+  }
+
+  const digits = clean.replace(/\D/g, "")
+  if (digits.length === 3) {
+    const dayStr = "0" + digits[0]
+    const monthStr = digits.substring(1, 3)
+    return `${dayStr}/${monthStr}/26`
+  } else if (digits.length === 4) {
+    const dayStr = digits.substring(0, 2)
+    const monthStr = digits.substring(2, 4)
+    return `${dayStr}/${monthStr}/26`
+  } else if (digits.length === 5) {
+    const dayStr = "0" + digits[0]
+    const monthStr = digits.substring(1, 3)
+    const yearStr = digits.substring(3, 5)
+    return `${dayStr}/${monthStr}/${yearStr}`
+  } else if (digits.length === 6) {
+    const dayStr = digits.substring(0, 2)
+    const monthStr = digits.substring(2, 4)
+    const yearStr = digits.substring(4, 6)
+    return `${dayStr}/${monthStr}/${yearStr}`
+  }
+
+  return input
 }
 import { 
   Plus, 
@@ -207,7 +260,7 @@ export default function PublicidadGeofalGrid({
     setHasStoredCommentDraft(true)
   }
 
-  const activeCommentTitle = activeCommentField === "observacion_1" ? "Observación 1" : "Observación 2"
+  const activeCommentTitle = "Nota"
   const commentSyncState = hasStoredCommentDraft
     ? {
         label: "Borrador local",
@@ -423,30 +476,29 @@ export default function PublicidadGeofalGrid({
     { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
     { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "278px" },
     { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[120px] min-w-[120px] max-w-[120px]", stickyLeft: "438px" },
-    { key: "observacion_1", label: "OBS. 1", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "558px" },
-    { key: "observacion_2", label: "OBS. 2", width: "w-[85px] min-w-[85px] max-w-[85px]", stickyLeft: "643px", isLastPinned: true },
+    { key: "observacion_1", label: "Nota", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "558px", isLastPinned: true },
     
-    // Monthly comments
-    { key: "junio_asistente", label: "JUNIO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "junio_asesor", label: "JUNIO\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    // Date fields (Fecha 1 to Fecha 14)
+    { key: "junio_asistente", label: "FECHA 1", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "junio_asesor", label: "FECHA 2", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "julio_asistente", label: "JULIO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "julio_asesor", label: "JULIO\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    { key: "julio_asistente", label: "FECHA 3", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "julio_asesor", label: "FECHA 4", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "agosto_asistente", label: "AGOSTO\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "agosto_asesor", label: "AGOSTO\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    { key: "agosto_asistente", label: "FECHA 5", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "agosto_asesor", label: "FECHA 6", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "setiembre_asistente", label: "SETIEMBRE\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "setiembre_asesor", label: "SETIEMBRE\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    { key: "setiembre_asistente", label: "FECHA 7", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "setiembre_asesor", label: "FECHA 8", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "octubre_asistente", label: "OCTUBRE\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "octubre_asesor", label: "OCTUBRE\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    { key: "octubre_asistente", label: "FECHA 9", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "octubre_asesor", label: "FECHA 10", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "noviembre_asistente", label: "NOVIEMBRE\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "noviembre_asesor", label: "NOVIEMBRE\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
+    { key: "noviembre_asistente", label: "FECHA 11", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "noviembre_asesor", label: "FECHA 12", width: "w-[110px] min-w-[110px] max-w-[110px]" },
     
-    { key: "diciembre_asistente", label: "DICIEMBRE\n(AUX)", width: "w-[130px] min-w-[130px] max-w-[130px]" },
-    { key: "diciembre_asesor", label: "DICIEMBRE\n(ASES)", width: "w-[130px] min-w-[130px] max-w-[130px]" }
+    { key: "diciembre_asistente", label: "FECHA 13", width: "w-[110px] min-w-[110px] max-w-[110px]" },
+    { key: "diciembre_asesor", label: "FECHA 14", width: "w-[110px] min-w-[110px] max-w-[110px]" }
   ]
 
   return (
@@ -612,7 +664,7 @@ export default function PublicidadGeofalGrid({
                   const isEmail = col.key === "correo_referencial"
                   const hasEmailValue = isEmail && cellValue && String(cellValue).trim().length > 0
 
-                  if (col.key === "observacion_1" || col.key === "observacion_2") {
+                  if (col.key === "observacion_1") {
                     const displayVal = getCommentDisplayValue(cellValue as string)
                     const isEmpty = !cellValue || displayVal === "-"
                     const commentBoxClass = isEmpty
@@ -626,7 +678,7 @@ export default function PublicidadGeofalGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         <div
-                          onClick={() => openCommentsModal(row, col.key as "observacion_1" | "observacion_2")}
+                          onClick={() => openCommentsModal(row, col.key as "observacion_1")}
                           title={`Haga clic para ver/editar ${col.label}`}
                           className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
@@ -649,7 +701,11 @@ export default function PublicidadGeofalGrid({
                           disabled={!editable}
                           defaultValue={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
                           onBlur={(e) => {
-                            const val = col.key === "id_cliente" ? (e.target.value ? parseInt(e.target.value) : null) : e.target.value
+                            let val = col.key === "id_cliente" ? (e.target.value ? parseInt(e.target.value) : null) : e.target.value
+                            if (typeof val === "string" && DATE_COLUMN_KEYS.has(col.key as string)) {
+                              val = autocompleteDateString(val)
+                              e.target.value = val
+                            }
                             handleCellBlur(row.id, col.key, cellValue, val)
                           }}
                           onKeyDown={(e) => {
@@ -753,6 +809,14 @@ export default function PublicidadGeofalGrid({
                       value={cellValue !== undefined && cellValue !== null ? String(cellValue) : ""}
                       onChange={(e) => {
                         handleGhostChange(col.key, e.target.value)
+                      }}
+                      onBlur={(e) => {
+                        let val = e.target.value
+                        if (DATE_COLUMN_KEYS.has(col.key as string)) {
+                          val = autocompleteDateString(val)
+                          e.target.value = val
+                          handleGhostChange(col.key, val)
+                        }
                       }}
                       onKeyDown={handleGhostKeyDown}
                       className="w-full bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
