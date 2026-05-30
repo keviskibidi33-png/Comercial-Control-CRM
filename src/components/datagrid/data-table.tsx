@@ -169,6 +169,37 @@ export function DataTable<TData, TValue>({
                 ]
             }
         },
+        globalFilterFn: (row, _columnId, filterValue) => {
+            const searchValue = String(filterValue).toLowerCase().trim()
+            if (!searchValue) return true
+
+            const original = row.original as any
+            if (!original) return false
+
+            const fieldsToSearch = [
+                original.recep_numero,
+                original.ot,
+                original.codigo_muestra,
+                original.cliente_nombre,
+                original.proyecto,
+                original.descripcion_servicio,
+                original.cotizacion_lab,
+                original.nota_lab,
+                original.nota_admin,
+                original.motivo_dias_atraso_com,
+                original.motivo_dias_atraso_lab,
+                original.numero_factura,
+                original.orden_servicio,
+                original.numero_valorizacion,
+                original.estado_trabajo
+            ]
+
+            return fieldsToSearch.some(val => 
+                val !== null && 
+                val !== undefined && 
+                String(val).toLowerCase().includes(searchValue)
+            )
+        },
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setGlobalFilter,
