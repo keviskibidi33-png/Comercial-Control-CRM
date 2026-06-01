@@ -200,20 +200,9 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    const channel = supabase
-      .channel("seguimiento_cliente_comercial_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "seguimiento_cliente_comercial" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["seguimiento-comercial"] })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    // Supabase Realtime subscription disabled to avoid concurrency race conditions during inline editing.
+    // Users can refresh data manually using the 'Recargar' button.
+    return () => {}
   }, [supabase, queryClient])
 
   // Carga de filas del backend

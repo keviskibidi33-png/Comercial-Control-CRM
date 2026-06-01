@@ -129,7 +129,7 @@ export function FixedProgramacionEditor({
   onModuleTabChange,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
-  const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
+  const { data, isLoading, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
   const [filteredItems, setFilteredItems] = React.useState<ProgramacionServicio[]>([])
   const [activeViewMode, setActiveViewMode] = React.useState<ViewMode>(viewMode)
 
@@ -277,6 +277,16 @@ export function FixedProgramacionEditor({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Recargar datos manualmente"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Recargar</span>
+          </button>
+
           <button
             onClick={() => exportToExcel(filteredItems, currentExportMode)}
             disabled={data.length === 0}

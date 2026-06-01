@@ -542,6 +542,16 @@ export default function SeguimientoClienteGrid({
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Recargar datos manualmente"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Recargar</span>
+          </button>
+
+          <button
             onClick={exportToExcel}
             disabled={isMutating || isLoading || total === 0}
             className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
