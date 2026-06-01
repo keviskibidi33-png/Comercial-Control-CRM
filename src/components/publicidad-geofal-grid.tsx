@@ -472,12 +472,12 @@ export default function PublicidadGeofalGrid({
   }
 
   const COLUMNS: readonly GridColumn[] = [
-    { key: "id_cliente", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
-    { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "48px" },
-    { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "148px" },
-    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "278px" },
-    { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[140px] min-w-[140px] max-w-[140px]", stickyLeft: "438px" },
-    { key: "observacion_1", label: "Nota", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "578px", isLastPinned: true },
+    { key: "id_cliente", label: "N°", width: "w-16 min-w-[64px] max-w-[64px] text-center", stickyLeft: "0px" },
+    { key: "contacto", label: "Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", stickyLeft: "64px" },
+    { key: "telefono", label: "Teléfono", width: "w-[130px] min-w-[130px] max-w-[130px]", stickyLeft: "164px" },
+    { key: "correo_referencial", label: "Correo\nReferencial", width: "w-[160px] min-w-[160px] max-w-[160px]", stickyLeft: "294px" },
+    { key: "razon_social_referencial", label: "Razón Social\nReferencial", width: "w-[140px] min-w-[140px] max-w-[140px]", stickyLeft: "454px" },
+    { key: "observacion_1", label: "Nota", width: "w-[110px] min-w-[110px] max-w-[110px]", stickyLeft: "594px", isLastPinned: true },
     
     // Date fields (Fecha 1 to Fecha 14)
     { key: "junio_asistente", label: "FECHA 1", width: "w-[110px] min-w-[110px] max-w-[110px]" },
