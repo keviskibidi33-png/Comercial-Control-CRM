@@ -160,7 +160,7 @@ export type Catalogs = {
 }
 
 const DEFAULT_CATALOGS: Catalogs = {
-  asesores: ["Silvia Peralta", "Juan Garcia"],
+  asesores: ["Silvia Peralta", "Juan Garcia", "Yerly Yanela Infante"],
   contactos: ["WHATSAPP", "LLAMADA", "CORREO"],
   rubros: ["LABORATORIO", "INGENIERÍA", "ALQUILER", "EN ESPERA"],
   estados: [
