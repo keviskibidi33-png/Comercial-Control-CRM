@@ -186,6 +186,7 @@ const DEFAULT_CATALOGS: Catalogs = {
     "Se Genero una Versión",
     "Cotización Rechazada",
     "Se Genero Venta",
+    "Anulado",
   ],
 }
 
