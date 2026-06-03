@@ -78,6 +78,28 @@ const getWhatsAppUrl = (phone: string): string => {
   return `https://wa.me/${prefix}${cleanPhone}`
 }
 
+const formatDateToDDMMYY = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return ""
+  const clean = dateStr.split("T")[0]
+  const parts = clean.split("-")
+  if (parts.length !== 3) return dateStr
+  const [year, month, day] = parts
+  return `${day}/${month}/${year.slice(-2)}`
+}
+
+const parseDDMMYYToDate = (displayStr: string): string | null => {
+  const clean = displayStr.trim()
+  if (!clean) return null
+  const parts = clean.split("/")
+  if (parts.length !== 3) return null
+  const [day, month, year] = parts
+  if (!day || !month || !year) return null
+  const fullYear = year.length === 2 ? `20${year}` : year
+  const formattedDay = day.padStart(2, "0")
+  const formattedMonth = month.padStart(2, "0")
+  return `${fullYear}-${formattedMonth}-${formattedDay}`
+}
+
 const WhatsAppIcon = () => (
   <svg
     viewBox="0 0 24 24"
@@ -838,19 +860,41 @@ export default function SeguimientoClienteGrid({
 
                   // Renders Date cell input
                   if (col.type === "date") {
-                    const dateValue = cellValue ? (cellValue as string).split("T")[0] : ""
+                    const dbDate = cellValue ? String(cellValue).split("T")[0] : ""
+                    const displayValue = formatDateToDDMMYY(dbDate)
                     return (
                       <td
                         key={col.key}
                         style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
-                        className={`px-1 ${baseCellClass}`}
+                        className={`px-1.5 ${baseCellClass}`}
                       >
                         <input
-                          type="date"
-                          value={dateValue}
-                          title={dateValue}
-                          onChange={(e) => updateCell(row.id, col.key as keyof SeguimientoRow, e.target.value || null)}
-                          className={`w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0 focus:bg-white focus:ring-1 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:ml-0.5 ${
+                          type="text"
+                          defaultValue={displayValue}
+                          title={displayValue}
+                          placeholder="dd/mm/aa"
+                          onBlur={(e) => {
+                            const val = e.target.value.trim()
+                            if (!val) {
+                              if (dbDate !== "") {
+                                updateCell(row.id, col.key as keyof SeguimientoRow, null)
+                              }
+                              return
+                            }
+                            const parsed = parseDDMMYYToDate(val)
+                            if (parsed && parsed !== dbDate) {
+                              updateCell(row.id, col.key as keyof SeguimientoRow, parsed)
+                            } else if (!parsed) {
+                              toast.error("Formato de fecha inválido. Use dd/mm/aa.")
+                              e.target.value = displayValue
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur()
+                            }
+                          }}
+                          className={`w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0.5 focus:bg-white focus:ring-1 focus:ring-blue-500 ${
                             isPinned ? "font-bold text-zinc-900" : "font-semibold text-zinc-700"
                           }`}
                         />
@@ -1042,6 +1086,7 @@ export default function SeguimientoClienteGrid({
               }
                 
               if (col.type === "date") {
+                const rawVal = (ghostRow[col.key as keyof SeguimientoRow] as string) || ""
                 return (
                   <td
                     key={`ghost-${col.key}`}
@@ -1049,11 +1094,26 @@ export default function SeguimientoClienteGrid({
                     className={`px-2 ${baseGhostClass}`}
                   >
                     <input
-                      type="date"
-                      value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
-                      onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                      type="text"
+                      placeholder="dd/mm/aa"
+                      defaultValue={formatDateToDDMMYY(rawVal)}
+                      key={`ghost-${col.key}-${rawVal}`}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim()
+                        if (!val) {
+                          handleGhostChange(col.key as keyof SeguimientoRow, "")
+                          return
+                        }
+                        const parsed = parseDDMMYYToDate(val)
+                        if (parsed) {
+                          handleGhostChange(col.key as keyof SeguimientoRow, parsed)
+                        } else {
+                          toast.error("Formato de fecha inválido. Use dd/mm/aa.")
+                          e.target.value = formatDateToDDMMYY(rawVal)
+                        }
+                      }}
                       onKeyDown={handleGhostKeyDown}
-                      className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-0.5 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3 [&::-webkit-calendar-picker-indicator]:opacity-60 ${
+                      className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
                         isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
                       }`}
                     />
@@ -1156,6 +1216,7 @@ export default function SeguimientoClienteGrid({
       {/* Comments Modal */}
       {commentModalRow && activeCommentField && (
         <div
+          key={commentModalRow.id}
           onClick={closeCommentsModal}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
         >
