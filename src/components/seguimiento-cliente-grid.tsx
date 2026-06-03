@@ -528,12 +528,12 @@ export default function SeguimientoClienteGrid({
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
-    { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "date", stickyLeft: "48px" },
-    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "148px" },
-    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "248px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "date", stickyLeft: "348px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "458px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "588px", isLastPinned: true },
+    { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
+    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
+    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "323px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "398px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "528px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
@@ -894,7 +894,7 @@ export default function SeguimientoClienteGrid({
                               e.currentTarget.blur()
                             }
                           }}
-                          className={`w-[96px] bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0.5 focus:bg-white focus:ring-1 focus:ring-blue-500 ${
+                          className={`w-full text-center bg-transparent border-0 border-none outline-none shadow-none text-[11px] p-0.5 focus:bg-white focus:ring-1 focus:ring-blue-500 ${
                             isPinned ? "font-bold text-zinc-900" : "font-semibold text-zinc-700"
                           }`}
                         />
@@ -1113,7 +1113,7 @@ export default function SeguimientoClienteGrid({
                         }
                       }}
                       onKeyDown={handleGhostKeyDown}
-                      className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
+                      className={`ghost-input w-full text-center bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
                         isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
                       }`}
                     />
