@@ -588,13 +588,14 @@ export default function SeguimientoClienteGrid({
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
-    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "48px" },
-    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores", stickyLeft: "148px" },
-    { key: "contacto", label: "Medio de Contacto", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "contactos", stickyLeft: "266px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "384px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "514px", isLastPinned: true },
-    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
-    { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
+    { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
+    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
+    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "323px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "398px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "528px", isLastPinned: true },
+    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
+    { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px] max-w-[192px]", type: "text" },
@@ -1299,7 +1300,7 @@ export default function SeguimientoClienteGrid({
               </div>
 
               {/* Información detallada para copiar/editar */}
-              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs shrink-0">
+              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs shrink-0">
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Razón Social</span>
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -1371,32 +1372,6 @@ export default function SeguimientoClienteGrid({
                         onClick={() => copyToClipboard(commentModalRow.email, "Email")}
                         className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
                         title="Copiar Email"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Contacto</span>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <input
-                      type="text"
-                      defaultValue={commentModalRow.persona_contacto || ""}
-                      onBlur={(e) => {
-                        if ((commentModalRow.persona_contacto || "") !== e.target.value) {
-                          updateCell(commentModalRow.id, "persona_contacto", e.target.value)
-                          setCommentModalRow(prev => prev ? { ...prev, persona_contacto: e.target.value } : null)
-                        }
-                      }}
-                      className="font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none"
-                    />
-                    {commentModalRow.persona_contacto && (
-                      <button
-                        onClick={() => copyToClipboard(commentModalRow.persona_contacto, "Contacto")}
-                        className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
-                        title="Copiar Contacto"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
