@@ -191,6 +191,13 @@ export default function SeguimientoClienteGrid({
     setHasStoredCommentDraft(true)
   }
 
+  const copyToClipboard = (text: string, label: string) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success(`${label} copiado al portapapeles.`))
+      .catch(() => toast.error(`Error al copiar ${label.toLowerCase()}.`))
+  }
+
   const activeCommentTitle = activeCommentField === "comentarios_asistente" ? "Asistente" : "Asesor"
   const commentSyncState = hasStoredCommentDraft
     ? {
@@ -502,12 +509,9 @@ export default function SeguimientoClienteGrid({
     { key: "fecha_contacto", label: "Fecha Contacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "date", stickyLeft: "48px" },
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "148px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "248px" },
-    { key: "email", label: "Email", width: "w-[120px] min-w-[120px] max-w-[120px]", type: "text", stickyLeft: "348px" },
-    { key: "razon_social", label: "Razón\nSocial", width: "w-[150px] min-w-[150px] max-w-[150px]", type: "text", stickyLeft: "468px" },
-    { key: "ruc", label: "RUC", width: "w-[75px] min-w-[75px] max-w-[75px]", type: "text", stickyLeft: "618px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "date", stickyLeft: "693px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "803px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "933px", isLastPinned: true },
+    { key: "fecha_ultimo_contacto", label: "F. Último Contacto", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "date", stickyLeft: "348px" },
+    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "458px" },
+    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "588px", isLastPinned: true },
     { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores" },
     { key: "contacto", label: "Contacto", width: "w-[98px] min-w-[98px] max-w-[98px]", type: "catalog", catalogKey: "contactos" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
@@ -1155,32 +1159,89 @@ export default function SeguimientoClienteGrid({
           onClick={closeCommentsModal}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[90vh]"
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
-                  Geofal CRM · Seguimiento Clientes
-                </p>
-                <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
-                  Comentario {activeCommentTitle}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  {commentModalRow.razon_social || "Sin razón social"} · RUC: {commentModalRow.ruc || "-"}
-                </p>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[90vh]"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
+                    Geofal CRM · Seguimiento Clientes
+                  </p>
+                  <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
+                    Comentario {activeCommentTitle}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {commentModalRow.razon_social || "Sin razón social"} · RUC: {commentModalRow.ruc || "-"}
+                  </p>
+                </div>
+                <button
+                  onClick={closeCommentsModal}
+                  className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Cerrar comentario"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                onClick={closeCommentsModal}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="Cerrar comentario"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            <div className="space-y-4 px-6 py-5">
+              {/* Información detallada para copiar */}
+              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs shrink-0 select-text">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Razón Social</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-semibold text-zinc-800 truncate" title={commentModalRow.razon_social || "-"}>
+                      {commentModalRow.razon_social || "-"}
+                    </span>
+                    {commentModalRow.razon_social && (
+                      <button
+                        onClick={() => copyToClipboard(commentModalRow.razon_social, "Razón Social")}
+                        className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
+                        title="Copiar Razón Social"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">RUC</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono font-semibold text-zinc-800 truncate" title={commentModalRow.ruc || "-"}>
+                      {commentModalRow.ruc || "-"}
+                    </span>
+                    {commentModalRow.ruc && (
+                      <button
+                        onClick={() => copyToClipboard(commentModalRow.ruc, "RUC")}
+                        className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
+                        title="Copiar RUC"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Email</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-semibold text-blue-600 truncate hover:underline" title={commentModalRow.email || "-"}>
+                      {commentModalRow.email || "-"}
+                    </span>
+                    {commentModalRow.email && (
+                      <button
+                        onClick={() => copyToClipboard(commentModalRow.email, "Email")}
+                        className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
+                        title="Copiar Email"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 px-6 py-5">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
                   Comentario
