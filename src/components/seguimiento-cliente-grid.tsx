@@ -1165,15 +1165,9 @@ export default function SeguimientoClienteGrid({
             >
               <div className="flex items-start justify-between gap-4 border-b border-blue-100 border-t-4 border-t-primary bg-[#eef5ff] px-6 py-4">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/90">
-                    Geofal CRM · Seguimiento Clientes
-                  </p>
-                  <h2 className="mt-1 truncate text-lg font-semibold text-foreground">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Comentario {activeCommentTitle}
                   </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {commentModalRow.razon_social || "Sin razón social"} · RUC: {commentModalRow.ruc || "-"}
-                  </p>
                 </div>
                 <button
                   onClick={closeCommentsModal}
