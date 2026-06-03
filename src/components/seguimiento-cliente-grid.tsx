@@ -1184,14 +1184,22 @@ export default function SeguimientoClienteGrid({
                 </button>
               </div>
 
-              {/* Información detallada para copiar */}
-              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs shrink-0 select-text">
+              {/* Información detallada para copiar/editar */}
+              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs shrink-0">
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Razón Social</span>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-semibold text-zinc-800 truncate" title={commentModalRow.razon_social || "-"}>
-                      {commentModalRow.razon_social || "-"}
-                    </span>
+                    <input
+                      type="text"
+                      defaultValue={commentModalRow.razon_social || ""}
+                      onBlur={(e) => {
+                        if ((commentModalRow.razon_social || "") !== e.target.value) {
+                          updateCell(commentModalRow.id, "razon_social", e.target.value)
+                          setCommentModalRow(prev => prev ? { ...prev, razon_social: e.target.value } : null)
+                        }
+                      }}
+                      className="font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none"
+                    />
                     {commentModalRow.razon_social && (
                       <button
                         onClick={() => copyToClipboard(commentModalRow.razon_social, "Razón Social")}
@@ -1207,9 +1215,17 @@ export default function SeguimientoClienteGrid({
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">RUC</span>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-mono font-semibold text-zinc-800 truncate" title={commentModalRow.ruc || "-"}>
-                      {commentModalRow.ruc || "-"}
-                    </span>
+                    <input
+                      type="text"
+                      defaultValue={commentModalRow.ruc || ""}
+                      onBlur={(e) => {
+                        if ((commentModalRow.ruc || "") !== e.target.value) {
+                          updateCell(commentModalRow.id, "ruc", e.target.value)
+                          setCommentModalRow(prev => prev ? { ...prev, ruc: e.target.value } : null)
+                        }
+                      }}
+                      className="font-mono font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none"
+                    />
                     {commentModalRow.ruc && (
                       <button
                         onClick={() => copyToClipboard(commentModalRow.ruc, "RUC")}
@@ -1225,9 +1241,17 @@ export default function SeguimientoClienteGrid({
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Email</span>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-semibold text-blue-600 truncate hover:underline" title={commentModalRow.email || "-"}>
-                      {commentModalRow.email || "-"}
-                    </span>
+                    <input
+                      type="email"
+                      defaultValue={commentModalRow.email || ""}
+                      onBlur={(e) => {
+                        if ((commentModalRow.email || "") !== e.target.value) {
+                          updateCell(commentModalRow.id, "email", e.target.value)
+                          setCommentModalRow(prev => prev ? { ...prev, email: e.target.value } : null)
+                        }
+                      }}
+                      className="font-semibold text-blue-600 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none"
+                    />
                     {commentModalRow.email && (
                       <button
                         onClick={() => copyToClipboard(commentModalRow.email, "Email")}
