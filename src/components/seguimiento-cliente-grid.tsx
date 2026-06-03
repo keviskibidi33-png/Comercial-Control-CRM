@@ -88,16 +88,76 @@ const formatDateToDDMMYY = (dateStr: string | undefined | null): string => {
 }
 
 const parseDDMMYYToDate = (displayStr: string): string | null => {
-  const clean = displayStr.trim()
-  if (!clean) return null
-  const parts = clean.split("/")
-  if (parts.length !== 3) return null
-  const [day, month, year] = parts
-  if (!day || !month || !year) return null
-  const fullYear = year.length === 2 ? `20${year}` : year
-  const formattedDay = day.padStart(2, "0")
-  const formattedMonth = month.padStart(2, "0")
-  return `${fullYear}-${formattedMonth}-${formattedDay}`
+  const clean = displayStr.trim().replace(/[-\s.]/g, "/");
+  if (!clean) return null;
+
+  let day = "";
+  let month = "";
+  let year = "";
+
+  if (clean.includes("/")) {
+    const parts = clean.split("/").filter(Boolean);
+    if (parts.length === 2) {
+      day = parts[0];
+      month = parts[1];
+      year = String(new Date().getFullYear());
+    } else if (parts.length === 3) {
+      day = parts[0];
+      month = parts[1];
+      year = parts[2];
+    } else {
+      return null;
+    }
+  } else {
+    if (!/^\d+$/.test(clean)) return null;
+
+    if (clean.length === 2) {
+      day = clean[0];
+      month = clean[1];
+      year = String(new Date().getFullYear());
+    } else if (clean.length === 3) {
+      const d12 = parseInt(clean.slice(0, 2), 10);
+      const m12 = parseInt(clean.slice(2), 10);
+      const d1 = parseInt(clean.slice(0, 1), 10);
+      const m23 = parseInt(clean.slice(1), 10);
+
+      if (d12 <= 31 && m12 >= 1 && m12 <= 12) {
+        day = clean.slice(0, 2);
+        month = clean.slice(2);
+      } else if (d1 <= 31 && m23 >= 1 && m23 <= 12) {
+        day = clean.slice(0, 1);
+        month = clean.slice(1);
+      } else {
+        return null;
+      }
+      year = String(new Date().getFullYear());
+    } else if (clean.length === 4) {
+      day = clean.slice(0, 2);
+      month = clean.slice(2, 4);
+      year = String(new Date().getFullYear());
+    } else if (clean.length === 6) {
+      day = clean.slice(0, 2);
+      month = clean.slice(2, 4);
+      year = clean.slice(4, 6);
+    } else if (clean.length === 8) {
+      day = clean.slice(0, 2);
+      month = clean.slice(2, 4);
+      year = clean.slice(4, 8);
+    } else {
+      return null;
+    }
+  }
+
+  const dNum = parseInt(day, 10);
+  const mNum = parseInt(month, 10);
+  if (isNaN(dNum) || isNaN(mNum) || dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) {
+    return null;
+  }
+
+  const fullYear = year.length === 2 ? `20${year}` : year;
+  const formattedDay = String(dNum).padStart(2, "0");
+  const formattedMonth = String(mNum).padStart(2, "0");
+  return `${fullYear}-${formattedMonth}-${formattedDay}`;
 }
 
 const WhatsAppIcon = () => (
