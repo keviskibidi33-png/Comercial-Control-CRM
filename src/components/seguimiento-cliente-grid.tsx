@@ -191,7 +191,7 @@ export default function SeguimientoClienteGrid({
     setHasStoredCommentDraft(true)
   }
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string | undefined | null, label: string) => {
     if (!text) return
     navigator.clipboard.writeText(text)
       .then(() => toast.success(`${label} copiado al portapapeles.`))
