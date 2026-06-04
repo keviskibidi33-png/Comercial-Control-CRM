@@ -542,8 +542,15 @@ export default function SeguimientoClienteGrid({
 
   // Handle cell edit save
   const handleCellBlur = (id: number, field: keyof SeguimientoRow, currentValue: unknown, newValue: unknown) => {
-    if (currentValue !== newValue) {
-      updateCell(id, field, newValue)
+    let finalValue = newValue;
+    if (field === "numero_cotizacion" && typeof newValue === "string") {
+      const trimmed = newValue.trim();
+      if (/^\d+$/.test(trimmed)) {
+        finalValue = `${trimmed}-26`;
+      }
+    }
+    if (currentValue !== finalValue) {
+      updateCell(id, field, finalValue)
     }
   }
 
@@ -1180,7 +1187,6 @@ export default function SeguimientoClienteGrid({
                 )
               }
                 
-              // Standard text inputs
               return (
                 <td
                   key={`ghost-${col.key}`}
@@ -1192,6 +1198,13 @@ export default function SeguimientoClienteGrid({
                     placeholder={`${col.label}...`}
                     value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                     onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
+                    onBlur={(e) => {
+                      let val = e.target.value.trim();
+                      if (col.key === "numero_cotizacion" && /^\d+$/.test(val)) {
+                        val = `${val}-26`;
+                        handleGhostChange(col.key as keyof SeguimientoRow, val);
+                      }
+                    }}
                     onKeyDown={handleGhostKeyDown}
                     className={`ghost-input w-full bg-transparent border border-zinc-200 rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
                       isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
