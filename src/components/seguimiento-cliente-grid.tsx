@@ -857,7 +857,11 @@ export default function SeguimientoClienteGrid({
                     return (
                       <td
                         key={col.key}
-                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        style={
+                          col.stickyLeft
+                            ? { position: "sticky", left: col.stickyLeft, zIndex: isActive ? 40 : 10 }
+                            : (isActive ? { position: "relative", zIndex: 40 } : undefined)
+                        }
                         className={`px-1.5 ${baseCellClass} group/cell`}
                       >
                         {isActive ? (
