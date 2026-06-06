@@ -201,18 +201,38 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         queryFn: async () => {
-            const { data, error } = await (supabase
-                .from("cuadro_control") as any)
-                .select("*")
-                .order("item_numero", { ascending: true })
+            let allData: ProgramacionServicio[] = []
+            let from = 0
+            let to = 999
+            let hasMore = true
 
-            if (error) {
-                const message = error?.message || "No se pudo cargar la programación"
-                console.error("[Programacion] No se pudieron cargar los datos de cuadro_control:", message)
-                toast.error("No se pudo cargar la programación")
-                throw new Error(message)
+            while (hasMore) {
+                const { data, error } = await (supabase
+                    .from("cuadro_control") as any)
+                    .select("*")
+                    .order("item_numero", { ascending: true })
+                    .range(from, to)
+
+                if (error) {
+                    const message = error?.message || "No se pudo cargar la programación"
+                    console.error("[Programacion] No se pudieron cargar los datos de cuadro_control:", message)
+                    toast.error("No se pudo cargar la programación")
+                    throw new Error(message)
+                }
+
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data]
+                    if (data.length < 1000) {
+                        hasMore = false
+                    } else {
+                        from += 1000
+                        to += 1000
+                    }
+                } else {
+                    hasMore = false
+                }
             }
-            return data as ProgramacionServicio[]
+            return allData
         },
     })
 
