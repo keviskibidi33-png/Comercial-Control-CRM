@@ -612,7 +612,7 @@ export default function SeguimientoClienteGrid({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       {/* Module Header */}
-      <div className="z-10 flex min-h-[3.5rem] h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
+      <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
@@ -1020,14 +1020,14 @@ export default function SeguimientoClienteGrid({
                                 e.currentTarget.blur()
                               }
                             }}
-                            className="w-full min-h-[52px] bg-white border border-blue-500 rounded px-1.5 py-1 text-[11px] text-zinc-900 font-bold focus:outline-none resize-none leading-tight whitespace-pre-wrap break-words"
+                            className="w-full min-h-[52px] bg-white border border-blue-500 rounded px-1.5 py-1 text-[11px] text-zinc-900 font-bold focus:outline-none resize-none leading-tight whitespace-pre-wrap wrap-break-word"
                           />
                         ) : (
                           <div
                             onClick={() => {
                               setActiveTextEdit({ id: row.id, field: col.key })
                             }}
-                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal break-words leading-tight cursor-pointer hover:bg-zinc-100/50"
+                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal wrap-break-word leading-tight cursor-pointer hover:bg-zinc-100/50"
                             title={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
                           >
                             {cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== "" ? String(cellValue) : <span className="text-zinc-300">-</span>}
