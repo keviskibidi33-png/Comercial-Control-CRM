@@ -148,4 +148,17 @@ export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         cell: (props: any) => <EditableCell {...props} className="text-zinc-800 text-[12px] whitespace-normal break-words" />,
     },
+    {
+        accessorKey: "nota_lab",
+        header: ({ column }) => <SortableHeader column={column} title={`MOTIVO ATRASO /\nNOTAS LAB`} />,
+        size: 350, minSize: 200, maxSize: 700, enableResizing: true,
+        cell: ({ getValue }) => {
+            const val = getValue() as string | null
+            return (
+                <div className="text-zinc-800 text-[12px] whitespace-normal break-words leading-tight px-1.5 py-1">
+                    {val || <span className="text-zinc-300 italic">-</span>}
+                </div>
+            )
+        },
+    },
 ]
