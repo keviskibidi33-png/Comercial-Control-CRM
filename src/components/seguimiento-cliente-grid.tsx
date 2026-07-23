@@ -36,6 +36,7 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   servicio_solicitado: "",
   fecha_ultimo_contacto: "",
   numero_cotizacion: "",
+  costo_cotiz_sin_igv: "",
   estado_seguimiento: "Pendiente"
 }
 
@@ -606,6 +607,7 @@ export default function SeguimientoClienteGrid({
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px] max-w-[192px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
+    { key: "costo_cotiz_sin_igv", label: "Costo Cotiz\nSin IGV", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
 

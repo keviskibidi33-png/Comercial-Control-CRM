@@ -144,6 +144,7 @@ export type SeguimientoRow = {
   comentarios_asistente?: string
   comentarios_asesor?: string
   numero_cotizacion?: string
+  costo_cotiz_sin_igv?: string
   estado_seguimiento?: string
   creado_por?: string
   fecha_creacion?: string
