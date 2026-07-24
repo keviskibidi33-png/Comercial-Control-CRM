@@ -550,6 +550,16 @@ export default function SeguimientoClienteGrid({
         finalValue = `${trimmed}-26`;
       }
     }
+    if (field === "costo_cotiz_sin_igv" && typeof newValue === "string") {
+      const cleaned = newValue.replace(/^S\/\s*/i, "").trim();
+      if (cleaned && /^[\d,.]+$/.test(cleaned)) {
+        finalValue = "S/ " + cleaned;
+      } else if (cleaned) {
+        finalValue = cleaned;
+      } else {
+        finalValue = "";
+      }
+    }
     if (currentValue !== finalValue) {
       updateCell(id, field, finalValue)
     }
@@ -1037,6 +1047,53 @@ export default function SeguimientoClienteGrid({
                         )}
                       </td>
                     )
+                  }
+
+                  // Costo Cotiz Sin IGV with S/ prefix
+                  if (col.key === "costo_cotiz_sin_igv") {
+                    const rawVal = (cellValue as string) ?? "";
+                    const displayVal = rawVal.startsWith("S/") ? rawVal : (rawVal ? "S/ " + rawVal : "");
+                    const isEditing = activeTextEdit?.id === row.id && activeTextEdit?.field === col.key;
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: isEditing ? 40 : 10 } : undefined}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            defaultValue={rawVal.replace(/^S\/\s*/i, "")}
+                            onBlur={(e) => {
+                              handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value);
+                              setActiveTextEdit(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 focus:outline-none"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => setActiveTextEdit({ id: row.id, field: col.key })}
+                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold cursor-pointer hover:bg-zinc-100/50 flex items-center gap-0.5"
+                            title={displayVal || ""}
+                          >
+                            {displayVal ? (
+                              <>
+                                <span className="text-[10px] text-emerald-600 font-bold shrink-0">S/</span>
+                                <span>{rawVal.replace(/^S\/\s*/i, "")}</span>
+                              </>
+                            ) : (
+                              <span className="text-zinc-300">-</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    );
                   }
 
                   const isCelular = col.key === "numero_celular"
