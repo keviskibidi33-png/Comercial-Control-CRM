@@ -541,6 +541,33 @@ export default function SeguimientoClienteGrid({
     })
   }
 
+  const formatSinIgvDisplay = (value: unknown): string => {
+    if (value === null || value === undefined || value === "") return ""
+    const raw = String(value).trim()
+    if (!raw) return ""
+    const stripped = raw.replace(/s\/\.?/gi, "").replace(/\s+/g, "")
+    const decimalNormalized = stripped.includes(",") && stripped.includes(".")
+      ? stripped.replace(/\./g, "").replace(/,/g, ".")
+      : stripped.replace(/,/g, ".")
+    const cleaned = decimalNormalized.replace(/[^0-9.-]/g, "")
+    const parsed = Number(cleaned)
+    if (!Number.isFinite(parsed)) return raw
+    return `S/. ${parsed.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  const normalizeSinIgvInput = (value: string): string => {
+    const raw = value.trim()
+    if (!raw) return ""
+    const stripped = raw.replace(/s\/\.?/gi, "").replace(/\s+/g, "")
+    const decimalNormalized = stripped.includes(",") && stripped.includes(".")
+      ? stripped.replace(/\./g, "").replace(/,/g, ".")
+      : stripped.replace(/,/g, ".")
+    const cleaned = decimalNormalized.replace(/[^0-9.-]/g, "")
+    if (!cleaned) return ""
+    const parsed = Number(cleaned)
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : raw
+  }
+
   // Handle cell edit save
   const handleCellBlur = (id: number, field: keyof SeguimientoRow, currentValue: unknown, newValue: unknown) => {
     let finalValue = newValue;
@@ -551,9 +578,9 @@ export default function SeguimientoClienteGrid({
       }
     }
     if (field === "costo_cotiz_sin_igv" && typeof newValue === "string") {
-      const cleaned = newValue.replace(/^S\/\s*/i, "").trim();
+      const cleaned = newValue.replace(/s\/\.?/gi, "").trim();
       if (cleaned && /^[\d,.]+$/.test(cleaned)) {
-        finalValue = "S/ " + cleaned;
+        finalValue = normalizeSinIgvInput(newValue);
       } else if (cleaned) {
         finalValue = cleaned;
       } else {
@@ -1049,10 +1076,10 @@ export default function SeguimientoClienteGrid({
                     )
                   }
 
-                  // Costo Cotiz Sin IGV with S/ prefix
+                  // Costo Cotiz Sin IGV with S/. prefix (bold black, formatted)
                   if (col.key === "costo_cotiz_sin_igv") {
                     const rawVal = (cellValue as string) ?? "";
-                    const displayVal = rawVal.startsWith("S/") ? rawVal : (rawVal ? "S/ " + rawVal : "");
+                    const displayVal = formatSinIgvDisplay(rawVal);
                     const isEditing = activeTextEdit?.id === row.id && activeTextEdit?.field === col.key;
                     return (
                       <td
@@ -1064,7 +1091,7 @@ export default function SeguimientoClienteGrid({
                           <input
                             type="text"
                             autoFocus
-                            defaultValue={rawVal.replace(/^S\/\s*/i, "")}
+                            defaultValue={rawVal.replace(/s\/\.?/gi, "").trim()}
                             onBlur={(e) => {
                               handleCellBlur(row.id, col.key as keyof SeguimientoRow, cellValue, e.target.value);
                               setActiveTextEdit(null);
@@ -1074,22 +1101,17 @@ export default function SeguimientoClienteGrid({
                                 e.currentTarget.blur();
                               }
                             }}
-                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 focus:outline-none"
+                            inputMode="decimal"
+                            className="w-full bg-white border border-blue-500 rounded px-1.5 py-0.5 text-[11px] text-zinc-900 font-medium focus:outline-none"
+                            placeholder="Ej: 1500.00"
                           />
                         ) : (
                           <div
                             onClick={() => setActiveTextEdit({ id: row.id, field: col.key })}
-                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold cursor-pointer hover:bg-zinc-100/50 flex items-center gap-0.5"
+                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold cursor-pointer hover:bg-zinc-100/50 flex items-center truncate"
                             title={displayVal || ""}
                           >
-                            {displayVal ? (
-                              <>
-                                <span className="text-[10px] text-emerald-600 font-bold shrink-0">S/</span>
-                                <span>{rawVal.replace(/^S\/\s*/i, "")}</span>
-                              </>
-                            ) : (
-                              <span className="text-zinc-300">-</span>
-                            )}
+                            {displayVal || <span className="text-zinc-300">-</span>}
                           </div>
                         )}
                       </td>
