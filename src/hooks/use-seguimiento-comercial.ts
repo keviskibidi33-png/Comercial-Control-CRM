@@ -92,7 +92,8 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
             contacto: "Contacto",
             rubro: "Rubro",
             estado_cliente: "Estado Cliente",
-            servicio_solicitado: "Tipo Servicio",
+            servicio_solicitado: "Servicio Solicitado",
+            categoria_servicio: "Tipo Servicio",
             fecha_ultimo_contacto: "Fecha Último Contacto",
             numero_cotizacion: "N° Cotización",
             estado_seguimiento: "Estado Seguimiento"
@@ -140,6 +141,7 @@ export type SeguimientoRow = {
   rubro?: string
   estado_cliente?: string
   servicio_solicitado?: string
+  categoria_servicio?: string
   fecha_ultimo_contacto?: string
   comentarios_asistente?: string
   comentarios_asesor?: string
@@ -157,6 +159,7 @@ export type Catalogs = {
   rubros: string[]
   estados: string[]
   servicios: string[]
+  categorias_servicio: string[]
   estados_seguimiento: string[]
 }
 
@@ -176,6 +179,13 @@ const DEFAULT_CATALOGS: Catalogs = {
     "DESCARTO EL SERVICIO",
   ],
   servicios: [
+    "Ensayos de Laboratorio",
+    "Densidades",
+    "Probetas",
+    "Laboratorio en Obra",
+    "Estudios de Suelos",
+  ],
+  categorias_servicio: [
     "DEN",
     "PROB",
     "EMS",
