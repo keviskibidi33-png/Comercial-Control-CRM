@@ -92,7 +92,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
             contacto: "Contacto",
             rubro: "Rubro",
             estado_cliente: "Estado Cliente",
-            servicio_solicitado: "Servicio Solicitado",
+            servicio_solicitado: "Tipo Servicio",
             fecha_ultimo_contacto: "Fecha Último Contacto",
             numero_cotizacion: "N° Cotización",
             estado_seguimiento: "Estado Seguimiento"
@@ -176,18 +176,20 @@ const DEFAULT_CATALOGS: Catalogs = {
     "DESCARTO EL SERVICIO",
   ],
   servicios: [
-    "Ensayos de Laboratorio",
-    "Densidades",
-    "Probetas",
-    "Laboratorio en Obra",
-    "Estudios de Suelos",
+    "DEN",
+    "PROB",
+    "EMS",
+    "ALQ",
+    "ENS.V.",
   ],
   estados_seguimiento: [
-    "En Negociación",
-    "Se Genero una Versión",
-    "Cotización Rechazada",
-    "Se Genero Venta",
-    "Anulado",
+    "Leads",
+    "Contactado",
+    "Cotización enviada",
+    "Negociación",
+    "Venta",
+    "Perdido",
+    "Seguimiento futuro",
   ],
 }
 
@@ -196,7 +198,7 @@ type ErrorDetailItem = {
   msg: string
 }
 
-export function useSeguimientoComercial(filters: { search?: string; asesor?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
+export function useSeguimientoComercial(filters: { search?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
   const queryClient = useQueryClient()
   const queryKey = ["seguimiento-comercial", filters]
   const supabase = useMemo(() => createClient(), [])
@@ -213,7 +215,6 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.search) params.append("search", filters.search)
-      if (filters.asesor) params.append("asesor", filters.asesor)
       if (filters.estado_cliente) params.append("estado_cliente", filters.estado_cliente)
       if (filters.limit) params.append("limit", String(filters.limit))
       if (filters.offset) params.append("offset", String(filters.offset))

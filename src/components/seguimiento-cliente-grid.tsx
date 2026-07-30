@@ -29,7 +29,6 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   email: "",
   razon_social: "",
   ruc: "",
-  asesor: "",
   contacto: "WHATSAPP",
   rubro: "LABORATORIO",
   estado_cliente: "EN ESPERA DE ATENCIÓN",
@@ -37,7 +36,7 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   fecha_ultimo_contacto: "",
   numero_cotizacion: "",
   costo_cotiz_sin_igv: "",
-  estado_seguimiento: "Pendiente"
+  estado_seguimiento: "Leads"
 }
 
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
@@ -294,7 +293,6 @@ export default function SeguimientoClienteGrid({
 
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
-  const [selectedAsesor, setSelectedAsesor] = useState("")
   const [selectedEstado, setSelectedEstado] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
@@ -319,7 +317,6 @@ export default function SeguimientoClienteGrid({
 
       const parsed = JSON.parse(raw) as Partial<{
         search: string
-        selectedAsesor: string
         selectedEstado: string
         currentPage: number
         pageSize: number
@@ -328,7 +325,6 @@ export default function SeguimientoClienteGrid({
       }>
 
       if (typeof parsed.search === "string") setSearch(parsed.search)
-      if (typeof parsed.selectedAsesor === "string") setSelectedAsesor(parsed.selectedAsesor)
       if (typeof parsed.selectedEstado === "string") setSelectedEstado(parsed.selectedEstado)
       if (Number.isInteger(parsed.currentPage) && (parsed.currentPage as number) > 0) setCurrentPage(parsed.currentPage as number)
       if (Number.isInteger(parsed.pageSize) && (parsed.pageSize as number) > 0) setPageSize(parsed.pageSize as number)
@@ -351,7 +347,6 @@ export default function SeguimientoClienteGrid({
       STORAGE_KEY,
       JSON.stringify({
         search,
-        selectedAsesor,
         selectedEstado,
         currentPage,
         pageSize,
@@ -359,12 +354,7 @@ export default function SeguimientoClienteGrid({
         sortDirection: sortConfig?.direction ?? null,
       }),
     )
-  }, [search, selectedAsesor, selectedEstado, currentPage, pageSize, sortConfig, uiHydrated])
-
-  // Sync advisor filter with ghost row advisor if filter changes
-  useEffect(() => {
-    setGhostRow(prev => ({ ...prev, asesor: selectedAsesor || "" }))
-  }, [selectedAsesor])
+  }, [search, selectedEstado, currentPage, pageSize, sortConfig, uiHydrated])
 
   const handleGhostChange = (field: keyof SeguimientoRow, val: string | number | null) => {
     setGhostRow(prev => ({ ...prev, [field]: val }))
@@ -378,7 +368,6 @@ export default function SeguimientoClienteGrid({
       onSuccess: () => {
         setGhostRow({
           ...DEFAULT_GHOST_ROW,
-          asesor: selectedAsesor || ""
         })
         setIsGhostSubmitting(false)
         // Focus first input after query update
@@ -447,7 +436,6 @@ export default function SeguimientoClienteGrid({
     isMutating
   } = useSeguimientoComercial({
     search: debouncedSearch,
-    asesor: selectedAsesor,
     estado_cliente: selectedEstado,
     limit: 10000,
     offset: 0
@@ -636,13 +624,11 @@ export default function SeguimientoClienteGrid({
     { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
-    { key: "asesor", label: "Asesor", width: "w-[118px] min-w-[118px] max-w-[118px]", type: "catalog", catalogKey: "asesores", stickyLeft: "323px" },
-    { key: "comentarios_asistente", label: "Asistente Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "441px" },
-    { key: "comentarios_asesor", label: "Asesor Comentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "571px", isLastPinned: true },
+    { key: "servicio_solicitado", label: "Tipo\nServicio", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "catalog", catalogKey: "servicios", stickyLeft: "323px" },
+    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "433px", isLastPinned: true },
     { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
-    { key: "servicio_solicitado", label: "Servicio Solicitado", width: "w-48 min-w-[192px] max-w-[192px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "costo_cotiz_sin_igv", label: "Costo Cotiz\nSin IGV", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
@@ -738,25 +724,6 @@ export default function SeguimientoClienteGrid({
                 <X className="h-4 w-4" />
               </button>
             )}
-          </div>
-
-          {/* Asesor Filter */}
-          <div className="relative">
-            <select
-              value={selectedAsesor}
-              onChange={(e) => {
-                setSelectedAsesor(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
-            >
-              <option value="">Todos los Asesores</option>
-              {catalogs?.asesores?.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Estado Cliente Filter */}
