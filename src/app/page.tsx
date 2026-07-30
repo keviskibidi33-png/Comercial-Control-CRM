@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from "react"
 import { FixedProgramacionEditor } from "@/components/fixed-programacion-editor"
 import SeguimientoClienteGrid from "@/components/seguimiento-cliente-grid"
+import SeguimientoClienteGrid2 from "@/components/seguimiento-cliente-grid-2"
 import PublicidadGeofalGrid from "@/components/publicidad-geofal-grid"
 import type { CommercialModuleTab } from "@/components/commercial-module-tabs"
 
@@ -51,6 +52,11 @@ export default function Home() {
             />
           ) : activeTab === "seguimiento" ? (
             <SeguimientoClienteGrid
+              activeModuleTab={activeTab}
+              onModuleTabChange={setActiveTab}
+            />
+          ) : activeTab === "seguimiento2" ? (
+            <SeguimientoClienteGrid2
               activeModuleTab={activeTab}
               onModuleTabChange={setActiveTab}
             />

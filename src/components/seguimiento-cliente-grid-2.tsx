@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
-import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { useSeguimientoComercial2, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -40,8 +40,8 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   estado_seguimiento: "Leads"
 }
 
-const STORAGE_KEY = "seguimiento-comercial-ui:v1"
-const COMMENT_DRAFT_STORAGE_PREFIX = "seguimiento-comercial-comment-draft:v1"
+const STORAGE_KEY = "seguimiento-comercial-2-ui:v1"
+const COMMENT_DRAFT_STORAGE_PREFIX = "seguimiento-comercial-2-comment-draft:v1"
 
 type CommentFieldKey = "comentarios_asistente" | "comentarios_asesor"
 
@@ -184,7 +184,7 @@ type SortConfig = {
   direction: SortDirection
 } | null
 
-export default function SeguimientoClienteGrid({
+export default function SeguimientoClienteGrid2({
   activeModuleTab,
   onModuleTabChange,
 }: SeguimientoClienteGridProps) {
@@ -435,7 +435,7 @@ export default function SeguimientoClienteGrid({
     insertRow,
     exportToExcel,
     isMutating
-  } = useSeguimientoComercial({
+  } = useSeguimientoComercial2({
     search: debouncedSearch,
     estado_cliente: selectedEstado,
     limit: 10000,
@@ -647,7 +647,7 @@ export default function SeguimientoClienteGrid({
               <Users className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Resumen Segui.</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Resumen Segui.2</h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
               </p>
