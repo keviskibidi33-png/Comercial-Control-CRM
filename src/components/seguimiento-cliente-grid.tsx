@@ -625,10 +625,9 @@ export default function SeguimientoClienteGrid({
     { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
-    { key: "comentarios_asistente", label: "Asistente\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
-    { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "453px" },
-    { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "583px" },
-    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "713px", isLastPinned: true },
+    { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
+    { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "453px" },
+    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "583px", isLastPinned: true },
     { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
@@ -982,7 +981,7 @@ export default function SeguimientoClienteGrid({
                     )
                   }
 
-                  if (col.key === "comentarios_asistente" || col.key === "comentarios_asesor") {
+                  if (col.key === "comentarios_asesor") {
                     const displayVal = getCommentDisplayValue(cellValue as string)
                     const isEmpty = !cellValue || displayVal === "-"
                     const commentBoxClass = isEmpty
@@ -996,7 +995,7 @@ export default function SeguimientoClienteGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         <div
-                          onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
+                          onClick={() => openCommentsModal(row, col.key as "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
                           className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
