@@ -93,7 +93,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
             rubro: "Rubro",
             estado_cliente: "Estado Cliente",
             servicio_solicitado: "Servicio Solicitado",
-            categoria_servicio: "Tipo Servicio",
+            categoria_servicio: "Categoria Cliente",
             fecha_ultimo_contacto: "Fecha Último Contacto",
             numero_cotizacion: "N° Cotización",
             estado_seguimiento: "Estado Seguimiento"
@@ -186,11 +186,11 @@ const DEFAULT_CATALOGS: Catalogs = {
     "Estudios de Suelos",
   ],
   categorias_servicio: [
-    "DEN",
-    "PROB",
-    "EMS",
-    "ALQ",
-    "ENS.V.",
+    "CLIENTE 1 (DEN)",
+    "CLIENTE 2 (PROB)",
+    "CLIENTE 3 (EMS)",
+    "CLIENTE 4 (ALQ)",
+    "CLIENTE 5 (ENS.V.)",
   ],
   estados_seguimiento: [
     "Leads",
