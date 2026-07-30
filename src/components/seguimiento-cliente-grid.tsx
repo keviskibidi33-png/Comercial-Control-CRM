@@ -614,7 +614,7 @@ export default function SeguimientoClienteGrid({
     readonly label: string
     readonly width: string
     readonly type?: "text" | "date" | "catalog"
-    readonly catalogKey?: "asesores" | "contactos" | "rubros" | "estados" | "servicios" | "estados_seguimiento"
+    readonly catalogKey?: "asesores" | "contactos" | "rubros" | "estados" | "servicios" | "categorias_servicio" | "estados_seguimiento"
     readonly stickyLeft?: string
     readonly isLastPinned?: boolean
   }
