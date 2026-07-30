@@ -43,7 +43,7 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
 const COMMENT_DRAFT_STORAGE_PREFIX = "seguimiento-comercial-comment-draft:v1"
 
-type CommentFieldKey = "comentarios_asistente"
+type CommentFieldKey = "comentarios_asistente" | "comentarios_asesor"
 
 const getCommentDraftStorageKey = (rowId: number, field: CommentFieldKey) =>
   `${COMMENT_DRAFT_STORAGE_PREFIX}:${rowId}:${field}`
@@ -281,7 +281,7 @@ export default function SeguimientoClienteGrid({
       .catch(() => toast.error(`Error al copiar ${label.toLowerCase()}.`))
   }
 
-  const activeCommentTitle = "Asistente"
+  const activeCommentTitle = activeCommentField === "comentarios_asistente" ? "Asistente" : "Asesor"
   const commentSyncState = hasStoredCommentDraft
     ? {
         label: "Borrador local",
@@ -626,13 +626,13 @@ export default function SeguimientoClienteGrid({
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
     { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
-    { key: "categoria_servicio", label: "Tipo\nServicio", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "catalog", catalogKey: "categorias_servicio", stickyLeft: "453px" },
-    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "563px", isLastPinned: true },
+    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "453px", isLastPinned: true },
     { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "costo_cotiz_sin_igv", label: "Costo Cotiz\nSin IGV", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
+    { key: "categoria_servicio", label: "Tipo\nServicio", width: "w-[110px] min-w-[110px] max-w-[110px]", type: "catalog", catalogKey: "categorias_servicio" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
   ]
 
@@ -980,7 +980,7 @@ export default function SeguimientoClienteGrid({
                     )
                   }
 
-                  if (col.key === "comentarios_asistente") {
+                  if (col.key === "comentarios_asistente" || col.key === "comentarios_asesor") {
                     const displayVal = getCommentDisplayValue(cellValue as string)
                     const isEmpty = !cellValue || displayVal === "-"
                     const commentBoxClass = isEmpty
@@ -994,7 +994,7 @@ export default function SeguimientoClienteGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         <div
-                          onClick={() => openCommentsModal(row, col.key as "comentarios_asistente")}
+                          onClick={() => openCommentsModal(row, col.key as "comentarios_asistente" | "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
                           className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
