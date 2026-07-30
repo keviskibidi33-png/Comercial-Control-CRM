@@ -626,15 +626,15 @@ export default function SeguimientoClienteGrid({
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
     { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
-    { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "453px" },
-    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento", stickyLeft: "583px" },
-    { key: "categoria_servicio", label: "CATEGORIA\nCLIENTE", width: "w-[140px] min-w-[140px] max-w-[140px]", type: "catalog", catalogKey: "categorias_servicio", stickyLeft: "727px", isLastPinned: true },
-    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "867px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date" },
+    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "453px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "613px" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
+    { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text" },
     { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "costo_cotiz_sin_igv", label: "Costo Cotiz\nSin IGV", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
+    { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
+    { key: "categoria_servicio", label: "CATEGORIA\nCLIENTE", width: "w-[140px] min-w-[140px] max-w-[140px]", type: "catalog", catalogKey: "categorias_servicio" },
   ]
 
   return (
