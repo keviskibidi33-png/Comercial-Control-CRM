@@ -34,3 +34,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 0.8;
 }
+
+.commercial-tabs-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #b8b8b8 #f4f4f5;
+}
+
+.commercial-tabs-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.commercial-tabs-scroll::-webkit-scrollbar-track {
+  background: #f4f4f5;
+  border-radius: 9999px;
+}
+
+.commercial-tabs-scroll::-webkit-scrollbar-thumb {
+  background: #b8b8b8;
+  border-radius: 9999px;
+}
+
+.commercial-tabs-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}

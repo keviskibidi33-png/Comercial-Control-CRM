@@ -399,8 +399,8 @@ export default function ResumenComercial1Grid({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
-      <div className="z-10 flex min-h-14 h-auto shrink-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-2 shadow-sm xl:h-14 xl:flex-row xl:items-center xl:justify-between xl:gap-4 xl:py-0">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 md:gap-4">
+      <div className="z-10 flex min-h-14 h-auto shrink-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-2 shadow-sm xl:h-14 xl:flex-row xl:items-center xl:justify-between xl:gap-6 xl:py-0">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 md:gap-5">
           <div className="flex min-w-[260px] items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <BarChart3 className="h-4 w-4" />
@@ -411,13 +411,13 @@ export default function ResumenComercial1Grid({
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{total}</span>
           </div>
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1 xl:mx-2" />
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
           <select
             value={selectedMonth}
             onChange={(event) => setSelectedMonth(event.target.value)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-colors hover:bg-zinc-50 focus:border-blue-400"
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
           >
             {Array.from({ length: 12 }, (_, index) => {
               const monthValue = String(index + 1).padStart(2, "0")
@@ -427,14 +427,14 @@ export default function ResumenComercial1Grid({
           <select
             value={selectedYear}
             onChange={(event) => setSelectedYear(Number(event.target.value))}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-colors hover:bg-zinc-50 focus:border-blue-400"
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
           >
             {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
           </select>
           <button
             onClick={() => refetch()}
             disabled={isLoading}
-            className="flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
             <span>Recargar</span>
@@ -442,14 +442,14 @@ export default function ResumenComercial1Grid({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <div className="flex-1 min-h-0 overflow-auto p-5">
         {errorMessage ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
             {errorMessage}
           </div>
         ) : null}
 
-        <section className="space-y-6 rounded-xl border bg-white p-6 shadow-sm">
+        <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-bold text-slate-950">Resumen Comercial 1</h3>

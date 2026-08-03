@@ -41,8 +41,8 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
 
 export function CommercialModuleTabs({ activeTab, onTabChange, className = "" }: CommercialModuleTabsProps) {
   return (
-    <div className={`min-w-0 max-w-full overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-100 p-1 shadow-inner ${className}`}>
-      <div className="flex w-max min-w-full items-center gap-1">
+    <div className={`commercial-tabs-scroll min-w-0 max-w-full overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-100 p-1 shadow-inner ${className}`}>
+      <div className="flex w-max min-w-full items-center gap-2">
         {(Object.keys(TAB_LABELS) as CommercialModuleTab[]).map((tab) => {
           const tabMeta = TAB_LABELS[tab]
           const isActive = activeTab === tab
@@ -52,10 +52,10 @@ export function CommercialModuleTabs({ activeTab, onTabChange, className = "" }:
               key={tab}
               type="button"
               onClick={() => onTabChange(tab)}
-              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] ${
                 isActive
                   ? "bg-white text-blue-600 shadow-sm ring-1 ring-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-700"
+                  : "text-zinc-500 hover:bg-white/70 hover:text-zinc-700 hover:shadow-sm"
               }`}
             >
               {tabMeta.icon}
