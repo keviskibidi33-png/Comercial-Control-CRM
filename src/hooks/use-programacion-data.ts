@@ -5,6 +5,33 @@ import { useCurrentUser } from "./use-current-user"
 import { ProgramacionServicio } from "@/types/programacion"
 import { toast } from "sonner"
 
+interface DbError {
+    message?: string
+}
+
+interface DbQueryBuilder<T = unknown> extends PromiseLike<{ data: T | null; error: DbError | null }> {
+    select(columns?: string): DbQueryBuilder<T>
+    order(column: string, options?: { ascending?: boolean }): DbQueryBuilder<T>
+    range(from: number, to: number): DbQueryBuilder<T>
+    eq(column: string, value: unknown): DbQueryBuilder<T>
+    update(values: Record<string, unknown>): DbQueryBuilder<T>
+    insert(values: Record<string, unknown>): DbQueryBuilder<T>
+    maybeSingle(): PromiseLike<{ data: T extends Array<infer U> ? U | null : T | null; error: DbError | null }>
+    single(): PromiseLike<{ data: T extends Array<infer U> ? U | null : T | null; error: DbError | null }>
+}
+
+interface AuthTokenPayload {
+    access_token?: unknown
+    currentSession?: AuthTokenPayload
+    session?: AuthTokenPayload
+}
+
+interface RealtimePayload {
+    eventType: string
+    new: Record<string, unknown> | null
+    old: Record<string, unknown> | null
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -21,6 +48,33 @@ class ExpiringSet {
     has(id: string) { return this.map.has(id) }
     delete(id: string) { if (this.map.has(id)) { clearTimeout(this.map.get(id)!); this.map.delete(id) } }
     clear() { this.map.forEach(t => clearTimeout(t)); this.map.clear() }
+}
+
+
+const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30)
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
+function parseDateOnlyUtc(dateStr: string | null | undefined) {
+    if (!dateStr) return null
+    const cleaned = dateStr.trim().split("T")[0]
+    const match = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (!match) return null
+
+    const [, year, month, day] = match
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+    return Number.isNaN(date.getTime()) ? null : date
+}
+
+function computeDiasAtraso(estimatedStr: string | null | undefined, realStr: string | null | undefined): number {
+    const estimated = parseDateOnlyUtc(estimatedStr)
+    if (!estimated) return 0
+
+    const real = parseDateOnlyUtc(realStr)
+    if (!real) {
+        return -Math.round((estimated.getTime() - EXCEL_EPOCH_UTC) / MS_PER_DAY)
+    }
+
+    return Math.round((real.getTime() - estimated.getTime()) / MS_PER_DAY)
 }
 
 const EXPORT_AUTH_TRACE_PREFIX = "[ProgramacionExportAuth]"
@@ -89,6 +143,7 @@ function resolveParentOrigin(): string | null {
 type ProgramacionModuleKind = "laboratorio" | "oficina_tecnica" | "comercial" | "administracion"
 
 export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
+    void _moduleKind
     const supabase = useMemo(() => createClient(), [])
     const queryClient = useQueryClient()
     const { loading: authLoading } = useCurrentUser()
@@ -103,7 +158,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             || localStorage.getItem("token")
         if (direct) return direct
 
-        const extractToken = (parsed: any): string | null => {
+        const extractToken = (parsed: AuthTokenPayload | null): string | null => {
             if (!parsed) return null
             if (typeof parsed?.access_token === "string" && parsed.access_token) return parsed.access_token
             if (typeof parsed?.currentSession?.access_token === "string" && parsed.currentSession.access_token) return parsed.currentSession.access_token
@@ -208,7 +263,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
             while (hasMore) {
                 const { data, error } = await (supabase
-                    .from("cuadro_control") as any)
+                    .from("cuadro_control") as unknown as DbQueryBuilder<ProgramacionServicio[]>)
                     .select("*")
                     .order("item_numero", { ascending: true })
                     .range(from, to)
@@ -237,9 +292,9 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     })
 
     // 2. Realtime handler — NEVER calls invalidateQueries for UPDATEs
-    const handleRealtimePayload = useCallback((payload: any) => {
+    const handleRealtimePayload = useCallback((payload: RealtimePayload) => {
         const rec = payload.new || payload.old || {}
-        const viewId: string | undefined = rec.programacion_id || rec.id
+        const viewId = typeof rec.programacion_id === "string" ? rec.programacion_id : typeof rec.id === "string" ? rec.id : undefined
 
         // Skip ALL events caused by our own writes (kept 4 s in ExpiringSet)
         if (viewId && pendingLocalIds.current.has(viewId)) {
@@ -259,11 +314,11 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         // of just that one row, NOT a full refetch
         if (eventType === "INSERT" && viewId) {
             // Fetch only the new row from the view
-            ;(supabase.from("cuadro_control") as any)
+            ;(supabase.from("cuadro_control") as unknown as DbQueryBuilder<ProgramacionServicio>)
                 .select("*")
                 .eq("id", viewId)
                 .maybeSingle()
-                .then(({ data: newRow }: any) => {
+                .then(({ data: newRow }) => {
                     if (!newRow) return
                     queryClient.setQueryData(["programacion"], (old: ProgramacionServicio[] = []) => {
                         // Avoid duplicates
@@ -280,12 +335,12 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             queryClient.setQueryData(["programacion"], (old: ProgramacionServicio[] = []) => {
                 return old.map(row => {
                     if (row.id !== viewId) return row
-                    const merged = { ...row }
+                    const merged: Record<string, unknown> = { ...row }
                     for (const key of Object.keys(changed)) {
                         if (key === "id" || key === "programacion_id" || key === "created_at") continue
-                        ;(merged as any)[key] = changed[key]
+                        merged[key] = changed[key]
                     }
-                    return merged
+                    return merged as unknown as ProgramacionServicio
                 })
             })
         }
@@ -327,9 +382,21 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     const updateField = useCallback(async (rowId: string, field: string, value: unknown) => {
         const normalizedValue = field === "costo_servicio" ? normalizeServiceCostValue(value) : value
 
+        // Compute derived delay fields when date fields change.
+        // DIAS ATRASO LAB follows Excel K-G: blank ENTREGA REAL means 0 - serial(FECHA ENTREGA).
+        const derivedUpdates: Record<string, unknown> = {}
+        if (field === "entrega_real" || field === "fecha_entrega_estimada") {
+            const row = queryClient.getQueryData<ProgramacionServicio[]>(["programacion"])?.find(r => r.id === rowId)
+            if (row) {
+                const estimated = field === "fecha_entrega_estimada" ? (normalizedValue as string) : row.fecha_entrega_estimada
+                const real = field === "entrega_real" ? (normalizedValue as string) : row.entrega_real
+                derivedUpdates.dias_atraso_lab = computeDiasAtraso(estimated, real)
+            }
+        }
+
         // 1. Optimistic Update in Cache (instant UI)
         queryClient.setQueryData(["programacion"], (oldData: ProgramacionServicio[] = []) => {
-            return oldData.map(row => row.id === rowId ? { ...row, [field]: normalizedValue } : row)
+            return oldData.map(row => row.id === rowId ? { ...row, [field]: normalizedValue, ...derivedUpdates } : row)
         })
 
         // 2. Mark this ID so realtime skips the echo
@@ -351,8 +418,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             }
 
             const { error } = await (supabase
-                .from(targetTable) as any)
-                .update({ [field]: normalizedValue, updated_at: new Date().toISOString() })
+                .from(targetTable) as unknown as DbQueryBuilder)
+                .update({ [field]: normalizedValue, ...derivedUpdates, updated_at: new Date().toISOString() })
                 .eq(idField, rowId)
 
             if (error) throw error
@@ -368,10 +435,17 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
     const insertRow = useCallback(async (newRow: Partial<ProgramacionServicio>) => {
         const otNumero = extractLeadingNumber(newRow.ot)
-        const labData: any = {
+        const labData: Record<string, unknown> = {
             ...newRow,
             ...(otNumero ? { item_numero: otNumero } : {}),
             estado_trabajo: newRow.estado_trabajo || "PENDIENTE",
+        }
+
+        if (labData.fecha_entrega_estimada) {
+            labData.dias_atraso_lab = computeDiasAtraso(
+                String(labData.fecha_entrega_estimada),
+                labData.entrega_real ? String(labData.entrega_real) : null
+            )
         }
 
         if (!otNumero) delete labData.item_numero
@@ -395,7 +469,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         })
 
         const { data: insertedData, error: labError } = await (supabase
-            .from("programacion_lab") as any)
+            .from("programacion_lab") as unknown as DbQueryBuilder<ProgramacionServicio>)
             .insert(labData)
             .select()
             .single()
@@ -408,18 +482,18 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         }
 
         if (insertedData) {
-            const rowId = (insertedData as any).id
+            const rowId = insertedData.id
             // Mark so realtime skips our own insert echoes
             pendingLocalIds.current.add(rowId)
 
-            const commercialData: any = {}
+            const commercialData: Record<string, unknown> = {}
             if (newRow.fecha_solicitud_com) commercialData.fecha_solicitud_com = newRow.fecha_solicitud_com
             if (newRow.fecha_entrega_com) commercialData.fecha_entrega_com = newRow.fecha_entrega_com
             if (newRow.evidencia_solicitud_envio) commercialData.evidencia_solicitud_envio = newRow.evidencia_solicitud_envio
             if (newRow.motivo_dias_atraso_com) commercialData.motivo_dias_atraso_com = newRow.motivo_dias_atraso_com
             if (newRow.costo_servicio !== undefined && newRow.costo_servicio !== null && newRow.costo_servicio !== '') commercialData.costo_servicio = newRow.costo_servicio
 
-            const adminData: any = {}
+            const adminData: Record<string, unknown> = {}
             if (newRow.numero_factura) adminData.numero_factura = newRow.numero_factura
             if (newRow.estado_pago) adminData.estado_pago = newRow.estado_pago
             if (newRow.estado_autorizar) adminData.estado_autorizar = newRow.estado_autorizar
@@ -428,14 +502,14 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             if (newRow.numero_valorizacion) adminData.numero_valorizacion = newRow.numero_valorizacion
 
             if (Object.keys(commercialData).length > 0) {
-                await (supabase.from("programacion_comercial") as any).update(commercialData).eq("programacion_id", rowId)
+                await (supabase.from("programacion_comercial") as unknown as DbQueryBuilder).update(commercialData).eq("programacion_id", rowId)
             }
             if (Object.keys(adminData).length > 0) {
-                await (supabase.from("programacion_administracion") as any).update(adminData).eq("programacion_id", rowId)
+                await (supabase.from("programacion_administracion") as unknown as DbQueryBuilder).update(adminData).eq("programacion_id", rowId)
             }
 
             // Add to cache directly from view (single-row fetch, NOT full refetch)
-            const { data: viewRow } = await (supabase.from("cuadro_control") as any)
+            const { data: viewRow } = await (supabase.from("cuadro_control") as unknown as DbQueryBuilder<ProgramacionServicio>)
                 .select("*").eq("id", rowId).maybeSingle()
             if (viewRow) {
                 queryClient.setQueryData(["programacion"], (old: ProgramacionServicio[] = []) => {
