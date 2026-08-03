@@ -21,11 +21,11 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
     icon: <Briefcase className="h-3.5 w-3.5" />,
   },
   seguimiento: {
-    label: "Resumen Segui.",
+    label: "Seguimiento 1",
     icon: <Users className="h-3.5 w-3.5" />,
   },
   seguimiento2: {
-    label: "Resumen Segui.2",
+    label: "Seguimiento 2",
     icon: <Users className="h-3.5 w-3.5" />,
   },
   publicidad: {

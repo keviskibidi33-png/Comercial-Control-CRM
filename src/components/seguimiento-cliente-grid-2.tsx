@@ -647,7 +647,7 @@ export default function SeguimientoClienteGrid2({
               <Users className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Resumen Segui.2</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento 2</h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
               </p>
