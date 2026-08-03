@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { usePublicidadGeofal, type PublicidadRow } from "@/hooks/use-publicidad-geofal"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { Button } from "@/components/ui/button"
@@ -522,7 +522,7 @@ export default function PublicidadGeofalGrid({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="shrink-0" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
         </div>
 
         <div className="flex items-center gap-3">

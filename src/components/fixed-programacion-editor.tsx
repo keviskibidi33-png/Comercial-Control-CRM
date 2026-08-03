@@ -219,7 +219,7 @@ export function FixedProgramacionEditor({
             <CommercialModuleTabs
               activeTab={activeModuleTab}
               onTabChange={onModuleTabChange}
-              className="shrink-0"
+              className="min-w-0 flex-1"
             />
           ) : null}
 

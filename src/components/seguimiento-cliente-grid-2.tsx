@@ -657,7 +657,7 @@ export default function SeguimientoClienteGrid2({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="shrink-0" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
         </div>
 
         <div className="flex items-center gap-3">
