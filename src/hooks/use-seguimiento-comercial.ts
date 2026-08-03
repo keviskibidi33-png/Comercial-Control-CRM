@@ -186,11 +186,11 @@ const DEFAULT_CATALOGS: Catalogs = {
     "Estudios de Suelos",
   ],
   categorias_servicio: [
-    "Categoria 1 (DEN)",
-    "Categoria 2 (PROB)",
-    "Categoria 3 (EMS)",
-    "Categoria 4 (ALQ)",
-    "Categoria 5 (ENS.V.)",
+    "CLIENTE 1 (DEN)",
+    "CLIENTE 2 (PROB)",
+    "CLIENTE 3 (EMS)",
+    "CLIENTE 4 (ALQ)",
+    "CLIENTE 5 (ENS.V.)",
   ],
   estados_seguimiento: [
     "Leads",
