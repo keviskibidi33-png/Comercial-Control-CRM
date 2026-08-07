@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial2, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { 
@@ -449,7 +450,8 @@ export default function SeguimientoClienteGrid2({
     offset: 0
   })
 
-  // Local state for active autocomplete cell
+  const { isAdmin } = useCurrentUser()
+  const [selectedAsesor, setSelectedAsesor] = useState<string>("")
   const [activeCell, setActiveCell] = useState<{ id: number; field: keyof SeguimientoRow } | null>(null)
   const [suggestionQuery, setSuggestionQuery] = useState("")
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1)
@@ -504,8 +506,25 @@ export default function SeguimientoClienteGrid2({
     })
   }
 
+  const uniqueAdvisors = useMemo(() => {
+    const set = new Set<string>()
+    rows.forEach((r) => {
+      const a = (r.asesor || "").trim()
+      if (a) set.add(a)
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"))
+  }, [rows])
+
+  const filteredRows = useMemo(() => {
+    if (!selectedAsesor) return rows
+    return rows.filter((r) => {
+      const a = (r.asesor || "").trim()
+      return a.toLowerCase() === selectedAsesor.toLowerCase()
+    })
+  }, [rows, selectedAsesor])
+
   const sortedRows = useMemo(() => {
-    const baseRows = [...rows]
+    const baseRows = [...filteredRows]
     if (!sortConfig) return baseRows
 
     const { key, direction } = sortConfig
@@ -513,7 +532,7 @@ export default function SeguimientoClienteGrid2({
       const result = compareValues(leftRow[key], rightRow[key])
       return direction === "asc" ? result : -result
     })
-  }, [rows, sortConfig])
+  }, [filteredRows, sortConfig])
 
   const pagedRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -754,6 +773,27 @@ export default function SeguimientoClienteGrid2({
               ))}
             </select>
           </div>
+
+          {/* Asesor Filter (visible for Admins or when multiple advisors exist) */}
+          {(isAdmin || uniqueAdvisors.length > 1) && (
+            <div className="relative">
+              <select
+                value={selectedAsesor}
+                onChange={(e) => {
+                  setSelectedAsesor(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 border border-blue-200 rounded-md px-2 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/80 text-blue-900 cursor-pointer hover:bg-blue-100/80"
+              >
+                <option value="">👤 Todos los Asesores</option>
+                {uniqueAdvisors.map((adv) => (
+                  <option key={adv} value={adv}>
+                    👤 {adv}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 

@@ -396,6 +396,10 @@ export function useCurrentUser() {
             }
             return false
         },
+        isAdmin: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            return rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin
+        })(),
         // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins.
         canViewKpis: (() => {
             // Admin always sees KPI regardless of show_kpi
