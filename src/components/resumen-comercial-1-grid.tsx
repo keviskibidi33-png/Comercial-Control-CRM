@@ -157,19 +157,19 @@ function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
 
   if (!categoryText) return null
 
-  // Categoría 1 (DEN): DEN, DENSIDAD, DENSIDADES, CLIENTE 1, CATEGORIA 1, CAT 1
+  // Categoría 1 (DEN): DEN, DENSIDAD, DENSIDADES, DENSIMETRO, CLIENTE 1, CATEGORIA 1, CAT 1
   if (
     /\bDEN\b/.test(categoryText) ||
-    /DENSIDADES?/.test(categoryText) ||
+    /DENSIDA|DENSIME/.test(categoryText) ||
     /CLIENTE\s*1\b|CATEGORIA\s*1\b|CAT\s*1\b/.test(categoryText)
   ) {
     return "DEN"
   }
 
-  // Categoría 2 (PROB): PROB, PROBETA, PROBETAS, CLIENTE 2, CATEGORIA 2, CAT 2
+  // Categoría 2 (PROB): PROB, PROBETA, PROBETAS, COMPRESION, ROTURA, CLIENTE 2, CATEGORIA 2, CAT 2
   if (
     /\bPROB\b/.test(categoryText) ||
-    /PROBETAS?/.test(categoryText) ||
+    /PROBETA|ROTURA|COMPRESION/.test(categoryText) ||
     /CLIENTE\s*2\b|CATEGORIA\s*2\b|CAT\s*2\b/.test(categoryText)
   ) {
     return "PROB"
@@ -178,7 +178,7 @@ function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
   // Categoría 3 (EMS): EMS, ESTUDIOS DE SUELOS, ENSAYOS DE SUELOS, CLIENTE 3, CATEGORIA 3, CAT 3
   if (
     /\bEMS\b/.test(categoryText) ||
-    /ESTUDIOS DE SUELOS|ENSAYOS DE SUELOS/.test(categoryText) ||
+    /ESTUDIOS DE SUELOS|ENSAYOS DE SUELOS|SUELOS/.test(categoryText) ||
     /CLIENTE\s*3\b|CATEGORIA\s*3\b|CAT\s*3\b/.test(categoryText)
   ) {
     return "EMS"
@@ -193,10 +193,10 @@ function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
     return "ALQ"
   }
 
-  // Categoría 5 (ENS.V.): ENS.V., ENSAYOS DE LABORATORIO, CLIENTE 5, CATEGORIA 5, CAT 5
+  // Categoría 5 (ENS.V.): ENS.V., ENSAYOS DE LABORATORIO, MEZCLA, AGREGADO, LADRILLOS, CORTE DIRECTO, PROCTOR, BLOQUE, ROCA, CLIENTE 5, CATEGORIA 5, CAT 5
   if (
     /\bENS\s*\.?\s*V\.?\b/.test(categoryText) ||
-    /ENSAYOS DE LABORATORIO|ENSAYOS VARIOS/.test(categoryText) ||
+    /ENSAYO|MEZCLA|AGREGADO|LADRILLO|CORTE DIRECTO|PROCTOR|BLOQUE|ROCA|LABORATORIO/.test(categoryText) ||
     /CLIENTE\s*5\b|CATEGORIA\s*5\b|CAT\s*5\b/.test(categoryText)
   ) {
     return "ENS.V."
