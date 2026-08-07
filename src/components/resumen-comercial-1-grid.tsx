@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { BarChart3, FileCheck2, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { BarChart3, FileCheck2, Lock, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
 
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
@@ -527,7 +527,7 @@ export default function ResumenComercial1Grid({
   onModuleTabChange: (tab: CommercialModuleTab) => void
 }) {
   const current = getCurrentMonthYear()
-  const { role, email } = useCurrentUser()
+  const { role, email, canViewKpis } = useCurrentUser()
   const normalizedRole = (role || "").toLowerCase()
   const normalizedEmail = (email || "").toLowerCase()
 
@@ -568,6 +568,30 @@ export default function ResumenComercial1Grid({
   const activeValue = `${activePeriod.year}-${String(activePeriod.month).padStart(2, "0")}`
 
   const kpis = useMemo(() => buildKpis(rows, activePeriod.month, activePeriod.year), [rows, activePeriod.month, activePeriod.year])
+
+  if (!canViewKpis) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
+        <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-sm">
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
+        </div>
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-lg">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+              <Lock className="h-7 w-7" />
+            </div>
+            <h2 className="text-lg font-bold text-zinc-800">Acceso Privado y Restringido</h2>
+            <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
+              El módulo de Resumen Comercial y Métricas KPI está reservado exclusivamente para la Gerencia y usuarios autorizados (Irma Coaquira, Fabián, Labprueba).
+            </p>
+            <div className="mt-6 rounded-lg bg-zinc-50 px-4 py-2.5 text-[11px] font-medium text-zinc-600">
+              Si requiere acceso a este módulo, por favor solicítelo a la Dirección del CRM.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">

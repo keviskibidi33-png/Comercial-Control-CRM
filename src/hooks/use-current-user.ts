@@ -356,7 +356,23 @@ export function useCurrentUser() {
                 return permissions?.administracion?.write || false
             }
             return false
-        }
-
+        },
+        canViewKpis: isKpiAuthorizedUser(role || qRole, email, userId || qUserId),
     }
+}
+
+const KPI_AUTHORIZED_IDENTITIES = ["irma.coaquira", "irma", "fabian", "labprueba"]
+
+export function isKpiAuthorizedUser(role: string | null | undefined, email: string | null | undefined, userId?: string | null): boolean {
+    const normRole = String(role || "").toLowerCase().trim()
+    const normEmail = String(email || "").toLowerCase().trim()
+    const normId = String(userId || "").toLowerCase().trim()
+
+    if (normRole.includes("admin") || normRole.includes("gerencia") || normRole.includes("administrador") || normRole.includes("kpi")) {
+        return true
+    }
+
+    return KPI_AUTHORIZED_IDENTITIES.some(
+        (id) => normEmail.includes(id) || normId.includes(id)
+    )
 }
