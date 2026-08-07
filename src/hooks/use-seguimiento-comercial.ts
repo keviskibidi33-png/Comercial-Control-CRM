@@ -137,6 +137,7 @@ export type SeguimientoRow = {
   razon_social?: string
   ruc?: string
   asesor?: string
+  asesor_email?: string | null
   contacto?: string
   rubro?: string
   estado_cliente?: string
