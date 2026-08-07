@@ -264,7 +264,7 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
   const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
 
   const seguimientoRows = rows.filter((row) => {
-    const datePart = toIsoDatePart(row.fecha_contacto)
+    const datePart = getRowDate(row)
     return datePart !== null && datePart >= startDate && datePart < endDate
   })
 
