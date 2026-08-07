@@ -26,6 +26,7 @@ type RoleDefinitionRecord = {
 type ProfileRecord = {
     role: string | null
     email: string | null
+    full_name?: string | null
     role_definitions: RoleDefinitionRecord | RoleDefinitionRecord[] | null
 }
 
@@ -99,6 +100,7 @@ export function useCurrentUser() {
     // Derived values from URL (Reactive because they depend on searchParams)
     const qUserId = searchParams.get("userId")
     const qRole = searchParams.get("role")?.toLowerCase() || null
+    const qUserName = searchParams.get("userName") || null
     const qCanWrite = searchParams.get("canWrite") === "true"
     const hasCanWriteParam = searchParams.has("canWrite")
     const qIsAdmin = searchParams.get("isAdmin") === "true"
@@ -113,6 +115,8 @@ export function useCurrentUser() {
 
     const [role, setRole] = useState<string | null>(qRole)
     const [email, setEmail] = useState<string | null>(null)
+    // Use the userName passed from the parent shell as the initial displayName (sync, no DB wait)
+    const [displayName, setDisplayName] = useState<string | null>(qUserName)
     const [loading, setLoading] = useState(true)
     const [userId, setUserId] = useState<string | null>(qUserId)
     const [needsAuth, setNeedsAuth] = useState(false)
@@ -255,7 +259,7 @@ export function useCurrentUser() {
             try {
                 const { data: profile, error: profileError } = await supabase
                     .from("perfiles")
-                    .select("role, email, role_definitions!fk_perfiles_role(permissions)")
+                    .select("role, email, full_name, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
@@ -268,8 +272,12 @@ export function useCurrentUser() {
                     const typedProfile = profile as ProfileRecord
                     const dbRole = typeof typedProfile.role === "string" ? typedProfile.role.toLowerCase() : null
                     const dbEmail = typeof typedProfile.email === "string" ? typedProfile.email.toLowerCase() : null
+                    const dbDisplayName = typeof typedProfile.full_name === "string" && typedProfile.full_name.trim()
+                        ? typedProfile.full_name.trim()
+                        : null
                     if (!sourceOfTruthIsUrl) setRole(dbRole)
                     if (dbEmail) setEmail(dbEmail)
+                    if (dbDisplayName) setDisplayName(dbDisplayName)
 
                     const roleDef = Array.isArray(typedProfile.role_definitions)
                         ? typedProfile.role_definitions[0]
@@ -323,10 +331,13 @@ export function useCurrentUser() {
         userId,
         role,
         email,
+        displayName,
         loading,
         needsAuth,
         allowedViews,
         permissions,
+        // qIsAdmin is set by the parent shell (crm-geofal) via URL param — reliable, synchronous
+        isAdminFromUrl: qIsAdmin,
         getCanView: (mode: ViewMode) => allowedViews.includes(mode),
         getCanWrite: (mode: ViewMode) => {
             const rNorm = (role || qRole || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")

@@ -527,28 +527,50 @@ export default function ResumenComercial1Grid({
   onModuleTabChange: (tab: CommercialModuleTab) => void
 }) {
   const current = getCurrentMonthYear()
-  const { role, email, canViewKpis } = useCurrentUser()
+  const { role, email, displayName, loading: userLoading, isAdminFromUrl } = useCurrentUser()
   const normalizedRole = (role || "").toLowerCase()
   const normalizedEmail = (email || "").toLowerCase()
 
+  // isAdminFromUrl: set synchronously by the parent shell (crm-geofal) via ?isAdmin=true URL param.
+  // Falls back to role-based check once the DB fetch completes.
   const isAdmin = useMemo(() => {
+    if (isAdminFromUrl) return true // immediate — no async wait
+    if (userLoading) return false   // safe default until role loads
     return (
       normalizedRole.includes("admin") ||
       normalizedRole.includes("gerencia") ||
       normalizedRole.includes("administrador")
     )
-  }, [normalizedRole])
+  }, [isAdminFromUrl, userLoading, normalizedRole])
 
+  // Detect Yerly-Silvia team by email/displayName.
+  // Any other user uses their own displayName or email local part as scope.
   const resolvedAdvisorScope = useMemo(() => {
-    if (isAdmin) return undefined
-    if (normalizedEmail.includes("yerly") || normalizedRole.includes("auxiliar") || normalizedRole.includes("asistente")) {
+    if (isAdmin || userLoading) return undefined
+    const nameHint = (displayName || "").toLowerCase()
+    const emailHint = normalizedEmail
+    // Yerly is Silvia's assistant → shares Silvia's scope
+    if (nameHint.includes("yerly") || emailHint.includes("asesorcomercial1")) {
       return "Silvia Peralta"
     }
-    if (normalizedEmail.includes("silvia") || normalizedRole.includes("b2b")) {
+    // Silvia herself
+    if (nameHint.includes("silvia") || emailHint.includes("asesorcomercial@")) {
       return "Silvia Peralta"
     }
-    return "Silvia Peralta"
-  }, [isAdmin, normalizedRole, normalizedEmail])
+    // Other advisors: use their display name if available, else undefined (backend resolves via JWT)
+    return displayName || undefined
+  }, [isAdmin, userLoading, displayName, normalizedEmail])
+
+  // Label shown in the locked badge for non-admin users
+  const scopeBadgeLabel = useMemo(() => {
+    if (!resolvedAdvisorScope) return "Cargando..."
+    const nameHint = (displayName || "").toLowerCase()
+    const emailHint = normalizedEmail
+    if (nameHint.includes("yerly") || emailHint.includes("asesorcomercial1")) {
+      return "Silvia Peralta (Equipo Yerly - Silvia)"
+    }
+    return resolvedAdvisorScope
+  }, [resolvedAdvisorScope, displayName, normalizedEmail])
 
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
   const [selectedAdvisor, setSelectedAdvisor] = useState<string>("ALL")
@@ -598,7 +620,7 @@ export default function ResumenComercial1Grid({
             </select>
           ) : (
             <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
-              <span>📌 Ámbito: Silvia Peralta (Equipo Yerly - Silvia)</span>
+              <span>📌 Ámbito: {scopeBadgeLabel}</span>
             </div>
           )}
 
