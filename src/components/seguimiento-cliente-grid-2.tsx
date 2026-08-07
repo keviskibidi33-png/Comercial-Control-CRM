@@ -642,11 +642,11 @@ export default function SeguimientoClienteGrid2({
       {/* Module Header */}
       <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex w-[466px] max-w-full items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <Users className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento 2</h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
