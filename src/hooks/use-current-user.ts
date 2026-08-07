@@ -28,6 +28,7 @@ type ProfileRecord = {
     email: string | null
     full_name?: string | null
     show_kpi?: boolean | null
+    tabla_seguimiento?: string | null
     role_definitions: RoleDefinitionRecord | RoleDefinitionRecord[] | null
 }
 
@@ -124,8 +125,10 @@ export function useCurrentUser() {
     const [userId, setUserId] = useState<string | null>(qUserId)
     const [needsAuth, setNeedsAuth] = useState(false)
     const [tokenApplied, setTokenApplied] = useState(false)
+    const qTablaSeguimiento = searchParams.get("tabla_seguimiento") || searchParams.get("tabla")
     // show_kpi: null = loading, true = show KPI tab, false = hide KPI tab
     const [showKpi, setShowKpi] = useState<boolean | null>(qShowKpi)
+    const [tablaSeguimiento, setTablaSeguimiento] = useState<string | null>(qTablaSeguimiento)
 
     const [allowedViews, setAllowedViews] = useState<ViewMode[]>(["LAB", "COM", "ADMIN"])
 
@@ -266,7 +269,7 @@ export function useCurrentUser() {
 
                 const res1: any = await supabase
                     .from("perfiles")
-                    .select("role, email, full_name, show_kpi, role_definitions!fk_perfiles_role(permissions)")
+                    .select("role, email, full_name, show_kpi, tabla_seguimiento, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
@@ -300,6 +303,9 @@ export function useCurrentUser() {
                     // show_kpi: fallback to true if column doesn't exist yet (migration pending)
                     const dbShowKpi = typeof typedProfile.show_kpi === "boolean" ? typedProfile.show_kpi : true
                     setShowKpi(dbShowKpi)
+                    if (typeof typedProfile.tabla_seguimiento === "string" && typedProfile.tabla_seguimiento) {
+                        setTablaSeguimiento(typedProfile.tabla_seguimiento)
+                    }
 
                     const roleDef = Array.isArray(typedProfile.role_definitions)
                         ? typedProfile.role_definitions[0]
@@ -404,16 +410,20 @@ export function useCurrentUser() {
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
         isLegacyUser: isLegacyTrackingUser(email, displayName, role),
-        /** Tabla 1 (seguimiento) is visible ONLY for Silvia, Yerly, and Admins */
+        /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins */
         canViewTabla1: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            if (tablaSeguimiento === "tabla1") return true
+            if (tablaSeguimiento === "tabla2") return false
             return isLegacyTrackingUser(email, displayName, role)
         })(),
-        /** Tabla 2 (seguimiento2) is visible for all NEW commercial advisors and Admins */
+        /** Tabla 2 (seguimiento2) is visible for new commercial advisors, users assigned to tabla2, and Admins */
         canViewTabla2: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            if (tablaSeguimiento === "tabla2") return true
+            if (tablaSeguimiento === "tabla1") return false
             return !isLegacyTrackingUser(email, displayName, role)
         })(),
     }
