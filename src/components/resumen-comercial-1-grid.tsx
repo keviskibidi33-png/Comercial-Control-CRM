@@ -5,6 +5,7 @@ import { BarChart3, FileCheck2, RefreshCw, ShoppingCart, TrendingUp, Users } fro
 
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 const CATEGORY_DEFINITIONS = [
   { key: "DEN", label: "Categoría 1 (DEN)" },
@@ -526,11 +527,39 @@ export default function ResumenComercial1Grid({
   onModuleTabChange: (tab: CommercialModuleTab) => void
 }) {
   const current = getCurrentMonthYear()
+  const { role, email } = useCurrentUser()
+  const normalizedRole = (role || "").toLowerCase()
+  const normalizedEmail = (email || "").toLowerCase()
+
+  const isAdmin = useMemo(() => {
+    return (
+      normalizedRole.includes("admin") ||
+      normalizedRole.includes("gerencia") ||
+      normalizedRole.includes("administrador")
+    )
+  }, [normalizedRole])
+
+  const resolvedAdvisorScope = useMemo(() => {
+    if (isAdmin) return undefined
+    if (normalizedEmail.includes("yerly") || normalizedRole.includes("auxiliar") || normalizedRole.includes("asistente")) {
+      return "Silvia Peralta"
+    }
+    if (normalizedEmail.includes("silvia") || normalizedRole.includes("b2b")) {
+      return "Silvia Peralta"
+    }
+    return "Silvia Peralta"
+  }, [isAdmin, normalizedRole, normalizedEmail])
+
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
   const [selectedAdvisor, setSelectedAdvisor] = useState<string>("ALL")
+
+  const effectiveAdvisorFilter = isAdmin
+    ? (selectedAdvisor === "ALL" ? undefined : selectedAdvisor)
+    : resolvedAdvisorScope
+
   const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({
     limit: 10000,
-    asesor: selectedAdvisor === "ALL" ? undefined : selectedAdvisor,
+    asesor: effectiveAdvisorFilter,
   })
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
@@ -557,15 +586,21 @@ export default function ResumenComercial1Grid({
           <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={selectedAdvisor}
-            onChange={(event) => setSelectedAdvisor(event.target.value)}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
-          >
-            <option value="ALL">📌 Todos los Asesores (Consolidado)</option>
-            <option value="Silvia Peralta">👤 Silvia Peralta (Equipo Yerly - Silvia)</option>
-            <option value="Juan Garcia">👤 Juan García</option>
-          </select>
+          {isAdmin ? (
+            <select
+              value={selectedAdvisor}
+              onChange={(event) => setSelectedAdvisor(event.target.value)}
+              className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
+            >
+              <option value="ALL">📌 Todos los Asesores (Consolidado)</option>
+              <option value="Silvia Peralta">👤 Silvia Peralta (Equipo Yerly - Silvia)</option>
+              <option value="Juan Garcia">👤 Juan García</option>
+            </select>
+          ) : (
+            <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
+              <span>📌 Ámbito: Silvia Peralta (Equipo Yerly - Silvia)</span>
+            </div>
+          )}
 
           <select
             value={activeValue}
