@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react"
 import { BarChart3, FileCheck2, Lock, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
 
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { useSeguimientoComercial2 } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useCurrentUser } from "@/hooks/use-current-user"
 
@@ -585,10 +586,19 @@ export default function ResumenComercial1Grid({
     ? (selectedAdvisor === "ALL" ? undefined : selectedAdvisor)
     : resolvedAdvisorScope
 
-  const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({
+  const useTable2 = !canViewTabla1 && !isAdmin
+
+  const tracker1 = useSeguimientoComercial({
     limit: 10000,
     asesor: effectiveAdvisorFilter,
   })
+
+  const tracker2 = useSeguimientoComercial2({
+    limit: 10000,
+  })
+
+  const { rows, total, isLoading, refetch, errorMessage } = useTable2 ? tracker2 : tracker1
+  const fuenteLabel = useTable2 ? "Fuente: Mi Seguimiento (Tabla 2)" : "Fuente: Seguimiento B2B (Tabla 1)"
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
@@ -671,7 +681,7 @@ export default function ResumenComercial1Grid({
               <p className="mt-1 text-sm text-muted-foreground">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
             <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
-              Fuente: Seguimiento
+              {fuenteLabel}
             </span>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
