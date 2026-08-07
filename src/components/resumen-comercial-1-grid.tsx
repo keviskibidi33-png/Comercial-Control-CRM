@@ -452,6 +452,40 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
   )
 }
 
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+]
+
+interface PeriodOption {
+  value: string
+  label: string
+  month: string
+  year: number
+}
+
+function generateAvailablePeriods(): PeriodOption[] {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const periods: PeriodOption[] = []
+
+  for (let year = currentYear; year >= currentYear - 2; year--) {
+    const startMonth = year === currentYear ? currentMonth : 12
+    const endMonth = 1
+    for (let m = startMonth; m >= endMonth; m--) {
+      periods.push({
+        value: `${year}-${String(m).padStart(2, "0")}`,
+        label: `${MONTH_NAMES[m - 1]} ${year}`,
+        month: String(m).padStart(2, "0"),
+        year,
+      })
+    }
+  }
+
+  return periods
+}
+
 function getCurrentMonthYear() {
   const now = new Date()
   return {
@@ -471,18 +505,10 @@ export default function ResumenComercial1Grid({
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
   const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({ limit: 10000 })
 
+  const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
   const activePeriod = selectedPeriod ?? latestPeriod ?? current
-
-  const availableYears = useMemo(() => {
-    const years = new Set<number>([current.year])
-    rows.forEach((row) => {
-      const datePart = toIsoDatePart(row.fecha_contacto)
-      const year = Number.parseInt(datePart?.slice(0, 4) ?? "", 10)
-      if (Number.isInteger(year)) years.add(year)
-    })
-    return Array.from(years).sort((a, b) => b - a)
-  }, [rows, current.year])
+  const activeValue = `${activePeriod.year}-${String(activePeriod.month).padStart(2, "0")}`
 
   const kpis = useMemo(() => buildKpis(rows, activePeriod.month, activePeriod.year), [rows, activePeriod.month, activePeriod.year])
 
@@ -504,21 +530,20 @@ export default function ResumenComercial1Grid({
         </div>
         <div className="flex items-center gap-3">
           <select
-            value={activePeriod.month}
-            onChange={(event) => setSelectedPeriod((previous) => ({ month: event.target.value, year: previous?.year ?? activePeriod.year }))}
+            value={activeValue}
+            onChange={(event) => {
+              const selected = availablePeriods.find((p) => p.value === event.target.value)
+              if (selected) {
+                setSelectedPeriod({ month: selected.month, year: selected.year })
+              }
+            }}
             className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
           >
-            {Array.from({ length: 12 }, (_, index) => {
-              const monthValue = String(index + 1).padStart(2, "0")
-              return <option key={monthValue} value={monthValue}>Mes {monthValue}</option>
-            })}
-          </select>
-          <select
-            value={activePeriod.year}
-            onChange={(event) => setSelectedPeriod((previous) => ({ month: previous?.month ?? activePeriod.month, year: Number(event.target.value) }))}
-            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
-          >
-            {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
+            {availablePeriods.map((period) => (
+              <option key={period.value} value={period.value}>
+                {period.label}
+              </option>
+            ))}
           </select>
           <button
             onClick={() => refetch()}
