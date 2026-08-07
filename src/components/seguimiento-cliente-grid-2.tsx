@@ -654,7 +654,7 @@ export default function SeguimientoClienteGrid2({
               <Users className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento 2</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Mi Seguimiento Comercial</h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
               </p>
@@ -842,6 +842,7 @@ export default function SeguimientoClienteGrid2({
 
                   // Renders Read-Only 'N°' cell
                   if (isNo) {
+                    const visualNo = (currentPage - 1) * pageSize + idx + 1
                     return (
                       <td
                         key={col.key}
@@ -850,9 +851,9 @@ export default function SeguimientoClienteGrid2({
                           ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100` : "bg-zinc-50"}
                           ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                         `}
-                        title={String(cellValue ?? row.id)}
+                        title={String(visualNo)}
                       >
-                        {cellValue ?? row.id}
+                        {visualNo}
                       </td>
                     )
                   }
