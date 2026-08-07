@@ -7,9 +7,32 @@ import SeguimientoClienteGrid2 from "@/components/seguimiento-cliente-grid-2"
 import ResumenComercial1Grid from "@/components/resumen-comercial-1-grid"
 import PublicidadGeofalGrid from "@/components/publicidad-geofal-grid"
 import type { CommercialModuleTab } from "@/components/commercial-module-tabs"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
-export default function Home() {
+/**
+ * Home — Orchestrates which commercial module tab is active and passes
+ * KPI visibility (`canViewKpis`) down to every grid component.
+ *
+ * KPI visibility is driven by `show_kpi` in the `perfiles` DB table and
+ * is readable via `useCurrentUser().canViewKpis`. Admin/gerencia users
+ * always have access regardless of that flag.
+ */
+function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
+  const { canViewKpis } = useCurrentUser()
+
+  /**
+   * If the active tab is the KPI panel but the user loses access (e.g., DB
+   * refreshes with show_kpi=false), redirect them to the default tab.
+   */
+  const safeActiveTab: CommercialModuleTab =
+    activeTab === "resumen_comercial_1" && !canViewKpis ? "com" : activeTab
+
+  const handleTabChange = (tab: CommercialModuleTab) => {
+    // Prevent navigating to KPI tab if not authorized
+    if (tab === "resumen_comercial_1" && !canViewKpis) return
+    setActiveTab(tab)
+  }
 
   return (
     <main className="flex h-screen w-screen flex-col overflow-hidden bg-zinc-50 font-sans">
@@ -25,7 +48,7 @@ export default function Home() {
             </div>
           }
         >
-          {activeTab === "lab" ? (
+          {safeActiveTab === "lab" ? (
             <FixedProgramacionEditor
               kind="laboratorio"
               title="Control Comercial"
@@ -35,10 +58,11 @@ export default function Home() {
               exportMode="lab"
               storageNamespace="programacion-laboratorio"
               showViewTabs={false}
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
-          ) : activeTab === "com" ? (
+          ) : safeActiveTab === "com" ? (
             <FixedProgramacionEditor
               kind="comercial"
               title="Control Comercial"
@@ -48,32 +72,51 @@ export default function Home() {
               exportMode="comercial"
               storageNamespace="programacion-comercial"
               showViewTabs={false}
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
-          ) : activeTab === "seguimiento" ? (
+          ) : safeActiveTab === "seguimiento" ? (
             <SeguimientoClienteGrid
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
-          ) : activeTab === "seguimiento2" ? (
+          ) : safeActiveTab === "seguimiento2" ? (
             <SeguimientoClienteGrid2
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
-          ) : activeTab === "resumen_comercial_1" ? (
+          ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
           ) : (
             <PublicidadGeofalGrid
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewKpis={canViewKpis}
             />
           )}
         </Suspense>
       </div>
     </main>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-zinc-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      }
+    >
+      <CommercialHome />
+    </Suspense>
   )
 }

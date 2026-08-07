@@ -522,9 +522,11 @@ function getCurrentMonthYear() {
 export default function ResumenComercial1Grid({
   activeModuleTab,
   onModuleTabChange,
+  canViewKpis = true,
 }: {
   activeModuleTab: CommercialModuleTab
   onModuleTabChange: (tab: CommercialModuleTab) => void
+  canViewKpis?: boolean
 }) {
   const current = getCurrentMonthYear()
   const { role, email, displayName, loading: userLoading, isAdminFromUrl } = useCurrentUser()
@@ -605,7 +607,7 @@ export default function ResumenComercial1Grid({
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{total}</span>
           </div>
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} />
         </div>
         <div className="flex items-center gap-3">
           {isAdmin ? (

@@ -176,6 +176,8 @@ const WhatsAppIcon = () => (
 interface SeguimientoClienteGridProps {
   activeModuleTab: CommercialModuleTab
   onModuleTabChange: (tab: CommercialModuleTab) => void
+  /** Controls visibility of the KPI tab. Defaults to true. */
+  canViewKpis?: boolean
 }
 
 type SortDirection = "asc" | "desc"
@@ -187,6 +189,7 @@ type SortConfig = {
 export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
+  canViewKpis = true,
 }: SeguimientoClienteGridProps) {
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
@@ -657,7 +660,7 @@ export default function SeguimientoClienteGrid({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} />
         </div>
 
         <div className="flex items-center gap-3">

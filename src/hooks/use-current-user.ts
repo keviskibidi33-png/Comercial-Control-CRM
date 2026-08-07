@@ -27,6 +27,7 @@ type ProfileRecord = {
     role: string | null
     email: string | null
     full_name?: string | null
+    show_kpi?: boolean | null
     role_definitions: RoleDefinitionRecord | RoleDefinitionRecord[] | null
 }
 
@@ -104,6 +105,8 @@ export function useCurrentUser() {
     const qCanWrite = searchParams.get("canWrite") === "true"
     const hasCanWriteParam = searchParams.has("canWrite")
     const qIsAdmin = searchParams.get("isAdmin") === "true"
+    // Parent shell passes showKpi=true|false in iframe URL for fast first-render (avoids DB round-trip)
+    const qShowKpi = searchParams.has("showKpi") ? searchParams.get("showKpi") === "true" : null
     const passedToken = searchParams.get("token")
     const requestedModeParam = (searchParams.get("mode") || "").toLowerCase()
     const requestedMode: ViewMode =
@@ -121,6 +124,8 @@ export function useCurrentUser() {
     const [userId, setUserId] = useState<string | null>(qUserId)
     const [needsAuth, setNeedsAuth] = useState(false)
     const [tokenApplied, setTokenApplied] = useState(false)
+    // show_kpi: null = loading, true = show KPI tab, false = hide KPI tab
+    const [showKpi, setShowKpi] = useState<boolean | null>(qShowKpi)
 
     const [allowedViews, setAllowedViews] = useState<ViewMode[]>(["LAB", "COM", "ADMIN"])
 
@@ -259,7 +264,7 @@ export function useCurrentUser() {
             try {
                 const { data: profile, error: profileError } = await supabase
                     .from("perfiles")
-                    .select("role, email, full_name, role_definitions!fk_perfiles_role(permissions)")
+                    .select("role, email, full_name, show_kpi, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
@@ -278,6 +283,9 @@ export function useCurrentUser() {
                     if (!sourceOfTruthIsUrl) setRole(dbRole)
                     if (dbEmail) setEmail(dbEmail)
                     if (dbDisplayName) setDisplayName(dbDisplayName)
+                    // show_kpi: fallback to true if column doesn't exist yet (migration pending)
+                    const dbShowKpi = typeof typedProfile.show_kpi === "boolean" ? typedProfile.show_kpi : true
+                    setShowKpi(dbShowKpi)
 
                     const roleDef = Array.isArray(typedProfile.role_definitions)
                         ? typedProfile.role_definitions[0]
@@ -368,7 +376,18 @@ export function useCurrentUser() {
             }
             return false
         },
-        canViewKpis: isKpiAuthorizedUser(role || qRole, email, userId || qUserId),
+        // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins.
+        canViewKpis: (() => {
+            // Admin always sees KPI regardless of show_kpi
+            const rNorm = (role || qRole || "").toLowerCase()
+            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            // DB value takes priority once loaded
+            if (showKpi !== null) return showKpi
+            // URL param as fast first-render value
+            if (qShowKpi !== null) return qShowKpi
+            // Default: show KPI while loading (prevents tab flash-hiding)
+            return true
+        })(),
     }
 }
 

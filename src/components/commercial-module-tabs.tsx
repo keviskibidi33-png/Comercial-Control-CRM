@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { FlaskConical, Briefcase, Users } from "lucide-react"
+import { FlaskConical, Briefcase, Users, BarChart3 } from "lucide-react"
 
 export type CommercialModuleTab = "lab" | "com" | "seguimiento" | "seguimiento2" | "resumen_comercial_1" | "publicidad"
 
@@ -9,6 +9,8 @@ interface CommercialModuleTabsProps {
   activeTab: CommercialModuleTab
   onTabChange: (tab: CommercialModuleTab) => void
   className?: string
+  /** If false, the KPI tab (resumen_comercial_1) is hidden entirely */
+  canViewKpis?: boolean
 }
 
 const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
@@ -21,16 +23,16 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
     icon: <Briefcase className="h-3.5 w-3.5" />,
   },
   seguimiento: {
-    label: "Seguimiento 1",
+    label: "Seguimiento B2B",
     icon: <Users className="h-3.5 w-3.5" />,
   },
   seguimiento2: {
-    label: "Seguimiento 2",
+    label: "Mi Seguimiento",
     icon: <Users className="h-3.5 w-3.5" />,
   },
   resumen_comercial_1: {
-    label: "Resumen Comercial 1",
-    icon: <Users className="h-3.5 w-3.5" />,
+    label: "KPI Personal",
+    icon: <BarChart3 className="h-3.5 w-3.5" />,
   },
   publicidad: {
     label: "Publicidad Geofal",
@@ -38,12 +40,17 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
   },
 }
 
+export function CommercialModuleTabs({ activeTab, onTabChange, className = "", canViewKpis = true }: CommercialModuleTabsProps) {
+  const visibleTabs = (Object.keys(TAB_LABELS) as CommercialModuleTab[]).filter((tab) => {
+    // Hide KPI tab entirely when user doesn't have permission
+    if (tab === "resumen_comercial_1" && !canViewKpis) return false
+    return true
+  })
 
-export function CommercialModuleTabs({ activeTab, onTabChange, className = "" }: CommercialModuleTabsProps) {
   return (
     <div className={`commercial-tabs-scroll min-w-0 max-w-full overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-100 p-1 shadow-inner ${className}`}>
       <div className="flex w-max min-w-full items-center gap-2">
-        {(Object.keys(TAB_LABELS) as CommercialModuleTab[]).map((tab) => {
+        {visibleTabs.map((tab) => {
           const tabMeta = TAB_LABELS[tab]
           const isActive = activeTab === tab
 
