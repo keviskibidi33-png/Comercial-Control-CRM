@@ -527,7 +527,11 @@ export default function ResumenComercial1Grid({
 }) {
   const current = getCurrentMonthYear()
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
-  const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({ limit: 10000 })
+  const [selectedAdvisor, setSelectedAdvisor] = useState<string>("ALL")
+  const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({
+    limit: 10000,
+    asesor: selectedAdvisor === "ALL" ? undefined : selectedAdvisor,
+  })
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
@@ -553,6 +557,16 @@ export default function ResumenComercial1Grid({
           <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
         </div>
         <div className="flex items-center gap-3">
+          <select
+            value={selectedAdvisor}
+            onChange={(event) => setSelectedAdvisor(event.target.value)}
+            className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
+          >
+            <option value="ALL">📌 Todos los Asesores (Consolidado)</option>
+            <option value="Silvia Peralta">👤 Silvia Peralta (Equipo Yerly - Silvia)</option>
+            <option value="Juan Garcia">👤 Juan García</option>
+          </select>
+
           <select
             value={activeValue}
             onChange={(event) => {

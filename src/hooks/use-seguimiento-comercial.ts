@@ -209,7 +209,7 @@ type ErrorDetailItem = {
   msg: string
 }
 
-export function useSeguimientoComercial(filters: { search?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
+export function useSeguimientoComercial(filters: { search?: string; asesor?: string; estado_cliente?: string; limit?: number; offset?: number } = {}) {
   const queryClient = useQueryClient()
   const queryKey = ["seguimiento-comercial", filters]
   const supabase = useMemo(() => createClient(), [])
@@ -226,6 +226,7 @@ export function useSeguimientoComercial(filters: { search?: string; estado_clien
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.search) params.append("search", filters.search)
+      if (filters.asesor) params.append("asesor", filters.asesor)
       if (filters.estado_cliente) params.append("estado_cliente", filters.estado_cliente)
       if (filters.limit) params.append("limit", String(filters.limit))
       if (filters.offset) params.append("offset", String(filters.offset))
