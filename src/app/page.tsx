@@ -61,11 +61,6 @@ export default function Home() {
               activeModuleTab={activeTab}
               onModuleTabChange={setActiveTab}
             />
-          ) : activeTab === "seguimiento2" ? (
-            <SeguimientoClienteGrid2
-              activeModuleTab={activeTab}
-              onModuleTabChange={setActiveTab}
-            />
           ) : (
             <PublicidadGeofalGrid
               activeModuleTab={activeTab}
