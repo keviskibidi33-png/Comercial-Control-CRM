@@ -98,23 +98,110 @@ function hasQuoteNumber(value: unknown) {
   return normalized !== "" && normalized !== "-"
 }
 
+function toIsoDatePart(value: unknown): string | null {
+  const raw = String(value ?? "").trim()
+  if (!raw) return null
+
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
+
+  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/)
+  if (slash) {
+    const day = slash[1].padStart(2, "0")
+    const month = slash[2].padStart(2, "0")
+    const numericYear = Number.parseInt(slash[3], 10)
+    const year = slash[3].length === 2 ? 2000 + numericYear : numericYear
+    return `${year}-${month}-${day}`
+  }
+
+  return null
+}
+
+function getMonthYearFromRows(rows: SeguimientoRow[]) {
+  const latest = rows
+    .map((row) => toIsoDatePart(row.fecha_contacto))
+    .filter((datePart): datePart is string => Boolean(datePart))
+    .sort()
+    .at(-1)
+
+  if (!latest) return null
+
+  return {
+    month: latest.slice(5, 7),
+    year: Number.parseInt(latest.slice(0, 4), 10),
+  }
+}
+
 function isSentQuote(row: SeguimientoRow) {
-  return normalizeText(row.estado_cliente).includes("COTIZACION ENVIADA")
-    && hasQuoteNumber(row.numero_cotizacion)
+  const estadoClientNorm = normalizeText(row.estado_cliente)
+  const estadoSegNorm = normalizeText(row.estado_seguimiento)
+  const isSent =
+    estadoClientNorm.includes("COTIZACION ENVIADA") ||
+    estadoClientNorm.includes("COTIZACION REALIZADA") ||
+    estadoSegNorm.includes("COTIZACION ENVIADA") ||
+    estadoSegNorm.includes("COTIZACION REALIZADA")
+
+  return isSent && hasQuoteNumber(row.numero_cotizacion)
 }
 
 function isSale(row: SeguimientoRow) {
-  return normalizeText(row.estado_seguimiento).includes("VENTA")
+  const estadoClientNorm = normalizeText(row.estado_cliente)
+  const estadoSegNorm = normalizeText(row.estado_seguimiento)
+  return estadoClientNorm.includes("VENTA") || estadoSegNorm.includes("VENTA")
 }
 
 function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
-  const categoryText = normalizeText(`${row.categoria_servicio ?? ""} ${row.servicio_solicitado ?? ""}`)
+  const categoryText = normalizeText(
+    `${row.categoria_servicio ?? ""} ${row.categoria_cliente ?? ""} ${row.servicio_solicitado ?? ""}`
+  )
 
-  if (/\bENS\s*\.?\s*V\.?\b/.test(categoryText)) return "ENS.V."
-  if (/\bPROB\b/.test(categoryText)) return "PROB"
-  if (/\bEMS\b/.test(categoryText)) return "EMS"
-  if (/\bALQ\b/.test(categoryText)) return "ALQ"
-  if (/\bDEN\b/.test(categoryText)) return "DEN"
+  if (!categoryText) return null
+
+  // Categoría 1 (DEN): DEN, DENSIDAD, DENSIDADES, CLIENTE 1, CATEGORIA 1, CAT 1
+  if (
+    /\bDEN\b/.test(categoryText) ||
+    /DENSIDADES?/.test(categoryText) ||
+    /CLIENTE\s*1\b|CATEGORIA\s*1\b|CAT\s*1\b/.test(categoryText)
+  ) {
+    return "DEN"
+  }
+
+  // Categoría 2 (PROB): PROB, PROBETA, PROBETAS, CLIENTE 2, CATEGORIA 2, CAT 2
+  if (
+    /\bPROB\b/.test(categoryText) ||
+    /PROBETAS?/.test(categoryText) ||
+    /CLIENTE\s*2\b|CATEGORIA\s*2\b|CAT\s*2\b/.test(categoryText)
+  ) {
+    return "PROB"
+  }
+
+  // Categoría 3 (EMS): EMS, ESTUDIOS DE SUELOS, ENSAYOS DE SUELOS, CLIENTE 3, CATEGORIA 3, CAT 3
+  if (
+    /\bEMS\b/.test(categoryText) ||
+    /ESTUDIOS DE SUELOS|ENSAYOS DE SUELOS/.test(categoryText) ||
+    /CLIENTE\s*3\b|CATEGORIA\s*3\b|CAT\s*3\b/.test(categoryText)
+  ) {
+    return "EMS"
+  }
+
+  // Categoría 4 (ALQ): ALQ, ALQUILER, CLIENTE 4, CATEGORIA 4, CAT 4
+  if (
+    /\bALQ\b/.test(categoryText) ||
+    /ALQUILER/.test(categoryText) ||
+    /CLIENTE\s*4\b|CATEGORIA\s*4\b|CAT\s*4\b/.test(categoryText)
+  ) {
+    return "ALQ"
+  }
+
+  // Categoría 5 (ENS.V.): ENS.V., ENSAYOS DE LABORATORIO, CLIENTE 5, CATEGORIA 5, CAT 5
+  if (
+    /\bENS\s*\.?\s*V\.?\b/.test(categoryText) ||
+    /ENSAYOS DE LABORATORIO|ENSAYOS VARIOS/.test(categoryText) ||
+    /CLIENTE\s*5\b|CATEGORIA\s*5\b|CAT\s*5\b/.test(categoryText)
+  ) {
+    return "ENS.V."
+  }
+
   return null
 }
 
@@ -153,9 +240,8 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
   const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
 
   const seguimientoRows = rows.filter((row) => {
-    if (!row.fecha_contacto) return false
-    const datePart = String(row.fecha_contacto).split("T")[0]
-    return datePart >= startDate && datePart < endDate
+    const datePart = toIsoDatePart(row.fecha_contacto)
+    return datePart !== null && datePart >= startDate && datePart < endDate
   })
 
   const quoteAmountsByCategory = new Map<CategoryKey, CommercialWeeklyAmounts>(
@@ -168,8 +254,8 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
   const weeklyNewClients = emptyWeeklyAmounts()
 
   for (const row of seguimientoRows) {
-    const datePart = String(row.fecha_contacto).split("T")[0]
-    const day = Number.parseInt(datePart.slice(8, 10), 10)
+    const datePart = toIsoDatePart(row.fecha_contacto)
+    const day = Number.parseInt(datePart?.slice(8, 10) ?? "", 10)
     const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
     const sale = isSale(row)
 
@@ -382,41 +468,44 @@ export default function ResumenComercial1Grid({
   onModuleTabChange: (tab: CommercialModuleTab) => void
 }) {
   const current = getCurrentMonthYear()
-  const [selectedMonth, setSelectedMonth] = useState(current.month)
-  const [selectedYear, setSelectedYear] = useState(current.year)
+  const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
   const { rows, total, isLoading, refetch, errorMessage } = useSeguimientoComercial({ limit: 10000 })
+
+  const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
+  const activePeriod = selectedPeriod ?? latestPeriod ?? current
 
   const availableYears = useMemo(() => {
     const years = new Set<number>([current.year])
     rows.forEach((row) => {
-      const year = Number.parseInt(String(row.fecha_contacto || "").slice(0, 4), 10)
+      const datePart = toIsoDatePart(row.fecha_contacto)
+      const year = Number.parseInt(datePart?.slice(0, 4) ?? "", 10)
       if (Number.isInteger(year)) years.add(year)
     })
     return Array.from(years).sort((a, b) => b - a)
   }, [rows, current.year])
 
-  const kpis = useMemo(() => buildKpis(rows, selectedMonth, selectedYear), [rows, selectedMonth, selectedYear])
+  const kpis = useMemo(() => buildKpis(rows, activePeriod.month, activePeriod.year), [rows, activePeriod.month, activePeriod.year])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
-      <div className="z-10 flex min-h-14 h-auto shrink-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-2 shadow-sm xl:h-14 xl:flex-row xl:items-center xl:justify-between xl:gap-6 xl:py-0">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 md:gap-5">
-          <div className="flex min-w-[260px] items-center gap-2">
+      <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
+          <div className="flex w-[466px] max-w-full items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <BarChart3 className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Resumen Comercial 1</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">KPI Comercial Personal</h1>
               <p className="truncate text-[11px] text-zinc-500">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{total}</span>
           </div>
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1 xl:mx-2" />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" />
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
           <select
-            value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
+            value={activePeriod.month}
+            onChange={(event) => setSelectedPeriod((previous) => ({ month: event.target.value, year: previous?.year ?? activePeriod.year }))}
             className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
           >
             {Array.from({ length: 12 }, (_, index) => {
@@ -425,8 +514,8 @@ export default function ResumenComercial1Grid({
             })}
           </select>
           <select
-            value={selectedYear}
-            onChange={(event) => setSelectedYear(Number(event.target.value))}
+            value={activePeriod.year}
+            onChange={(event) => setSelectedPeriod((previous) => ({ month: previous?.month ?? activePeriod.month, year: Number(event.target.value) }))}
             className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
           >
             {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
@@ -452,7 +541,7 @@ export default function ResumenComercial1Grid({
         <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-lg font-bold text-slate-950">Resumen Comercial 1</h3>
+              <h3 className="text-lg font-bold text-slate-950">KPI Comercial Personal</h3>
               <p className="mt-1 text-sm text-muted-foreground">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
             <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
