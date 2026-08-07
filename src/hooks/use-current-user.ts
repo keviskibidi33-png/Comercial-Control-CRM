@@ -262,26 +262,29 @@ export function useCurrentUser() {
 
             // 4. Fetch Profile & Permissions Matrix
             try {
-                let { data: profile, error: profileError } = await supabase
+                let profile: ProfileRecord | null = null
+
+                const res1: any = await supabase
                     .from("perfiles")
                     .select("role, email, full_name, show_kpi, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
-                if (profileError) {
-                    // Fallback in case PostgREST schema cache is stale for show_kpi column
-                    const fallback = await supabase
+                if (res1.error) {
+                    const fallback: any = await supabase
                         .from("perfiles")
                         .select("role, email, full_name, role_definitions!fk_perfiles_role(permissions)")
                         .eq("id", currentUid)
                         .single()
-                    if (fallback.data) {
-                        profile = fallback.data
-                        profileError = null
+
+                    if (fallback?.data) {
+                        profile = fallback.data as ProfileRecord
                     } else {
                         setLoading(false)
                         return
                     }
+                } else {
+                    profile = res1.data as ProfileRecord
                 }
 
                 if (profile) {

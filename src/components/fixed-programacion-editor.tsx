@@ -131,6 +131,9 @@ export function FixedProgramacionEditor({
   showViewTabs = true,
   activeModuleTab = "com",
   onModuleTabChange,
+  canViewKpis,
+  canViewTabla1,
+  canViewTabla2,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
   const { data, isLoading, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
