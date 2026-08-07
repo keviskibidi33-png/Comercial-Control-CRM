@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial2, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useCurrentUser } from "@/hooks/use-current-user"
+import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { 
@@ -452,6 +453,31 @@ export default function SeguimientoClienteGrid2({
 
   const { isAdmin } = useCurrentUser()
   const [selectedAsesor, setSelectedAsesor] = useState<string>("")
+  const [dbAdvisors, setDbAdvisors] = useState<string[]>([])
+
+  useEffect(() => {
+    async function fetchAdvisors() {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from("perfiles")
+          .select("full_name, email, role")
+        if (!error && data) {
+          const names = (data as any[])
+            .map((p: any) => {
+              const name = typeof p.full_name === "string" && p.full_name.trim() ? p.full_name.trim() : ""
+              const mail = typeof p.email === "string" && p.email.trim() ? p.email.trim() : ""
+              return name || mail
+            })
+            .filter(Boolean) as string[]
+          setDbAdvisors(names)
+        }
+      } catch {
+        // Fallback to row values
+      }
+    }
+    fetchAdvisors()
+  }, [])
   const [activeCell, setActiveCell] = useState<{ id: number; field: keyof SeguimientoRow } | null>(null)
   const [suggestionQuery, setSuggestionQuery] = useState("")
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1)
@@ -508,18 +534,33 @@ export default function SeguimientoClienteGrid2({
 
   const uniqueAdvisors = useMemo(() => {
     const set = new Set<string>()
+    dbAdvisors.forEach((adv) => set.add(adv))
+    catalogs?.asesores?.forEach((adv) => {
+      if (adv && adv.trim()) set.add(adv.trim())
+    })
     rows.forEach((r) => {
-      const a = (r.asesor || "").trim()
-      if (a) set.add(a)
+      if (r.asesor && r.asesor.trim()) set.add(r.asesor.trim())
+      if (r.creado_por && r.creado_por.trim()) set.add(r.creado_por.trim())
+      if (r.asesor_email && r.asesor_email.trim()) set.add(r.asesor_email.trim())
     })
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"))
-  }, [rows])
+  }, [dbAdvisors, catalogs, rows])
 
   const filteredRows = useMemo(() => {
     if (!selectedAsesor) return rows
+    const selLower = selectedAsesor.toLowerCase().trim()
     return rows.filter((r) => {
-      const a = (r.asesor || "").trim()
-      return a.toLowerCase() === selectedAsesor.toLowerCase()
+      const aName = (r.asesor || "").toLowerCase().trim()
+      const cPor = (r.creado_por || "").toLowerCase().trim()
+      const aMail = (r.asesor_email || "").toLowerCase().trim()
+      return (
+        aName.includes(selLower) ||
+        cPor.includes(selLower) ||
+        aMail.includes(selLower) ||
+        selLower.includes(aName && aName.length > 3 ? aName : "___") ||
+        selLower.includes(cPor && cPor.length > 3 ? cPor : "___") ||
+        selLower.includes(aMail && aMail.length > 3 ? aMail : "___")
+      )
     })
   }, [rows, selectedAsesor])
 
