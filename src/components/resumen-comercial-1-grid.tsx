@@ -636,7 +636,9 @@ export default function ResumenComercial1Grid({
               <BarChart3 className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">KPI Comercial Personal</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">
+                {isAdmin ? "Resumen en KPIs" : "KPI Comercial Personal"}
+              </h1>
               <p className="truncate text-[11px] text-zinc-500">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{total}</span>
