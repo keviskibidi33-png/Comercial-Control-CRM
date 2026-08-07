@@ -815,8 +815,8 @@ export default function SeguimientoClienteGrid({
             </select>
           </div>
 
-          {/* Asesor Filter (visible for Admins or when multiple advisors exist) */}
-          {(isAdmin || uniqueAdvisors.length > 1) && (
+          {/* Asesor Filter (visible strictly for Admins) */}
+          {isAdmin && (
             <div className="relative">
               <select
                 value={selectedAsesor}
