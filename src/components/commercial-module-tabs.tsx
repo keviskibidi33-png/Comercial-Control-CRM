@@ -17,33 +17,6 @@ interface CommercialModuleTabsProps {
   canViewTabla2?: boolean
 }
 
-const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
-  lab: {
-    label: "Laboratorio",
-    icon: <FlaskConical className="h-3.5 w-3.5" />,
-  },
-  com: {
-    label: "Comercial",
-    icon: <Briefcase className="h-3.5 w-3.5" />,
-  },
-  seguimiento: {
-    label: "Seguimiento B2B",
-    icon: <Users className="h-3.5 w-3.5" />,
-  },
-  seguimiento2: {
-    label: "Mi Seguimiento",
-    icon: <Users className="h-3.5 w-3.5" />,
-  },
-  resumen_comercial_1: {
-    label: "KPI Personal",
-    icon: <BarChart3 className="h-3.5 w-3.5" />,
-  },
-  publicidad: {
-    label: "Publicidad Geofal",
-    icon: <Users className="h-3.5 w-3.5 text-blue-600" />,
-  },
-}
-
 export function CommercialModuleTabs({
   activeTab,
   onTabChange,
@@ -52,12 +25,41 @@ export function CommercialModuleTabs({
   canViewTabla1 = true,
   canViewTabla2 = true,
 }: CommercialModuleTabsProps) {
+  const isAdminView = canViewTabla1 && canViewTabla2
+
+  const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
+    lab: {
+      label: "Laboratorio",
+      icon: <FlaskConical className="h-3.5 w-3.5" />,
+    },
+    com: {
+      label: "Comercial",
+      icon: <Briefcase className="h-3.5 w-3.5" />,
+    },
+    seguimiento: {
+      label: isAdminView ? "Seguimiento Yerly/Silvia" : "Seguimiento Yerly/Silvia",
+      icon: <Users className="h-3.5 w-3.5" />,
+    },
+    seguimiento2: {
+      label: isAdminView ? "Seguimiento B2B (Nuevos)" : "Mi Seguimiento B2B",
+      icon: <Users className="h-3.5 w-3.5" />,
+    },
+    resumen_comercial_1: {
+      label: "KPI Personal",
+      icon: <BarChart3 className="h-3.5 w-3.5" />,
+    },
+    publicidad: {
+      label: "Publicidad Geofal",
+      icon: <Users className="h-3.5 w-3.5 text-blue-600" />,
+    },
+  }
+
   const visibleTabs = (Object.keys(TAB_LABELS) as CommercialModuleTab[]).filter((tab) => {
     // Hide KPI tab entirely when user doesn't have permission
     if (tab === "resumen_comercial_1" && !canViewKpis) return false
-    // Hide Tabla 1 ("Seguimiento B2B") for non-legacy commercial users
+    // Hide Tabla 1 ("Seguimiento Yerly/Silvia") for non-legacy commercial users
     if (tab === "seguimiento" && !canViewTabla1) return false
-    // Hide Tabla 2 ("Mi Seguimiento") for legacy users (Silvia / Yerly)
+    // Hide Tabla 2 ("Seguimiento B2B") for legacy users (Silvia / Yerly)
     if (tab === "seguimiento2" && !canViewTabla2) return false
     return true
   })

@@ -580,25 +580,45 @@ export default function ResumenComercial1Grid({
   }, [resolvedAdvisorScope, displayName, normalizedEmail])
 
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
-  const [selectedAdvisor, setSelectedAdvisor] = useState<string>("ALL")
-
-  const effectiveAdvisorFilter = isAdmin
-    ? (selectedAdvisor === "ALL" ? undefined : selectedAdvisor)
-    : resolvedAdvisorScope
-
-  const useTable2 = !canViewTabla1 && !isAdmin
+  const [selectedSource, setSelectedSource] = useState<"ALL" | "TABLA1" | "TABLA2">("ALL")
 
   const tracker1 = useSeguimientoComercial({
     limit: 10000,
-    asesor: effectiveAdvisorFilter,
   })
 
   const tracker2 = useSeguimientoComercial2({
     limit: 10000,
   })
 
-  const { rows, total, isLoading, refetch, errorMessage } = useTable2 ? tracker2 : tracker1
-  const fuenteLabel = useTable2 ? "Fuente: Mi Seguimiento (Tabla 2)" : "Fuente: Seguimiento B2B (Tabla 1)"
+  const { rows, total, isLoading, refetch, errorMessage } = useMemo(() => {
+    if (!isAdmin) {
+      return canViewTabla1 ? tracker1 : tracker2
+    }
+    if (selectedSource === "TABLA1") return tracker1
+    if (selectedSource === "TABLA2") return tracker2
+    
+    // Consolidado for Admin: combine rows from both tables
+    const combinedRows = [...tracker1.rows, ...tracker2.rows]
+    return {
+      rows: combinedRows,
+      total: tracker1.total + tracker2.total,
+      isLoading: tracker1.isLoading || tracker2.isLoading,
+      refetch: () => {
+        tracker1.refetch()
+        tracker2.refetch()
+      },
+      errorMessage: tracker1.errorMessage || tracker2.errorMessage,
+    }
+  }, [isAdmin, canViewTabla1, selectedSource, tracker1, tracker2])
+
+  const fuenteLabel = useMemo(() => {
+    if (!isAdmin) {
+      return canViewTabla1 ? "Fuente: Seguimiento Yerly/Silvia (Tabla 1)" : "Fuente: Mi Seguimiento B2B"
+    }
+    if (selectedSource === "TABLA1") return "Fuente: Seguimiento Yerly/Silvia (Tabla 1)"
+    if (selectedSource === "TABLA2") return "Fuente: Seguimiento B2B (Tabla 2)"
+    return "Fuente: Consolidado General (Todas las Tablas)"
+  }, [isAdmin, canViewTabla1, selectedSource])
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
@@ -626,13 +646,13 @@ export default function ResumenComercial1Grid({
         <div className="flex items-center gap-3">
           {isAdmin ? (
             <select
-              value={selectedAdvisor}
-              onChange={(event) => setSelectedAdvisor(event.target.value)}
+              value={selectedSource}
+              onChange={(event) => setSelectedSource(event.target.value as "ALL" | "TABLA1" | "TABLA2")}
               className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
             >
-              <option value="ALL">📌 Todos los Asesores (Consolidado)</option>
-              <option value="Silvia Peralta">👤 Silvia Peralta (Equipo Yerly - Silvia)</option>
-              <option value="Juan Garcia">👤 Juan García</option>
+              <option value="ALL">📌 Consolidado General (Todas las Tablas)</option>
+              <option value="TABLA1">👤 Seguimiento Yerly / Silvia (Tabla 1)</option>
+              <option value="TABLA2">🚀 Seguimiento B2B Nuevos (Tabla 2)</option>
             </select>
           ) : (
             <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
