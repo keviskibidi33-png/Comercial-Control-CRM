@@ -178,6 +178,8 @@ interface SeguimientoClienteGridProps {
   onModuleTabChange: (tab: CommercialModuleTab) => void
   /** Controls visibility of the KPI tab. Defaults to true. */
   canViewKpis?: boolean
+  canViewTabla1?: boolean
+  canViewTabla2?: boolean
 }
 
 type SortDirection = "asc" | "desc"
@@ -190,6 +192,8 @@ export default function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
   canViewKpis = true,
+  canViewTabla1 = true,
+  canViewTabla2 = true,
 }: SeguimientoClienteGridProps) {
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
@@ -660,7 +664,7 @@ export default function SeguimientoClienteGrid({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} />
+          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} canViewTabla1={canViewTabla1} canViewTabla2={canViewTabla2} />
         </div>
 
         <div className="flex items-center gap-3">

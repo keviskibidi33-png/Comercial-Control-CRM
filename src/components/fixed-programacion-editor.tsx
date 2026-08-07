@@ -35,6 +35,8 @@ interface FixedProgramacionEditorProps {
   onModuleTabChange?: (tab: CommercialModuleTab) => void
   /** Controls visibility of the KPI tab in the module tabs bar. */
   canViewKpis?: boolean
+  canViewTabla1?: boolean
+  canViewTabla2?: boolean
 }
 
 const COLUMN_MAP = {
@@ -223,6 +225,8 @@ export function FixedProgramacionEditor({
               onTabChange={onModuleTabChange}
               className="min-w-0 flex-1"
               canViewKpis={canViewKpis ?? true}
+              canViewTabla1={canViewTabla1 ?? true}
+              canViewTabla2={canViewTabla2 ?? true}
             />
           ) : null}
 

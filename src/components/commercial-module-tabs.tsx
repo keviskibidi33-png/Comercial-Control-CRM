@@ -11,6 +11,10 @@ interface CommercialModuleTabsProps {
   className?: string
   /** If false, the KPI tab (resumen_comercial_1) is hidden entirely */
   canViewKpis?: boolean
+  /** If false, Tabla 1 (seguimiento) is hidden */
+  canViewTabla1?: boolean
+  /** If false, Tabla 2 (seguimiento2) is hidden */
+  canViewTabla2?: boolean
 }
 
 const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
@@ -40,10 +44,21 @@ const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.React
   },
 }
 
-export function CommercialModuleTabs({ activeTab, onTabChange, className = "", canViewKpis = true }: CommercialModuleTabsProps) {
+export function CommercialModuleTabs({
+  activeTab,
+  onTabChange,
+  className = "",
+  canViewKpis = true,
+  canViewTabla1 = true,
+  canViewTabla2 = true,
+}: CommercialModuleTabsProps) {
   const visibleTabs = (Object.keys(TAB_LABELS) as CommercialModuleTab[]).filter((tab) => {
     // Hide KPI tab entirely when user doesn't have permission
     if (tab === "resumen_comercial_1" && !canViewKpis) return false
+    // Hide Tabla 1 ("Seguimiento B2B") for non-legacy commercial users
+    if (tab === "seguimiento" && !canViewTabla1) return false
+    // Hide Tabla 2 ("Mi Seguimiento") for legacy users (Silvia / Yerly)
+    if (tab === "seguimiento2" && !canViewTabla2) return false
     return true
   })
 

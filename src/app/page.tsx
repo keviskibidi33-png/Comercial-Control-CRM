@@ -11,26 +11,36 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 
 /**
  * Home — Orchestrates which commercial module tab is active and passes
- * KPI visibility (`canViewKpis`) down to every grid component.
+ * KPI visibility (`canViewKpis`), `canViewTabla1`, and `canViewTabla2`
+ * down to every grid component.
  *
- * KPI visibility is driven by `show_kpi` in the `perfiles` DB table and
- * is readable via `useCurrentUser().canViewKpis`. Admin/gerencia users
- * always have access regardless of that flag.
+ * Tab Access Rules:
+ * - Tabla 1 (`seguimiento` / "Seguimiento B2B"): Visible ONLY to Yerly, Silvia, and Admins.
+ * - Tabla 2 (`seguimiento2` / "Mi Seguimiento"): Visible to all NEW commercial advisors and Admins.
+ * - KPI (`resumen_comercial_1`): Driven by `show_kpi` field in `perfiles` table.
  */
 function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
-  const { canViewKpis } = useCurrentUser()
+  const { canViewKpis, canViewTabla1, canViewTabla2 } = useCurrentUser()
 
   /**
-   * If the active tab is the KPI panel but the user loses access (e.g., DB
-   * refreshes with show_kpi=false), redirect them to the default tab.
+   * Safe active tab resolution:
+   * 1. If tab is KPI but !canViewKpis -> redirect to default "com"
+   * 2. If tab is Tabla 1 (seguimiento) but !canViewTabla1 -> redirect to Tabla 2 (seguimiento2)
+   * 3. If tab is Tabla 2 (seguimiento2) but !canViewTabla2 -> redirect to Tabla 1 (seguimiento)
    */
-  const safeActiveTab: CommercialModuleTab =
-    activeTab === "resumen_comercial_1" && !canViewKpis ? "com" : activeTab
+  const safeActiveTab: CommercialModuleTab = (() => {
+    if (activeTab === "resumen_comercial_1" && !canViewKpis) return "com"
+    if (activeTab === "seguimiento" && !canViewTabla1) return "seguimiento2"
+    if (activeTab === "seguimiento2" && !canViewTabla2) return "seguimiento"
+    return activeTab
+  })()
 
   const handleTabChange = (tab: CommercialModuleTab) => {
-    // Prevent navigating to KPI tab if not authorized
+    // Prevent navigating to unauthorized tabs
     if (tab === "resumen_comercial_1" && !canViewKpis) return
+    if (tab === "seguimiento" && !canViewTabla1) return
+    if (tab === "seguimiento2" && !canViewTabla2) return
     setActiveTab(tab)
   }
 
@@ -61,6 +71,8 @@ function CommercialHome() {
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           ) : safeActiveTab === "com" ? (
             <FixedProgramacionEditor
@@ -75,30 +87,40 @@ function CommercialHome() {
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           ) : safeActiveTab === "seguimiento" ? (
             <SeguimientoClienteGrid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           ) : safeActiveTab === "seguimiento2" ? (
             <SeguimientoClienteGrid2
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           ) : (
             <PublicidadGeofalGrid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
             />
           )}
         </Suspense>

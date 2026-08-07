@@ -399,6 +399,20 @@ export function useCurrentUser() {
             // Default: show KPI while loading (prevents tab flash-hiding)
             return true
         })(),
+        /** Legacy users are Yerly and Silvia who feed Tabla 1 */
+        isLegacyUser: isLegacyTrackingUser(email, displayName, role),
+        /** Tabla 1 (seguimiento) is visible ONLY for Silvia, Yerly, and Admins */
+        canViewTabla1: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            return isLegacyTrackingUser(email, displayName, role)
+        })(),
+        /** Tabla 2 (seguimiento2) is visible for all NEW commercial advisors and Admins */
+        canViewTabla2: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            return !isLegacyTrackingUser(email, displayName, role)
+        })(),
     }
 }
 
@@ -416,4 +430,18 @@ export function isKpiAuthorizedUser(role: string | null | undefined, email: stri
     return KPI_AUTHORIZED_IDENTITIES.some(
         (id) => normEmail.includes(id) || normId.includes(id)
     )
+}
+
+export function isLegacyTrackingUser(
+    email?: string | null,
+    displayName?: string | null,
+    role?: string | null
+): boolean {
+    const normEmail = String(email || "").toLowerCase().trim()
+    const normName = String(displayName || "").toLowerCase().trim()
+
+    // Yerly & Silvia are legacy tracking users (Tabla 1)
+    if (normEmail.includes("yerly") || normEmail.includes("silvia") || normEmail.includes("speralta") || normEmail.includes("yyerly")) return true
+    if (normName.includes("yerly") || normName.includes("silvia") || normName.includes("peralta") || normName.includes("infante")) return true
+    return false
 }
