@@ -117,9 +117,24 @@ function toIsoDatePart(value: unknown): string | null {
   return null
 }
 
+function getRowAmount(row: any): number {
+  return parseMoney(
+    row.costo_cotiz_sin_igv ?? row.monto ?? row.costo ?? row.costo_cotizacion
+  )
+}
+
+function getRowDate(row: SeguimientoRow): string | null {
+  return (
+    toIsoDatePart(row.fecha_contacto) ||
+    toIsoDatePart(row.fecha_ultimo_contacto) ||
+    toIsoDatePart(row.fecha_creacion) ||
+    toIsoDatePart((row as any).created_at)
+  )
+}
+
 function getMonthYearFromRows(rows: SeguimientoRow[]) {
   const latest = rows
-    .map((row) => toIsoDatePart(row.fecha_contacto))
+    .map((row) => getRowDate(row))
     .filter((datePart): datePart is string => Boolean(datePart))
     .sort()
     .at(-1)
@@ -136,10 +151,12 @@ function isSentQuote(row: SeguimientoRow) {
   const estadoClientNorm = normalizeText(row.estado_cliente)
   const estadoSegNorm = normalizeText(row.estado_seguimiento)
   const isSent =
-    estadoClientNorm.includes("COTIZACION ENVIADA") ||
-    estadoClientNorm.includes("COTIZACION REALIZADA") ||
-    estadoSegNorm.includes("COTIZACION ENVIADA") ||
-    estadoSegNorm.includes("COTIZACION REALIZADA")
+    estadoClientNorm.includes("COTIZACION") ||
+    estadoClientNorm.includes("COTIZADO") ||
+    estadoClientNorm.includes("ENVIAD") ||
+    estadoSegNorm.includes("COTIZACION") ||
+    estadoSegNorm.includes("COTIZADO") ||
+    estadoSegNorm.includes("ENVIAD")
 
   return isSent && hasQuoteNumber(row.numero_cotizacion)
 }
@@ -147,7 +164,14 @@ function isSentQuote(row: SeguimientoRow) {
 function isSale(row: SeguimientoRow) {
   const estadoClientNorm = normalizeText(row.estado_cliente)
   const estadoSegNorm = normalizeText(row.estado_seguimiento)
-  return estadoClientNorm.includes("VENTA") || estadoSegNorm.includes("VENTA")
+  return (
+    estadoClientNorm.includes("VENTA") ||
+    estadoClientNorm.includes("GANADO") ||
+    estadoClientNorm.includes("VENDIDO") ||
+    estadoSegNorm.includes("VENTA") ||
+    estadoSegNorm.includes("GANADO") ||
+    estadoSegNorm.includes("VENDIDO")
+  )
 }
 
 function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
@@ -254,7 +278,7 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
   const weeklyNewClients = emptyWeeklyAmounts()
 
   for (const row of seguimientoRows) {
-    const datePart = toIsoDatePart(row.fecha_contacto)
+    const datePart = getRowDate(row)
     const day = Number.parseInt(datePart?.slice(8, 10) ?? "", 10)
     const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
     const sale = isSale(row)
@@ -266,7 +290,7 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
 
     const category = resolveSeguimientoCategory(row)
     if (!category) continue
-    const amount = parseMoney(row.costo_cotiz_sin_igv)
+    const amount = getRowAmount(row)
     if (weekIndex !== null && amount > 0) {
       if (isSentQuote(row)) quoteAmountsByCategory.get(category)![weekIndex] += amount
       if (sale) saleAmountsByCategory.get(category)![weekIndex] += amount
