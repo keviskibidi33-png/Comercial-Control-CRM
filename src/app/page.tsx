@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, Suspense } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { FixedProgramacionEditor } from "@/components/fixed-programacion-editor"
 import SeguimientoClienteGrid from "@/components/seguimiento-cliente-grid"
 import SeguimientoClienteGrid2 from "@/components/seguimiento-cliente-grid-2"
@@ -21,7 +21,31 @@ import { useCurrentUser } from "@/hooks/use-current-user"
  */
 function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
-  const { canViewKpis, canViewTabla1, canViewTabla2 } = useCurrentUser()
+  const [tabAutoSet, setTabAutoSet] = useState(false)
+  const { canViewKpis, canViewTabla1, canViewTabla2, loading } = useCurrentUser()
+
+  // Once permissions load, auto-navigate to the correct seguimiento tab
+  // for users who only have one tabla assigned (not admins who see both).
+  useEffect(() => {
+    if (loading || tabAutoSet) return
+    // Only auto-redirect if we're still on the default "com" tab
+    if (activeTab !== "com") {
+      setTabAutoSet(true)
+      return
+    }
+    const onlyTabla1 = canViewTabla1 && !canViewTabla2
+    const onlyTabla2 = canViewTabla2 && !canViewTabla1
+    if (onlyTabla1) {
+      setActiveTab("seguimiento")
+      setTabAutoSet(true)
+    } else if (onlyTabla2) {
+      setActiveTab("seguimiento2")
+      setTabAutoSet(true)
+    } else {
+      // Admin or no restriction — stay on "com" but mark as resolved
+      setTabAutoSet(true)
+    }
+  }, [loading, canViewTabla1, canViewTabla2, tabAutoSet, activeTab])
 
   /**
    * Safe active tab resolution:
