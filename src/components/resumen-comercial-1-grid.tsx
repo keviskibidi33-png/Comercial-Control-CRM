@@ -104,10 +104,15 @@ function toIsoDatePart(value: unknown): string | null {
   const raw = String(value ?? "").trim()
   if (!raw) return null
 
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
+  const iso = raw.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/)
+  if (iso) {
+    const year = iso[1]
+    const month = iso[2].padStart(2, "0")
+    const day = iso[3].padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
 
-  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/)
+  const slash = raw.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2}|\d{4})$/)
   if (slash) {
     const day = slash[1].padStart(2, "0")
     const month = slash[2].padStart(2, "0")
