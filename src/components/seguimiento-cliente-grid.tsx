@@ -48,6 +48,15 @@ const COMMENT_DRAFT_STORAGE_PREFIX = "seguimiento-comercial-comment-draft:v1"
 
 type CommentFieldKey = "comentarios_asistente" | "comentarios_asesor"
 
+function normalizeText(val: unknown): string {
+  if (!val) return ""
+  return String(val)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+}
+
 const getCommentDraftStorageKey = (rowId: number, field: CommentFieldKey) =>
   `${COMMENT_DRAFT_STORAGE_PREFIX}:${rowId}:${field}`
 
@@ -308,6 +317,8 @@ export default function SeguimientoClienteGrid({
   // Query Filters & Pagination State
   const [search, setSearch] = useState("")
   const [selectedEstado, setSelectedEstado] = useState("")
+  const [selectedEstadoSeguimiento, setSelectedEstadoSeguimiento] = useState("")
+  const [selectedCategoria, setSelectedCategoria] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
@@ -564,22 +575,41 @@ export default function SeguimientoClienteGrid({
   }, [dbAdvisors, catalogs, rows])
 
   const filteredRows = useMemo(() => {
-    if (!selectedAsesor) return rows
-    const selLower = selectedAsesor.toLowerCase().trim()
     return rows.filter((r) => {
-      const aName = (r.asesor || "").toLowerCase().trim()
-      const cPor = (r.creado_por || "").toLowerCase().trim()
-      const aMail = (r.asesor_email || "").toLowerCase().trim()
-      return (
-        aName.includes(selLower) ||
-        cPor.includes(selLower) ||
-        aMail.includes(selLower) ||
-        selLower.includes(aName && aName.length > 3 ? aName : "___") ||
-        selLower.includes(cPor && cPor.length > 3 ? cPor : "___") ||
-        selLower.includes(aMail && aMail.length > 3 ? aMail : "___")
-      )
+      if (selectedAsesor) {
+        const selLower = selectedAsesor.toLowerCase().trim()
+        const aName = (r.asesor || "").toLowerCase().trim()
+        const cPor = (r.creado_por || "").toLowerCase().trim()
+        const aMail = (r.asesor_email || "").toLowerCase().trim()
+        const matchesAsesor =
+          aName.includes(selLower) ||
+          cPor.includes(selLower) ||
+          aMail.includes(selLower) ||
+          selLower.includes(aName && aName.length > 3 ? aName : "___") ||
+          selLower.includes(cPor && cPor.length > 3 ? cPor : "___") ||
+          selLower.includes(aMail && aMail.length > 3 ? aMail : "___")
+        if (!matchesAsesor) return false
+      }
+
+      if (selectedEstadoSeguimiento) {
+        const stSeg = normalizeText(r.estado_seguimiento)
+        const targetSeg = normalizeText(selectedEstadoSeguimiento)
+        if (!stSeg.includes(targetSeg) && !targetSeg.includes(stSeg)) return false
+      }
+
+      if (selectedCategoria) {
+        const catVal = normalizeText(`${r.categoria_servicio ?? ""} ${r.categoria_cliente ?? ""} ${r.servicio_solicitado ?? ""}`)
+        const selCatNorm = normalizeText(selectedCategoria)
+        if (selCatNorm.includes("DEN") && !/DEN|DENSIDA/.test(catVal)) return false
+        if (selCatNorm.includes("PROB") && !/PROB|PROBETA|ROTURA|COMPRESION/.test(catVal)) return false
+        if (selCatNorm.includes("EMS") && !/EMS|SUELOS/.test(catVal)) return false
+        if (selCatNorm.includes("ALQ") && !/ALQ|ALQUILER/.test(catVal)) return false
+        if (selCatNorm.includes("ENS") && !/ENS|LABORATORIO|MEZCLA|AGREGADO|LADRILLO|PROCTOR|ROCA/.test(catVal)) return false
+      }
+
+      return true
     })
-  }, [rows, selectedAsesor])
+  }, [rows, selectedAsesor, selectedEstadoSeguimiento, selectedCategoria])
 
   const sortedRows = useMemo(() => {
     const baseRows = [...filteredRows]
@@ -823,10 +853,48 @@ export default function SeguimientoClienteGrid({
               }}
               className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
             >
-              <option value="">Todos los Estados</option>
+              <option value="">Todos los Estados Cliente</option>
               {catalogs?.estados?.map((est) => (
                 <option key={est} value={est}>
                   {est}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Estado Seguimiento Filter */}
+          <div className="relative">
+            <select
+              value={selectedEstadoSeguimiento}
+              onChange={(e) => {
+                setSelectedEstadoSeguimiento(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
+            >
+              <option value="">Todos los Estados Seguimiento</option>
+              {catalogs?.estados_seguimiento?.map((estSeg) => (
+                <option key={estSeg} value={estSeg}>
+                  {estSeg}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Categoría Cliente / Servicio Filter */}
+          <div className="relative">
+            <select
+              value={selectedCategoria}
+              onChange={(e) => {
+                setSelectedCategoria(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
+            >
+              <option value="">Todas las Categorías</option>
+              {catalogs?.categorias_servicio?.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>
@@ -851,6 +919,25 @@ export default function SeguimientoClienteGrid({
                 ))}
               </select>
             </div>
+          )}
+
+          {/* Clear Filters Button */}
+          {(search || selectedEstado || selectedEstadoSeguimiento || selectedCategoria || selectedAsesor) && (
+            <button
+              onClick={() => {
+                setSearch("")
+                setSelectedEstado("")
+                setSelectedEstadoSeguimiento("")
+                setSelectedCategoria("")
+                setSelectedAsesor("")
+                setCurrentPage(1)
+              }}
+              className="flex items-center gap-1 h-8 px-2.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
+              title="Limpiar todos los filtros aplicados"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Limpiar Filtros</span>
+            </button>
           )}
         </div>
       </div>
