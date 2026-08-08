@@ -143,6 +143,7 @@ export type SeguimientoRow = {
   estado_cliente?: string
   servicio_solicitado?: string
   categoria_servicio?: string
+  categoria_cliente?: string
   fecha_ultimo_contacto?: string
   comentarios_asistente?: string
   comentarios_asesor?: string

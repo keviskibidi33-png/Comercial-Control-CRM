@@ -199,6 +199,7 @@ export default function SeguimientoClienteGrid({
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  tablaId = 1,
 }: SeguimientoClienteGridProps) {
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
@@ -434,6 +435,19 @@ export default function SeguimientoClienteGrid({
   }, [search])
 
   // Fetch tracking hook
+  const h1 = useSeguimientoComercial({
+    search: debouncedSearch,
+    estado_cliente: selectedEstado,
+    limit: 10000,
+    offset: 0
+  })
+  const h2 = useSeguimientoComercial2({
+    search: debouncedSearch,
+    estado_cliente: selectedEstado,
+    limit: 10000,
+    offset: 0
+  })
+
   const {
     rows,
     total,
@@ -447,12 +461,7 @@ export default function SeguimientoClienteGrid({
     insertRow,
     exportToExcel,
     isMutating
-  } = useSeguimientoComercial({
-    search: debouncedSearch,
-    estado_cliente: selectedEstado,
-    limit: 10000,
-    offset: 0
-  })
+  } = tablaId === 2 ? h2 : h1
 
   const { isAdmin } = useCurrentUser()
   const [selectedAsesor, setSelectedAsesor] = useState<string>("")
@@ -461,13 +470,18 @@ export default function SeguimientoClienteGrid({
   useEffect(() => {
     async function fetchAdvisors() {
       try {
+        interface PerfilItem {
+          full_name?: string | null
+          email?: string | null
+          role?: string | null
+        }
         const supabase = createClient()
         const { data, error } = await supabase
           .from("perfiles")
           .select("full_name, email, role")
         if (!error && data) {
-          const names = (data as any[])
-            .map((p: any) => {
+          const names = (data as PerfilItem[])
+            .map((p: PerfilItem) => {
               const name = typeof p.full_name === "string" && p.full_name.trim() ? p.full_name.trim() : ""
               const mail = typeof p.email === "string" && p.email.trim() ? p.email.trim() : ""
               return name || mail
