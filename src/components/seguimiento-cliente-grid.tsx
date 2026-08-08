@@ -709,7 +709,7 @@ export default function SeguimientoClienteGrid({
       {/* Module Header */}
       <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
-          <div className="flex w-[466px] max-w-full items-center gap-2">
+          <div className="flex w-116.5 max-w-full items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <Users className="h-4 w-4" />
             </div>
@@ -771,7 +771,7 @@ export default function SeguimientoClienteGrid({
       <div className="flex items-center justify-between p-2 border-b border-zinc-200 bg-white gap-2 z-20 shrink-0 overflow-visible">
         <div className="flex items-center gap-2 flex-1 flex-wrap">
           {/* Search Input */}
-          <div className="relative w-[200px] lg:w-[250px]">
+          <div className="relative w-50 lg:w-62.5">
             <Search className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" />
             <input
               type="text"
@@ -1015,7 +1015,7 @@ export default function SeguimientoClienteGrid({
                               setFocusedSuggestionIndex(-1)
                             }}
                             title={String(cellValue || "")}
-                            className="w-full min-h-[24px] cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
+                            className="w-full min-h-6 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 flex items-center justify-between"
                           >
                             <span className="truncate">{cellValue || <span className="text-zinc-300">-</span>}</span>
                             <span className="opacity-0 group-hover/cell:opacity-40 text-zinc-500 text-[10px]">▼</span>
@@ -1085,7 +1085,7 @@ export default function SeguimientoClienteGrid({
                         <div
                           onClick={() => openCommentsModal(row, col.key as "comentarios_asesor")}
                           title={`Haga clic para ver/editar ${col.label}`}
-                          className={`w-full min-w-0 min-h-[22px] cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
+                          className={`w-full min-w-0 min-h-5.5 cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
                           <span className="truncate min-w-0">{displayVal}</span>
                           <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
@@ -1117,14 +1117,14 @@ export default function SeguimientoClienteGrid({
                                 e.currentTarget.blur()
                               }
                             }}
-                            className="w-full min-h-[52px] bg-white border border-blue-500 rounded px-1.5 py-1 text-[11px] text-zinc-900 font-bold focus:outline-none resize-none leading-tight whitespace-pre-wrap wrap-break-word"
+                            className="w-full min-h-13 bg-white border border-blue-500 rounded px-1.5 py-1 text-[11px] text-zinc-900 font-bold focus:outline-none resize-none leading-tight whitespace-pre-wrap wrap-break-word"
                           />
                         ) : (
                           <div
                             onClick={() => {
                               setActiveTextEdit({ id: row.id, field: col.key })
                             }}
-                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal wrap-break-word leading-tight cursor-pointer hover:bg-zinc-100/50"
+                            className="w-full min-h-6 px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold whitespace-normal wrap-break-word leading-tight cursor-pointer hover:bg-zinc-100/50"
                             title={cellValue !== null && cellValue !== undefined ? String(cellValue) : ""}
                           >
                             {cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== "" ? String(cellValue) : <span className="text-zinc-300">-</span>}
@@ -1166,7 +1166,7 @@ export default function SeguimientoClienteGrid({
                         ) : (
                           <div
                             onClick={() => setActiveTextEdit({ id: row.id, field: col.key })}
-                            className="w-full min-h-[24px] px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold cursor-pointer hover:bg-zinc-100/50 flex items-center truncate"
+                            className="w-full min-h-6 px-1.5 py-0.5 text-[11px] text-zinc-900 font-bold cursor-pointer hover:bg-zinc-100/50 flex items-center truncate"
                             title={displayVal || ""}
                           >
                             {displayVal || <span className="text-zinc-300">-</span>}
@@ -1543,7 +1543,7 @@ export default function SeguimientoClienteGrid({
                         updateCell(commentModalRow.id, "contacto", e.target.value)
                         setCommentModalRow(prev => prev ? { ...prev, contacto: e.target.value } : null)
                       }}
-                      className="font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none h-[22px]"
+                      className="font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none h-5.5"
                     >
                       <option value="">- Seleccione -</option>
                       {catalogs?.contactos?.map((opt) => (
@@ -1570,7 +1570,7 @@ export default function SeguimientoClienteGrid({
                 value={commentDraft}
                 onChange={(e) => handleCommentDraftChange(e.target.value)}
                 placeholder="Escribe aquí la observación o comentario..."
-                className="min-h-[280px] w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                className="min-h-70 w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
             </div>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { BarChart3, FileCheck2, Lock, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { BarChart3, FileCheck2, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
 
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { useSeguimientoComercial2 } from "@/hooks/use-seguimiento-comercial-2"
@@ -119,18 +119,18 @@ function toIsoDatePart(value: unknown): string | null {
   return null
 }
 
-function getRowAmount(row: any): number {
+function getRowAmount(row: SeguimientoRow & Record<string, unknown>): number {
   return parseMoney(
     row.costo_cotiz_sin_igv ?? row.monto ?? row.costo ?? row.costo_cotizacion
   )
 }
 
-function getRowDate(row: SeguimientoRow): string | null {
+function getRowDate(row: SeguimientoRow & { created_at?: unknown }): string | null {
   return (
     toIsoDatePart(row.fecha_contacto) ||
     toIsoDatePart(row.fecha_ultimo_contacto) ||
     toIsoDatePart(row.fecha_creacion) ||
-    toIsoDatePart((row as any).created_at)
+    toIsoDatePart(row.created_at)
   )
 }
 
@@ -348,19 +348,19 @@ function AmountTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[920px] w-full text-xs">
+        <table className="min-w-230 w-full text-xs">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-100 text-slate-700">
-              <th rowSpan={2} className="w-[210px] border-r border-slate-200 px-3 py-2 text-left font-bold uppercase">
+              <th rowSpan={2} className="w-52.5 border-r border-slate-200 px-3 py-2 text-left font-bold uppercase">
                 Descripción
               </th>
               <th colSpan={4} className="border-r border-slate-200 px-3 py-2 text-center font-bold uppercase">
                 Monto (S/.)
               </th>
-              <th rowSpan={2} className="w-[125px] border-r border-slate-200 px-3 py-2 text-right font-bold uppercase">
+              <th rowSpan={2} className="w-31.25 border-r border-slate-200 px-3 py-2 text-right font-bold uppercase">
                 Total parcial (S/.)
               </th>
-              <th rowSpan={2} className="w-[110px] px-3 py-2 text-right font-bold uppercase">
+              <th rowSpan={2} className="w-27.5 px-3 py-2 text-right font-bold uppercase">
                 Monto parcial (%)
               </th>
             </tr>
@@ -424,10 +424,10 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[720px] w-full text-xs">
+        <table className="min-w-180 w-full text-xs">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-100 text-slate-700">
-              <th className="w-[210px] border-r border-slate-200 px-3 py-2.5 text-left font-bold uppercase">Descripción</th>
+              <th className="w-52.5 border-r border-slate-200 px-3 py-2.5 text-left font-bold uppercase">Descripción</th>
               {data.weekLabels.map((week) => (
                 <th key={week} className="border-r border-slate-200 px-3 py-2.5 text-right font-bold uppercase last:border-r-0">
                   {week}
@@ -618,7 +618,7 @@ export default function ResumenComercial1Grid({
     if (selectedSource === "TABLA1") return "Fuente: Seguimiento A"
     if (selectedSource === "TABLA2") return "Fuente: Seguimiento B"
     return "Fuente: Consolidado General"
-  }, [isAdmin, canViewTabla1, selectedSource])
+  }, [isAdmin, selectedSource])
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
@@ -631,7 +631,7 @@ export default function ResumenComercial1Grid({
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
-          <div className="flex w-[466px] max-w-full items-center gap-2">
+          <div className="flex w-116.5 max-w-full items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <BarChart3 className="h-4 w-4" />
             </div>

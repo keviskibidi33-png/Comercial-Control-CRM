@@ -207,9 +207,9 @@ export function FixedProgramacionEditor({
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <div className="z-10 flex min-h-[3.5rem] h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
+      <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
-          <div className="flex w-[466px] max-w-full items-center gap-2">
+          <div className="flex w-116.5 max-w-full items-center gap-2">
             <div className="rounded-md bg-blue-600 p-1.5 text-white shadow-sm">
               <RefreshCw className="h-4 w-4" />
             </div>
