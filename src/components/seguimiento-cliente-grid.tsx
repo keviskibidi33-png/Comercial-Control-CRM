@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { useSeguimientoComercial2 } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { createClient } from "@/utils/supabase/client"
@@ -175,13 +176,15 @@ const WhatsAppIcon = () => (
   </svg>
 )
 
-interface SeguimientoClienteGridProps {
+export interface SeguimientoClienteGridProps {
   activeModuleTab: CommercialModuleTab
   onModuleTabChange: (tab: CommercialModuleTab) => void
   /** Controls visibility of the KPI tab. Defaults to true. */
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  /** Permite alternar entre Tabla 1 (Seguimiento A) y Tabla 2 (Seguimiento B). Defaults to 1. */
+  tablaId?: 1 | 2
 }
 
 type SortDirection = "asc" | "desc"
