@@ -154,30 +154,30 @@ function getMonthYearFromRows(rows: SeguimientoRow[]) {
   }
 }
 
+/**
+ * Una cotización enviada se detecta SOLO por estado_cliente.
+ * Estado seguimiento NO interviene en este cálculo para evitar traslape.
+ */
 function isSentQuote(row: SeguimientoRow) {
   const estadoClientNorm = normalizeText(row.estado_cliente)
-  const estadoSegNorm = normalizeText(row.estado_seguimiento)
   const isSent =
     estadoClientNorm.includes("COTIZACION") ||
     estadoClientNorm.includes("COTIZADO") ||
-    estadoClientNorm.includes("ENVIAD") ||
-    estadoSegNorm.includes("COTIZACION") ||
-    estadoSegNorm.includes("COTIZADO") ||
-    estadoSegNorm.includes("ENVIAD")
+    estadoClientNorm.includes("ENVIAD")
 
   return isSent && hasQuoteNumber(row.numero_cotizacion)
 }
 
+/**
+ * Una venta se detecta SOLO por estado_seguimiento = "Se Genero Venta".
+ * estado_cliente NO interviene en este cálculo.
+ */
 function isSale(row: SeguimientoRow) {
-  const estadoClientNorm = normalizeText(row.estado_cliente)
   const estadoSegNorm = normalizeText(row.estado_seguimiento)
   return (
-    estadoClientNorm.includes("VENTA") ||
-    estadoClientNorm.includes("GANADO") ||
-    estadoClientNorm.includes("VENDIDO") ||
-    estadoSegNorm.includes("VENTA") ||
-    estadoSegNorm.includes("GANADO") ||
-    estadoSegNorm.includes("VENDIDO")
+    estadoSegNorm === "SE GENERO VENTA" ||
+    estadoSegNorm.includes("GENERO VENTA") ||
+    estadoSegNorm.includes("SE GENERO VENTA")
   )
 }
 
@@ -712,7 +712,10 @@ export default function ResumenComercial1Grid({
             </span>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
-            <span className="font-bold text-slate-800">Reglas:</span> Cotización enviada usa Estado cliente = Cotización enviada, número de cotización y monto válido. Venta usa Estado seguimiento = Venta. Leads cuentan registros con número de cotización y Cliente nuevos los registros en Venta.
+            <span className="font-bold text-slate-800">Reglas:</span>{" "}
+            <span className="text-blue-700 font-semibold">Cotización enviada</span>: Estado <strong>cliente</strong> contiene &quot;Cotización enviada&quot; + número de cotización + monto válido.{" "}
+            <span className="text-emerald-700 font-semibold">Venta</span>: Estado <strong>seguimiento</strong> = <em>&quot;Se Genero Venta&quot;</em> (columna exclusiva, sin mezcla con Estado cliente).{" "}
+            Leads = registros con número de cotización. Clientes nuevos = registros en Venta.
           </div>
           <AmountTable title="Cotización enviada" data={kpis.quoteSent} weekLabels={kpis.weekLabels} loading={isLoading} tone="blue" />
           <AmountTable title="Venta" data={kpis.sales} weekLabels={kpis.weekLabels} loading={isLoading} tone="emerald" />
