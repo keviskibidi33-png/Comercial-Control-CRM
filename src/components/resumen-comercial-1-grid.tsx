@@ -169,16 +169,12 @@ function isSentQuote(row: SeguimientoRow) {
 }
 
 /**
- * Una venta se detecta SOLO por estado_seguimiento = "Se Genero Venta".
+ * Una venta se detecta SOLO por estado_seguimiento = "Venta".
  * estado_cliente NO interviene en este cálculo.
  */
 function isSale(row: SeguimientoRow) {
   const estadoSegNorm = normalizeText(row.estado_seguimiento)
-  return (
-    estadoSegNorm === "SE GENERO VENTA" ||
-    estadoSegNorm.includes("GENERO VENTA") ||
-    estadoSegNorm.includes("SE GENERO VENTA")
-  )
+  return estadoSegNorm === "VENTA" || estadoSegNorm.includes("VENTA")
 }
 
 function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
@@ -714,7 +710,7 @@ export default function ResumenComercial1Grid({
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
             <span className="font-bold text-slate-800">Reglas:</span>{" "}
             <span className="text-blue-700 font-semibold">Cotización enviada</span>: Estado <strong>cliente</strong> contiene &quot;Cotización enviada&quot; + número de cotización + monto válido.{" "}
-            <span className="text-emerald-700 font-semibold">Venta</span>: Estado <strong>seguimiento</strong> = <em>&quot;Se Genero Venta&quot;</em> (columna exclusiva, sin mezcla con Estado cliente).{" "}
+            <span className="text-emerald-700 font-semibold">Venta</span>: Estado <strong>seguimiento</strong> = <em>&quot;Venta&quot;</em> (columna exclusiva).{" "}
             Leads = registros con número de cotización. Clientes nuevos = registros en Venta.
           </div>
           <AmountTable title="Cotización enviada" data={kpis.quoteSent} weekLabels={kpis.weekLabels} loading={isLoading} tone="blue" />
