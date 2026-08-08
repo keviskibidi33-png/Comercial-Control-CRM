@@ -574,7 +574,7 @@ export default function ResumenComercial1Grid({
     const nameHint = (displayName || "").toLowerCase()
     const emailHint = normalizedEmail
     if (nameHint.includes("yerly") || emailHint.includes("asesorcomercial1")) {
-      return "Silvia Peralta (Equipo Yerly - Silvia)"
+      return "Equipo Comercial — Asesora Senior"
     }
     return resolvedAdvisorScope
   }, [resolvedAdvisorScope, displayName, normalizedEmail])
@@ -613,10 +613,10 @@ export default function ResumenComercial1Grid({
 
   const fuenteLabel = useMemo(() => {
     if (!isAdmin) {
-      return canViewTabla1 ? "Fuente: Seguimiento Yerly/Silvia (Tabla 1)" : "Fuente: Mi Seguimiento B2B"
+      return canViewTabla1 ? "Fuente: Seguimiento Comercial — Tabla A" : "Fuente: Seguimiento Comercial — Tabla B"
     }
-    if (selectedSource === "TABLA1") return "Fuente: Seguimiento Yerly/Silvia (Tabla 1)"
-    if (selectedSource === "TABLA2") return "Fuente: Seguimiento B2B (Tabla 2)"
+    if (selectedSource === "TABLA1") return "Fuente: Seguimiento Comercial — Tabla A"
+    if (selectedSource === "TABLA2") return "Fuente: Seguimiento Comercial — Tabla B"
     return "Fuente: Consolidado General (Todas las Tablas)"
   }, [isAdmin, canViewTabla1, selectedSource])
 
@@ -653,8 +653,8 @@ export default function ResumenComercial1Grid({
               className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
             >
               <option value="ALL">📌 Consolidado General (Todas las Tablas)</option>
-              <option value="TABLA1">👤 Seguimiento Yerly / Silvia (Tabla 1)</option>
-              <option value="TABLA2">🚀 Seguimiento B2B Nuevos (Tabla 2)</option>
+              <option value="TABLA1">📋 Seguimiento Comercial — Tabla A</option>
+              <option value="TABLA2">🚀 Seguimiento Comercial — Tabla B</option>
             </select>
           ) : (
             <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
