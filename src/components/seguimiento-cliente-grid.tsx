@@ -100,6 +100,20 @@ const formatDateToDDMMYY = (dateStr: string | undefined | null): string => {
   return `${day}/${month}/${year.slice(-2)}`
 }
 
+const getMonthFromDateStr = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return ""
+  const clean = String(dateStr).split("T")[0].trim()
+  if (clean.includes("-")) {
+    const parts = clean.split("-")
+    if (parts.length >= 2) return parts[1].padStart(2, "0")
+  }
+  if (clean.includes("/")) {
+    const parts = clean.split("/")
+    if (parts.length >= 2) return parts[1].padStart(2, "0")
+  }
+  return ""
+}
+
 const parseDDMMYYToDate = (displayStr: string): string | null => {
   const clean = displayStr.trim().replace(/[-\s.]/g, "/");
   if (!clean) return null;
@@ -319,6 +333,7 @@ export default function SeguimientoClienteGrid({
   const [selectedEstado, setSelectedEstado] = useState("")
   const [selectedEstadoSeguimiento, setSelectedEstadoSeguimiento] = useState("")
   const [selectedCategoria, setSelectedCategoria] = useState("")
+  const [selectedMonth, setSelectedMonth] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
@@ -591,10 +606,23 @@ export default function SeguimientoClienteGrid({
         if (!matchesAsesor) return false
       }
 
+      if (selectedEstado) {
+        const stClient = normalizeText(r.estado_cliente)
+        const targetClient = normalizeText(selectedEstado)
+        if (!stClient.includes(targetClient) && !targetClient.includes(stClient)) return false
+      }
+
       if (selectedEstadoSeguimiento) {
         const stSeg = normalizeText(r.estado_seguimiento)
         const targetSeg = normalizeText(selectedEstadoSeguimiento)
         if (!stSeg.includes(targetSeg) && !targetSeg.includes(stSeg)) return false
+      }
+
+      if (selectedMonth) {
+        const m1 = getMonthFromDateStr(r.fecha_contacto)
+        const m2 = getMonthFromDateStr(r.fecha_ultimo_contacto)
+        const m3 = getMonthFromDateStr((r as any).created_at)
+        if (m1 !== selectedMonth && m2 !== selectedMonth && m3 !== selectedMonth) return false
       }
 
       if (selectedCategoria) {
@@ -609,7 +637,7 @@ export default function SeguimientoClienteGrid({
 
       return true
     })
-  }, [rows, selectedAsesor, selectedEstadoSeguimiento, selectedCategoria])
+  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth])
 
   const sortedRows = useMemo(() => {
     const baseRows = [...filteredRows]
@@ -843,6 +871,32 @@ export default function SeguimientoClienteGrid({
             )}
           </div>
 
+          {/* Mes Filter */}
+          <div className="relative">
+            <select
+              value={selectedMonth}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50 font-medium"
+            >
+              <option value="">📅 Todos los Meses</option>
+              <option value="01">📅 Enero</option>
+              <option value="02">📅 Febrero</option>
+              <option value="03">📅 Marzo</option>
+              <option value="04">📅 Abril</option>
+              <option value="05">📅 Mayo</option>
+              <option value="06">📅 Junio</option>
+              <option value="07">📅 Julio</option>
+              <option value="08">📅 Agosto</option>
+              <option value="09">📅 Septiembre</option>
+              <option value="10">📅 Octubre</option>
+              <option value="11">📅 Noviembre</option>
+              <option value="12">📅 Diciembre</option>
+            </select>
+          </div>
+
           {/* Estado Cliente Filter */}
           <div className="relative">
             <select
@@ -922,7 +976,7 @@ export default function SeguimientoClienteGrid({
           )}
 
           {/* Clear Filters Button */}
-          {(search || selectedEstado || selectedEstadoSeguimiento || selectedCategoria || selectedAsesor) && (
+          {(search || selectedEstado || selectedEstadoSeguimiento || selectedCategoria || selectedAsesor || selectedMonth) && (
             <button
               onClick={() => {
                 setSearch("")
@@ -930,6 +984,7 @@ export default function SeguimientoClienteGrid({
                 setSelectedEstadoSeguimiento("")
                 setSelectedCategoria("")
                 setSelectedAsesor("")
+                setSelectedMonth("")
                 setCurrentPage(1)
               }}
               className="flex items-center gap-1 h-8 px-2.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
