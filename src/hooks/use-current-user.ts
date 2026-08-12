@@ -267,27 +267,27 @@ export function useCurrentUser() {
             try {
                 let profile: ProfileRecord | null = null
 
-                const res1 = await supabase
+                const { data: profileData, error: profileError } = await supabase
                     .from("perfiles")
                     .select("role, email, full_name, show_kpi, tabla_seguimiento, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
-                if (res1.error) {
-                    const fallback = await supabase
+                if (profileError) {
+                    const { data: fallbackData } = await supabase
                         .from("perfiles")
                         .select("role, email, full_name, role_definitions!fk_perfiles_role(permissions)")
                         .eq("id", currentUid)
                         .single()
 
-                    if (fallback?.data) {
-                        profile = fallback.data as ProfileRecord
+                    if (fallbackData) {
+                        profile = fallbackData as unknown as ProfileRecord
                     } else {
                         setLoading(false)
                         return
                     }
                 } else {
-                    profile = res1.data as ProfileRecord
+                    profile = profileData as unknown as ProfileRecord
                 }
 
                 if (profile) {
@@ -413,14 +413,14 @@ export function useCurrentUser() {
             return true
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
-        isLegacyUser: isLegacyTrackingUser(email, displayName, role),
+        isLegacyUser: isLegacyTrackingUser(email, displayName),
         /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins */
         canViewTabla1: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
             if (tablaSeguimiento === "tabla1") return true
             if (tablaSeguimiento === "tabla2") return false
-            return isLegacyTrackingUser(email, displayName, role)
+            return isLegacyTrackingUser(email, displayName)
         })(),
         /** Tabla 2 (seguimiento2) is visible for new commercial advisors, users assigned to tabla2, and Admins */
         canViewTabla2: (() => {
@@ -428,7 +428,7 @@ export function useCurrentUser() {
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
             if (tablaSeguimiento === "tabla2") return true
             if (tablaSeguimiento === "tabla1") return false
-            return !isLegacyTrackingUser(email, displayName, role)
+            return !isLegacyTrackingUser(email, displayName)
         })(),
     }
 }
@@ -451,8 +451,7 @@ export function isKpiAuthorizedUser(role: string | null | undefined, email: stri
 
 export function isLegacyTrackingUser(
     email?: string | null,
-    displayName?: string | null,
-    _role?: string | null
+    displayName?: string | null
 ): boolean {
     const normEmail = String(email || "").toLowerCase().trim()
     const normName = String(displayName || "").toLowerCase().trim()
