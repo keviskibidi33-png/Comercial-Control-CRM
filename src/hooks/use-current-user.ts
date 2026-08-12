@@ -267,14 +267,14 @@ export function useCurrentUser() {
             try {
                 let profile: ProfileRecord | null = null
 
-                const res1: any = await supabase
+                const res1 = await supabase
                     .from("perfiles")
                     .select("role, email, full_name, show_kpi, tabla_seguimiento, role_definitions!fk_perfiles_role(permissions)")
                     .eq("id", currentUid)
                     .single()
 
                 if (res1.error) {
-                    const fallback: any = await supabase
+                    const fallback = await supabase
                         .from("perfiles")
                         .select("role, email, full_name, role_definitions!fk_perfiles_role(permissions)")
                         .eq("id", currentUid)
@@ -452,7 +452,7 @@ export function isKpiAuthorizedUser(role: string | null | undefined, email: stri
 export function isLegacyTrackingUser(
     email?: string | null,
     displayName?: string | null,
-    role?: string | null
+    _role?: string | null
 ): boolean {
     const normEmail = String(email || "").toLowerCase().trim()
     const normName = String(displayName || "").toLowerCase().trim()

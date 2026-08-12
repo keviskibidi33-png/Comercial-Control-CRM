@@ -621,7 +621,7 @@ export default function SeguimientoClienteGrid({
       if (selectedMonth) {
         const m1 = getMonthFromDateStr(r.fecha_contacto)
         const m2 = getMonthFromDateStr(r.fecha_ultimo_contacto)
-        const m3 = getMonthFromDateStr((r as any).created_at)
+        const m3 = getMonthFromDateStr((r as SeguimientoRow & { created_at?: string }).created_at)
         if (m1 !== selectedMonth && m2 !== selectedMonth && m3 !== selectedMonth) return false
       }
 
