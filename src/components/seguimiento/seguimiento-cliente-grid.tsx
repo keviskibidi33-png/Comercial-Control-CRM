@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
@@ -216,7 +216,7 @@ type SortConfig = {
   direction: SortDirection
 } | null
 
-export default function SeguimientoClienteGrid({
+export function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
   canViewKpis = true,
@@ -1759,3 +1759,5 @@ export default function SeguimientoClienteGrid({
     </div>
   )
 }
+
+export default SeguimientoClienteGrid
