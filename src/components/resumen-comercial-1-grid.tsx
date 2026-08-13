@@ -171,13 +171,9 @@ function isSentQuote(row: SeguimientoRow) {
   return isSent && hasQuoteNumber(row.numero_cotizacion)
 }
 
-/**
- * Una venta se detecta SOLO por estado_seguimiento = "Venta".
- * estado_cliente NO interviene en este cálculo.
- */
 function isSale(row: SeguimientoRow) {
   const estadoSegNorm = normalizeText(row.estado_seguimiento)
-  return estadoSegNorm === "VENTA" || estadoSegNorm.includes("VENTA")
+  return estadoSegNorm === "VENTA"
 }
 
 function resolveSeguimientoCategory(row: SeguimientoRow): CategoryKey | null {
