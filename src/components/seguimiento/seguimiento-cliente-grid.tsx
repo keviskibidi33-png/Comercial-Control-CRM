@@ -34,7 +34,7 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   ruc: "",
   contacto: "WHATSAPP",
   rubro: "LABORATORIO",
-  estado_cliente: "EN ESPERA DE ATENCI├ôN",
+  estado_cliente: "EN ESPERA DE ATENCIÓN",
   servicio_solicitado: "",
   categoria_servicio: "",
   fecha_ultimo_contacto: "",
@@ -763,17 +763,17 @@ export function SeguimientoClienteGrid({
 
   // Grid columns definition
   const COLUMNS: readonly GridColumn[] = [
-    { key: "no", label: "N┬░", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
+    { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
     { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
     { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
     { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
     { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
     { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "453px" },
-    { key: "fecha_ultimo_contacto", label: "F. ├Ültimo\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "613px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "613px" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text" },
-    { key: "numero_cotizacion", label: "N┬░ Cotizaci├│n", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
+    { key: "numero_cotizacion", label: "N° Cotización", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "costo_cotiz_sin_igv", label: "Costo Cotiz\nSin IGV", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "text" },
     { key: "estado_seguimiento", label: "Estado Seguimiento", width: "w-36 min-w-[144px] max-w-[144px]", type: "catalog", catalogKey: "estados_seguimiento" },
     { key: "categoria_servicio", label: "CATEGORIA\nCLIENTE", width: "w-[140px] min-w-[140px] max-w-[140px]", type: "catalog", catalogKey: "categorias_servicio" },
@@ -791,7 +791,7 @@ export function SeguimientoClienteGrid({
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento 1</h1>
               <p className="text-[11px] text-zinc-500">
-                Seguimiento comercial, entregas y evidencia de atenci├│n.
+                Seguimiento comercial, entregas y evidencia de atención.
               </p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">
@@ -827,15 +827,15 @@ export function SeguimientoClienteGrid({
               className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 shadow-inner transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0 active:scale-[0.98]"
               title={connectionStatus}
             >
-              {connectionStatus === "EN L├ìNEA" ? (
+              {connectionStatus === "EN LÍNEA" ? (
                 <Wifi className="h-3.5 w-3.5 text-emerald-500" />
-              ) : connectionStatus === "SIN CONEXI├ôN" ? (
+              ) : connectionStatus === "SIN CONEXIÓN" ? (
                 <WifiOff className="h-3.5 w-3.5 text-red-500" />
               ) : (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-500" />
               )}
               <span className="hidden text-[10px] font-bold uppercase text-zinc-500 sm:inline">
-                {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN L├ìNEA" ? "En L├¡nea" : "Sin Conexi├│n"}
+                {connectionStatus === "CONECTANDO" ? "Conectando" : connectionStatus === "EN LÍNEA" ? "En Línea" : "Sin Conexión"}
               </span>
             </div>
           </div>
@@ -881,19 +881,19 @@ export function SeguimientoClienteGrid({
               }}
               className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50 font-medium"
             >
-              <option value="">­ƒôà Todos los Meses</option>
-              <option value="01">­ƒôà Enero</option>
-              <option value="02">­ƒôà Febrero</option>
-              <option value="03">­ƒôà Marzo</option>
-              <option value="04">­ƒôà Abril</option>
-              <option value="05">­ƒôà Mayo</option>
-              <option value="06">­ƒôà Junio</option>
-              <option value="07">­ƒôà Julio</option>
-              <option value="08">­ƒôà Agosto</option>
-              <option value="09">­ƒôà Septiembre</option>
-              <option value="10">­ƒôà Octubre</option>
-              <option value="11">­ƒôà Noviembre</option>
-              <option value="12">­ƒôà Diciembre</option>
+              <option value="">📅 Todos los Meses</option>
+              <option value="01">📅 Enero</option>
+              <option value="02">📅 Febrero</option>
+              <option value="03">📅 Marzo</option>
+              <option value="04">📅 Abril</option>
+              <option value="05">📅 Mayo</option>
+              <option value="06">📅 Junio</option>
+              <option value="07">📅 Julio</option>
+              <option value="08">📅 Agosto</option>
+              <option value="09">📅 Septiembre</option>
+              <option value="10">📅 Octubre</option>
+              <option value="11">📅 Noviembre</option>
+              <option value="12">📅 Diciembre</option>
             </select>
           </div>
 
@@ -935,7 +935,7 @@ export function SeguimientoClienteGrid({
             </select>
           </div>
 
-          {/* Categor├¡a Cliente / Servicio Filter */}
+          {/* Categoría Cliente / Servicio Filter */}
           <div className="relative">
             <select
               value={selectedCategoria}
@@ -945,7 +945,7 @@ export function SeguimientoClienteGrid({
               }}
               className="h-8 border border-zinc-200 rounded-md px-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 cursor-pointer hover:bg-zinc-50"
             >
-              <option value="">Todas las Categor├¡as</option>
+              <option value="">Todas las Categorías</option>
               {catalogs?.categorias_servicio?.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -965,10 +965,10 @@ export function SeguimientoClienteGrid({
                 }}
                 className="h-8 border border-blue-200 rounded-md px-2 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 bg-blue-50/80 text-blue-900 cursor-pointer hover:bg-blue-100/80"
               >
-                <option value="">­ƒæñ Todos los Asesores</option>
+                <option value="">👤 Todos los Asesores</option>
                 {uniqueAdvisors.map((adv) => (
                   <option key={adv} value={adv}>
-                    ­ƒæñ {adv}
+                    👤 {adv}
                   </option>
                 ))}
               </select>
@@ -1080,7 +1080,7 @@ export function SeguimientoClienteGrid({
                       : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                   `
 
-                  // Renders Read-Only 'N┬░' cell
+                  // Renders Read-Only 'N°' cell
                   if (isNo) {
                     return (
                       <td
@@ -1211,7 +1211,7 @@ export function SeguimientoClienteGrid({
                             if (parsed && parsed !== dbDate) {
                               updateCell(row.id, col.key as keyof SeguimientoRow, parsed)
                             } else if (!parsed) {
-                              toast.error("Formato de fecha inv├ílido. Use dd/mm/aa.")
+                              toast.error("Formato de fecha inválido. Use dd/mm/aa.")
                               e.target.value = displayValue
                             }
                           }}
@@ -1247,7 +1247,7 @@ export function SeguimientoClienteGrid({
                           className={`w-full min-w-0 min-h-5.5 cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
                           <span className="truncate min-w-0">{displayVal}</span>
-                          <span className="text-[9px] opacity-70 shrink-0 ml-1">­ƒôØ</span>
+                          <span className="text-[9px] opacity-70 shrink-0 ml-1">📝</span>
                         </div>
                       </td>
                     )
@@ -1476,7 +1476,7 @@ export function SeguimientoClienteGrid({
                         if (parsed) {
                           handleGhostChange(col.key as keyof SeguimientoRow, parsed)
                         } else {
-                          toast.error("Formato de fecha inv├ílido. Use dd/mm/aa.")
+                          toast.error("Formato de fecha inválido. Use dd/mm/aa.")
                           e.target.value = formatDateToDDMMYY(rawVal)
                         }
                       }}
@@ -1554,7 +1554,7 @@ export function SeguimientoClienteGrid({
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-xs text-zinc-600">
-            P├ígina {currentPage} de {totalPages}
+            Página {currentPage} de {totalPages}
           </span>
           <button
             className="p-1 rounded hover:bg-zinc-100 disabled:opacity-50"
@@ -1613,10 +1613,10 @@ export function SeguimientoClienteGrid({
                 </button>
               </div>
 
-              {/* Informaci├│n detallada para copiar/editar */}
+              {/* Información detallada para copiar/editar */}
               <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs shrink-0">
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Raz├│n Social</span>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Razón Social</span>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <input
                       type="text"
@@ -1631,9 +1631,9 @@ export function SeguimientoClienteGrid({
                     />
                     {commentModalRow.razon_social && (
                       <button
-                        onClick={() => copyToClipboard(commentModalRow.razon_social, "Raz├│n Social")}
+                        onClick={() => copyToClipboard(commentModalRow.razon_social, "Razón Social")}
                         className="p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700 shrink-0 transition-colors"
-                        title="Copiar Raz├│n Social"
+                        title="Copiar Razón Social"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
@@ -1728,14 +1728,14 @@ export function SeguimientoClienteGrid({
               <textarea
                 value={commentDraft}
                 onChange={(e) => handleCommentDraftChange(e.target.value)}
-                placeholder="Escribe aqu├¡ la observaci├│n o comentario..."
+                placeholder="Escribe aquí la observación o comentario..."
                 className="min-h-70 w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
             </div>
 
             <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[11px] text-muted-foreground">
-                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todav├¡a"}
+                {commentDraft.length > 0 ? `${commentDraft.length} caracteres escritos` : "Sin texto todavía"}
               </div>
               <div className="flex items-center gap-2">
                 <Button
