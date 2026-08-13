@@ -417,6 +417,14 @@ function AmountTable({
 }
 
 function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading: boolean }) {
+  const totalLeads = data.leads.reduce((sum, v) => sum + v, 0)
+  const totalNewClients = data.newClients.reduce((sum, v) => sum + v, 0)
+  const totalClientsSum = totalLeads + totalNewClients
+  const overallConversion = totalLeads > 0 ? Math.round((totalNewClients / totalLeads) * 100) : 0
+
+  const leadsPct = totalClientsSum > 0 ? Math.round((totalLeads / totalClientsSum) * 100) : 0
+  const newClientsPct = totalClientsSum > 0 ? Math.round((totalNewClients / totalClientsSum) * 100) : 0
+
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="flex items-center gap-2 border-b border-violet-200 bg-violet-50 px-4 py-3 text-violet-900">
@@ -425,20 +433,26 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-180 w-full text-xs">
+        <table className="min-w-230 w-full text-xs">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-100 text-slate-700">
               <th className="w-52.5 border-r border-slate-200 px-3 py-2.5 text-left font-bold uppercase">Descripción</th>
               {data.weekLabels.map((week) => (
-                <th key={week} className="border-r border-slate-200 px-3 py-2.5 text-right font-bold uppercase last:border-r-0">
+                <th key={week} className="border-r border-slate-200 px-3 py-2.5 text-right font-bold uppercase">
                   {week}
                 </th>
               ))}
+              <th className="w-31.25 border-r border-slate-200 px-3 py-2.5 text-right font-bold uppercase text-slate-900">
+                Total parcial
+              </th>
+              <th className="w-27.5 px-3 py-2.5 text-right font-bold uppercase text-slate-900">
+                Monto parcial (%)
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <LoadingRows rows={3} columns={5} />
+              <LoadingRows rows={3} columns={7} />
             ) : (
               <>
                 <tr className="border-b border-slate-100 hover:bg-slate-50/80">
@@ -448,6 +462,12 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
                       {countFormatter.format(value)}
                     </td>
                   ))}
+                  <td className="border-r border-slate-200 px-3 py-2.5 text-right font-mono font-bold tabular-nums text-slate-900">
+                    {countFormatter.format(totalLeads)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">
+                    {leadsPct}%
+                  </td>
                 </tr>
                 <tr className="border-b border-slate-200 hover:bg-slate-50/80">
                   <td className="border-r border-slate-200 px-3 py-2.5 font-semibold text-slate-700">CLIENTE NUEVOS</td>
@@ -456,6 +476,12 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
                       {countFormatter.format(value)}
                     </td>
                   ))}
+                  <td className="border-r border-slate-200 px-3 py-2.5 text-right font-mono font-bold tabular-nums text-slate-900">
+                    {countFormatter.format(totalNewClients)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">
+                    {newClientsPct}%
+                  </td>
                 </tr>
                 <tr className="bg-violet-50 font-black text-violet-950">
                   <td className="border-r border-violet-200 px-3 py-3">
@@ -469,6 +495,12 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
                       {value.toLocaleString("es-PE", { maximumFractionDigits: 0 })}%
                     </td>
                   ))}
+                  <td className="border-r border-violet-200 px-3 py-3 text-right font-mono text-sm tabular-nums text-violet-950">
+                    {overallConversion}%
+                  </td>
+                  <td className="px-3 py-3 text-right tabular-nums text-violet-950">
+                    {overallConversion}%
+                  </td>
                 </tr>
               </>
             )}
