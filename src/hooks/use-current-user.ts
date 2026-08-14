@@ -117,8 +117,15 @@ export function useCurrentUser() {
                 ? "ADMIN"
                 : "LAB"
 
+    const qEmail = searchParams.get("email") || searchParams.get("userEmail") || null
+    const qIsAdvisor2Param = searchParams.get("isAsesorComercial2") === "true"
+    const qCanViewCom = searchParams.has("canViewCom") ? searchParams.get("canViewCom") === "true" : null
+    const qCanViewPublicidad = searchParams.has("canViewPublicidad") ? searchParams.get("canViewPublicidad") === "true" : null
+    const qCanViewTabla1 = searchParams.has("canViewTabla1") ? searchParams.get("canViewTabla1") === "true" : null
+    const qCanViewTabla2 = searchParams.has("canViewTabla2") ? searchParams.get("canViewTabla2") === "true" : null
+
     const [role, setRole] = useState<string | null>(qRole)
-    const [email, setEmail] = useState<string | null>(null)
+    const [email, setEmail] = useState<string | null>(qEmail)
     // Use the userName passed from the parent shell as the initial displayName (sync, no DB wait)
     const [displayName, setDisplayName] = useState<string | null>(qUserName)
     const [loading, setLoading] = useState(true)
@@ -400,8 +407,17 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             return rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin
         })(),
-        // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins.
+        /** Specific restriction for asesorcomercial2@geofal.com.pe */
+        isAsesorComercial2: isAsesorComercial2(email, displayName, qIsAdvisor2Param),
+        /** Lab tab is visible */
+        canViewLab: true,
+        /** Comercial tab is hidden for asesorcomercial2 */
+        canViewCom: qCanViewCom !== null ? qCanViewCom : !isAsesorComercial2(email, displayName, qIsAdvisor2Param),
+        /** Publicidad tab is hidden for asesorcomercial2 */
+        canViewPublicidad: qCanViewPublicidad !== null ? qCanViewPublicidad : !isAsesorComercial2(email, displayName, qIsAdvisor2Param),
+        // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins and asesorcomercial2.
         canViewKpis: (() => {
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param)) return true
             // Admin always sees KPI regardless of show_kpi
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
@@ -414,16 +430,20 @@ export function useCurrentUser() {
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
         isLegacyUser: isLegacyTrackingUser(email, displayName),
-        /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins */
+        /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins (blocked for asesorcomercial2) */
         canViewTabla1: (() => {
+            if (qCanViewTabla1 !== null) return qCanViewTabla1
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param)) return false
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
             if (tablaSeguimiento === "tabla1") return true
             if (tablaSeguimiento === "tabla2") return false
             return isLegacyTrackingUser(email, displayName)
         })(),
-        /** Tabla 2 (seguimiento2) is visible for new commercial advisors, users assigned to tabla2, and Admins */
+        /** Tabla 2 (seguimiento2) is visible for new commercial advisors (including asesorcomercial2), users assigned to tabla2, and Admins */
         canViewTabla2: (() => {
+            if (qCanViewTabla2 !== null) return qCanViewTabla2
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param)) return true
             const rNorm = (role || qRole || "").toLowerCase()
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
             if (tablaSeguimiento === "tabla2") return true
@@ -431,6 +451,17 @@ export function useCurrentUser() {
             return !isLegacyTrackingUser(email, displayName)
         })(),
     }
+}
+
+export function isAsesorComercial2(
+    email?: string | null,
+    displayName?: string | null,
+    paramFlag?: boolean,
+): boolean {
+    if (paramFlag) return true
+    const normEmail = String(email || "").toLowerCase().trim()
+    const normName = String(displayName || "").toLowerCase().trim()
+    return normEmail.includes("asesorcomercial2") || normName.includes("asesorcomercial2") || normEmail.includes("asesor2") || normName.includes("asesor 2")
 }
 
 const KPI_AUTHORIZED_IDENTITIES = ["irma.coaquira", "irma", "fabian", "labprueba"]

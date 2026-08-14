@@ -22,13 +22,21 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
   const [tabAutoSet, setTabAutoSet] = useState(false)
-  const { canViewKpis, canViewTabla1, canViewTabla2, loading } = useCurrentUser()
+  const { canViewLab, canViewCom, canViewKpis, canViewTabla1, canViewTabla2, canViewPublicidad, loading } = useCurrentUser()
 
-  // Once permissions load, auto-navigate to the correct seguimiento tab
-  // for users who only have one tabla assigned (not admins who see both).
+  // Once permissions load, auto-navigate to the correct initial tab
+  // for users who only have one tabla assigned or restricted access (e.g. asesorcomercial2).
   if (!loading && !tabAutoSet) {
     setTabAutoSet(true)
-    if (activeTab === "com") {
+    if (activeTab === "com" && !canViewCom) {
+      if (canViewTabla2) {
+        setActiveTab("seguimiento2")
+      } else if (canViewTabla1) {
+        setActiveTab("seguimiento")
+      } else if (canViewLab) {
+        setActiveTab("lab")
+      }
+    } else if (activeTab === "com") {
       const onlyTabla1 = canViewTabla1 && !canViewTabla2
       const onlyTabla2 = canViewTabla2 && !canViewTabla1
       if (onlyTabla1) {
@@ -41,12 +49,18 @@ function CommercialHome() {
 
   /**
    * Safe active tab resolution:
-   * 1. If tab is KPI but !canViewKpis -> redirect to default "com"
-   * 2. If tab is Tabla 1 (seguimiento) but !canViewTabla1 -> redirect to Tabla 2 (seguimiento2)
-   * 3. If tab is Tabla 2 (seguimiento2) but !canViewTabla2 -> redirect to Tabla 1 (seguimiento)
+   * 1. If tab is Lab but !canViewLab -> redirect
+   * 2. If tab is Comercial but !canViewCom -> redirect to "seguimiento2"
+   * 3. If tab is Publicidad but !canViewPublicidad -> redirect to "seguimiento2"
+   * 4. If tab is KPI but !canViewKpis -> redirect to default "com" / "seguimiento2"
+   * 5. If tab is Tabla 1 (seguimiento) but !canViewTabla1 -> redirect to Tabla 2 (seguimiento2)
+   * 6. If tab is Tabla 2 (seguimiento2) but !canViewTabla2 -> redirect to Tabla 1 (seguimiento)
    */
   const safeActiveTab: CommercialModuleTab = (() => {
-    if (activeTab === "resumen_comercial_1" && !canViewKpis) return "com"
+    if (activeTab === "com" && !canViewCom) return canViewTabla2 ? "seguimiento2" : canViewLab ? "lab" : "seguimiento2"
+    if (activeTab === "publicidad" && !canViewPublicidad) return canViewTabla2 ? "seguimiento2" : canViewCom ? "com" : "lab"
+    if (activeTab === "lab" && !canViewLab) return canViewTabla2 ? "seguimiento2" : "com"
+    if (activeTab === "resumen_comercial_1" && !canViewKpis) return canViewCom ? "com" : "seguimiento2"
     if (activeTab === "seguimiento" && !canViewTabla1) return "seguimiento2"
     if (activeTab === "seguimiento2" && !canViewTabla2) return "seguimiento"
     return activeTab
@@ -54,9 +68,12 @@ function CommercialHome() {
 
   const handleTabChange = (tab: CommercialModuleTab) => {
     // Prevent navigating to unauthorized tabs
+    if (tab === "lab" && !canViewLab) return
+    if (tab === "com" && !canViewCom) return
     if (tab === "resumen_comercial_1" && !canViewKpis) return
     if (tab === "seguimiento" && !canViewTabla1) return
     if (tab === "seguimiento2" && !canViewTabla2) return
+    if (tab === "publicidad" && !canViewPublicidad) return
     setActiveTab(tab)
   }
 
@@ -86,9 +103,12 @@ function CommercialHome() {
               showViewTabs={false}
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "com" ? (
             <FixedProgramacionEditor
@@ -102,41 +122,56 @@ function CommercialHome() {
               showViewTabs={false}
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "seguimiento" ? (
             <SeguimientoClienteGrid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "seguimiento2" ? (
             <SeguimientoClienteGrid2
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           ) : (
             <PublicidadGeofalGrid
               activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewPublicidad={canViewPublicidad}
             />
           )}
         </Suspense>

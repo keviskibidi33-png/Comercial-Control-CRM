@@ -9,21 +9,30 @@ interface CommercialModuleTabsProps {
   activeTab: CommercialModuleTab
   onTabChange: (tab: CommercialModuleTab) => void
   className?: string
+  /** If false, the Lab tab is hidden */
+  canViewLab?: boolean
+  /** If false, the Comercial tab is hidden */
+  canViewCom?: boolean
   /** If false, the KPI tab (resumen_comercial_1) is hidden entirely */
   canViewKpis?: boolean
   /** If false, Tabla 1 (seguimiento) is hidden */
   canViewTabla1?: boolean
   /** If false, Tabla 2 (seguimiento2) is hidden */
   canViewTabla2?: boolean
+  /** If false, the Publicidad tab is hidden */
+  canViewPublicidad?: boolean
 }
 
 export function CommercialModuleTabs({
   activeTab,
   onTabChange,
   className = "",
+  canViewLab = true,
+  canViewCom = true,
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewPublicidad = true,
 }: CommercialModuleTabsProps) {
   const isAdminView = canViewTabla1 && canViewTabla2
 
@@ -55,12 +64,18 @@ export function CommercialModuleTabs({
   }
 
   const visibleTabs = (Object.keys(TAB_LABELS) as CommercialModuleTab[]).filter((tab) => {
+    // Hide Lab tab when disabled
+    if (tab === "lab" && !canViewLab) return false
+    // Hide Comercial tab when disabled
+    if (tab === "com" && !canViewCom) return false
     // Hide KPI tab entirely when user doesn't have permission
     if (tab === "resumen_comercial_1" && !canViewKpis) return false
     // Hide Tabla 1 ("Seguimiento") for non-legacy commercial users
     if (tab === "seguimiento" && !canViewTabla1) return false
     // Hide Tabla 2 ("Seguimiento 2") for legacy users
     if (tab === "seguimiento2" && !canViewTabla2) return false
+    // Hide Publicidad tab when disabled
+    if (tab === "publicidad" && !canViewPublicidad) return false
     return true
   })
 

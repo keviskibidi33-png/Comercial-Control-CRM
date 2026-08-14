@@ -203,9 +203,12 @@ export interface SeguimientoClienteGridProps {
   activeModuleTab: CommercialModuleTab
   onModuleTabChange: (tab: CommercialModuleTab) => void
   /** Controls visibility of the KPI tab. Defaults to true. */
+  canViewLab?: boolean
+  canViewCom?: boolean
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewPublicidad?: boolean
   /** Permite alternar entre Tabla 1 (Seguimiento A) y Tabla 2 (Seguimiento B). Defaults to 1. */
   tablaId?: 1 | 2
 }
@@ -219,9 +222,12 @@ type SortConfig = {
 export function SeguimientoClienteGrid({
   activeModuleTab,
   onModuleTabChange,
+  canViewLab = true,
+  canViewCom = true,
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewPublicidad = true,
   tablaId = 1,
 }: SeguimientoClienteGridProps) {
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
@@ -799,7 +805,17 @@ export function SeguimientoClienteGrid({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} canViewTabla1={canViewTabla1} canViewTabla2={canViewTabla2} />
+          <CommercialModuleTabs
+            activeTab={activeModuleTab}
+            onTabChange={onModuleTabChange}
+            className="min-w-0 flex-1"
+            canViewLab={canViewLab}
+            canViewCom={canViewCom}
+            canViewKpis={canViewKpis}
+            canViewTabla1={canViewTabla1}
+            canViewTabla2={canViewTabla2}
+            canViewPublicidad={canViewPublicidad}
+          />
         </div>
 
         <div className="flex items-center gap-3">

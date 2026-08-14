@@ -162,15 +162,21 @@ type SortConfig = {
 export default function PublicidadGeofalGrid({
   activeModuleTab,
   onModuleTabChange,
+  canViewLab = true,
+  canViewCom = true,
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewPublicidad = true,
 }: {
   activeModuleTab: CommercialModuleTab
   onModuleTabChange: (tab: CommercialModuleTab) => void
+  canViewLab?: boolean
+  canViewCom?: boolean
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewPublicidad?: boolean
 }) {
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -528,7 +534,17 @@ export default function PublicidadGeofalGrid({
             </span>
           </div>
 
-          <CommercialModuleTabs activeTab={activeModuleTab} onTabChange={onModuleTabChange} className="min-w-0 flex-1" canViewKpis={canViewKpis} canViewTabla1={canViewTabla1} canViewTabla2={canViewTabla2} />
+          <CommercialModuleTabs
+            activeTab={activeModuleTab}
+            onTabChange={onModuleTabChange}
+            className="min-w-0 flex-1"
+            canViewLab={canViewLab}
+            canViewCom={canViewCom}
+            canViewKpis={canViewKpis}
+            canViewTabla1={canViewTabla1}
+            canViewTabla2={canViewTabla2}
+            canViewPublicidad={canViewPublicidad}
+          />
         </div>
 
         <div className="flex items-center gap-3">

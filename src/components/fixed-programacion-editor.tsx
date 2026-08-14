@@ -34,9 +34,12 @@ interface FixedProgramacionEditorProps {
   activeModuleTab?: CommercialModuleTab
   onModuleTabChange?: (tab: CommercialModuleTab) => void
   /** Controls visibility of the KPI tab in the module tabs bar. */
+  canViewLab?: boolean
+  canViewCom?: boolean
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewPublicidad?: boolean
 }
 
 const COLUMN_MAP = {
@@ -131,9 +134,12 @@ export function FixedProgramacionEditor({
   showViewTabs = true,
   activeModuleTab = "com",
   onModuleTabChange,
+  canViewLab,
+  canViewCom,
   canViewKpis,
   canViewTabla1,
   canViewTabla2,
+  canViewPublicidad,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
   const { data, isLoading, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
@@ -227,9 +233,12 @@ export function FixedProgramacionEditor({
               activeTab={activeModuleTab}
               onTabChange={onModuleTabChange}
               className="min-w-0 flex-1"
+              canViewLab={canViewLab ?? true}
+              canViewCom={canViewCom ?? true}
               canViewKpis={canViewKpis ?? true}
               canViewTabla1={canViewTabla1 ?? true}
               canViewTabla2={canViewTabla2 ?? true}
+              canViewPublicidad={canViewPublicidad ?? true}
             />
           ) : null}
 
