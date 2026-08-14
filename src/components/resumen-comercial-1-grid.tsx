@@ -158,17 +158,10 @@ function getMonthYearFromRows(rows: SeguimientoRow[]) {
 }
 
 /**
- * Una cotización enviada se detecta SOLO por estado_cliente.
- * Estado seguimiento NO interviene en este cálculo para evitar traslape.
+ * Cotización enviada se alimenta del patrón: Fecha de contacto + costo sin IGV + categoría cliente.
  */
-function isSentQuote(row: SeguimientoRow) {
-  const estadoClientNorm = normalizeText(row.estado_cliente)
-  const isSent =
-    estadoClientNorm.includes("COTIZACION") ||
-    estadoClientNorm.includes("COTIZADO") ||
-    estadoClientNorm.includes("ENVIAD")
-
-  return isSent && hasQuoteNumber(row.numero_cotizacion)
+function isSentQuote(_row: SeguimientoRow) {
+  return true
 }
 
 function isSale(row: SeguimientoRow) {
@@ -732,7 +725,7 @@ export default function ResumenComercial1Grid({
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
             <span className="font-bold text-slate-800">Reglas:</span>{" "}
-            <span className="text-blue-700 font-semibold">Cotización enviada</span>: Estado <strong>cliente</strong> contiene &quot;Cotización enviada&quot; + número de cotización + monto válido.{" "}
+            <span className="text-blue-700 font-semibold">Cotización enviada</span>: Fecha de contacto + costo sin IGV + categoría cliente.{" "}
             <span className="text-emerald-700 font-semibold">Venta</span>: Estado <strong>seguimiento</strong> = <em>&quot;Venta&quot;</em> (columna exclusiva).{" "}
             Leads = registros con número de cotización. Clientes nuevos = registros en Venta.
           </div>
