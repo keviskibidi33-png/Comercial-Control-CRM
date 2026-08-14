@@ -37,11 +37,11 @@ export function CommercialModuleTabs({
       icon: <Briefcase className="h-3.5 w-3.5" />,
     },
     seguimiento: {
-      label: "Seguimiento",
+      label: "Seguimiento 1",
       icon: <Users className="h-3.5 w-3.5" />,
     },
     seguimiento2: {
-      label: isAdminView ? "Seguimiento 2" : "Seguimiento",
+      label: "Seguimiento 2",
       icon: <Users className="h-3.5 w-3.5" />,
     },
     resumen_comercial_1: {

@@ -630,10 +630,10 @@ export default function ResumenComercial1Grid({
 
   const fuenteLabel = useMemo(() => {
     if (!isAdmin) {
-      return "Fuente: Seguimiento"
+      return "Fuente: Seguimiento 1"
     }
-    if (selectedSource === "TABLA1") return "Fuente: Seguimiento A"
-    if (selectedSource === "TABLA2") return "Fuente: Seguimiento B"
+    if (selectedSource === "TABLA1") return "Fuente: Seguimiento 1"
+    if (selectedSource === "TABLA2") return "Fuente: Seguimiento 2"
     return "Fuente: Consolidado General"
   }, [isAdmin, selectedSource])
 
@@ -670,8 +670,8 @@ export default function ResumenComercial1Grid({
               className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
             >
               <option value="ALL">Consolidado General</option>
-              <option value="TABLA1">Seguimiento A</option>
-              <option value="TABLA2">Seguimiento B</option>
+              <option value="TABLA1">Seguimiento 1</option>
+              <option value="TABLA2">Seguimiento 2</option>
             </select>
           ) : (
             <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
