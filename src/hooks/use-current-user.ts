@@ -460,8 +460,12 @@ export function isAsesorComercial2(
 ): boolean {
     if (paramFlag) return true
     const normEmail = String(email || "").toLowerCase().trim()
-    const normName = String(displayName || "").toLowerCase().trim()
-    return normEmail.includes("asesorcomercial2") || normName.includes("asesorcomercial2") || normEmail.includes("asesor2") || normName.includes("asesor 2")
+    return (
+        normEmail === "ejecutivocomercial2@geofal.com.pe" ||
+        normEmail === "asesorcomercial2@geofal.com.pe" ||
+        normEmail.includes("ejecutivocomercial2") ||
+        normEmail.includes("asesorcomercial2")
+    )
 }
 
 const KPI_AUTHORIZED_IDENTITIES = ["irma.coaquira", "irma", "fabian", "labprueba"]
