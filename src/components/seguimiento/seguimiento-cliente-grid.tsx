@@ -267,16 +267,19 @@ export function SeguimientoClienteGrid({
     }
   }
 
-  const openCommentsModal = (row: SeguimientoRow, field: CommentFieldKey) => {
-    setCommentModalRow(row)
+  const openCommentsModal = (row: SeguimientoRow | Partial<SeguimientoRow>, field: CommentFieldKey) => {
+    setCommentModalRow(row as SeguimientoRow)
     setActiveCommentField(field)
     const fallbackValue = readLegacyCommentValue(row[field])
-    const draftValue = readStoredCommentDraft(row.id, field, fallbackValue)
+    const isRealRow = typeof row.id === "number" && row.id > 0
+    const draftValue = isRealRow
+      ? readStoredCommentDraft(row.id as number, field, fallbackValue)
+      : (fallbackValue || (ghostRow.comentarios_asesor as string) || "")
     setCommentDraft(draftValue)
     let storedDraftExists = false
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isRealRow) {
       try {
-        storedDraftExists = window.localStorage.getItem(getCommentDraftStorageKey(row.id, field)) !== null
+        storedDraftExists = window.localStorage.getItem(getCommentDraftStorageKey(row.id as number, field)) !== null
       } catch {
         storedDraftExists = false
       }
@@ -294,6 +297,14 @@ export function SeguimientoClienteGrid({
     if (!commentModalRow || !activeCommentField) return
 
     const payload = commentDraft
+
+    // Si es fila rápida (Ghost Row), se asigna al estado local del nuevo registro
+    if (!commentModalRow.id || commentModalRow.id <= 0) {
+      handleGhostChange("comentarios_asesor", payload)
+      toast.success("Comentario añadido al nuevo registro.")
+      closeCommentsModal()
+      return
+    }
 
     setIsSavingComment(true)
     try {
@@ -795,7 +806,9 @@ export function SeguimientoClienteGrid({
               <Users className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">Seguimiento 1</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-zinc-800">
+                {tablaId === 2 ? "Seguimiento 2" : "Seguimiento 1"}
+              </h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
               </p>
@@ -1505,6 +1518,53 @@ export function SeguimientoClienteGrid({
                 )
               }
                 
+              if (col.key === "comentarios_asesor") {
+                const ghostVal = (ghostRow.comentarios_asesor as string) || ""
+                const hasGhostVal = ghostVal.trim().length > 0
+                return (
+                  <td
+                    key={`ghost-${col.key}`}
+                    style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                    className={`px-1.5 ${baseGhostClass}`}
+                  >
+                    <div className="flex items-center gap-1 w-full h-full">
+                      <input
+                        type="text"
+                        placeholder="Asesor Comentario..."
+                        value={ghostVal}
+                        onChange={(e) => handleGhostChange("comentarios_asesor", e.target.value)}
+                        onKeyDown={handleGhostKeyDown}
+                        className={`ghost-input flex-1 min-w-0 bg-transparent border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 ${
+                          isPinned ? "font-bold text-zinc-900" : "text-zinc-800"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openCommentsModal({
+                            id: -1,
+                            razon_social: ghostRow.razon_social || "",
+                            ruc: ghostRow.ruc || "",
+                            email: ghostRow.email || "",
+                            contacto: ghostRow.contacto || "WHATSAPP",
+                            comentarios_asesor: ghostRow.comentarios_asesor || "",
+                          }, "comentarios_asesor")
+                        }}
+                        className={`h-6 px-1.5 rounded flex items-center justify-center text-[10px] border transition-colors shrink-0 ${
+                          hasGhostVal
+                            ? "bg-emerald-100 border-emerald-300 text-emerald-800 hover:bg-emerald-200"
+                            : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100"
+                        }`}
+                        title="Abrir bloc de notas para redactar comentario detallado"
+                      >
+                        <span>📝</span>
+                      </button>
+                    </div>
+                  </td>
+                )
+              }
+
+              const cleanLabel = col.label.replace(/\n/g, " ")
               return (
                 <td
                   key={`ghost-${col.key}`}
@@ -1513,7 +1573,7 @@ export function SeguimientoClienteGrid({
                 >
                   <input
                     type="text"
-                    placeholder={`${col.label}...`}
+                    placeholder={`${cleanLabel}...`}
                     value={(ghostRow[col.key as keyof SeguimientoRow] as string) || ""}
                     onChange={(e) => handleGhostChange(col.key as keyof SeguimientoRow, e.target.value)}
                     onBlur={(e) => {
@@ -1639,7 +1699,11 @@ export function SeguimientoClienteGrid({
                       defaultValue={commentModalRow.razon_social || ""}
                       onBlur={(e) => {
                         if ((commentModalRow.razon_social || "") !== e.target.value) {
-                          updateCell(commentModalRow.id, "razon_social", e.target.value)
+                          if (commentModalRow.id && commentModalRow.id > 0) {
+                            updateCell(commentModalRow.id, "razon_social", e.target.value)
+                          } else {
+                            handleGhostChange("razon_social", e.target.value)
+                          }
                           setCommentModalRow(prev => prev ? { ...prev, razon_social: e.target.value } : null)
                         }
                       }}
@@ -1665,7 +1729,11 @@ export function SeguimientoClienteGrid({
                       defaultValue={commentModalRow.ruc || ""}
                       onBlur={(e) => {
                         if ((commentModalRow.ruc || "") !== e.target.value) {
-                          updateCell(commentModalRow.id, "ruc", e.target.value)
+                          if (commentModalRow.id && commentModalRow.id > 0) {
+                            updateCell(commentModalRow.id, "ruc", e.target.value)
+                          } else {
+                            handleGhostChange("ruc", e.target.value)
+                          }
                           setCommentModalRow(prev => prev ? { ...prev, ruc: e.target.value } : null)
                         }
                       }}
@@ -1691,7 +1759,11 @@ export function SeguimientoClienteGrid({
                       defaultValue={commentModalRow.email || ""}
                       onBlur={(e) => {
                         if ((commentModalRow.email || "") !== e.target.value) {
-                          updateCell(commentModalRow.id, "email", e.target.value)
+                          if (commentModalRow.id && commentModalRow.id > 0) {
+                            updateCell(commentModalRow.id, "email", e.target.value)
+                          } else {
+                            handleGhostChange("email", e.target.value)
+                          }
                           setCommentModalRow(prev => prev ? { ...prev, email: e.target.value } : null)
                         }
                       }}
@@ -1715,7 +1787,11 @@ export function SeguimientoClienteGrid({
                     <select
                       value={commentModalRow.contacto || ""}
                       onChange={(e) => {
-                        updateCell(commentModalRow.id, "contacto", e.target.value)
+                        if (commentModalRow.id && commentModalRow.id > 0) {
+                          updateCell(commentModalRow.id, "contacto", e.target.value)
+                        } else {
+                          handleGhostChange("contacto", e.target.value)
+                        }
                         setCommentModalRow(prev => prev ? { ...prev, contacto: e.target.value } : null)
                       }}
                       className="font-semibold text-zinc-800 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none h-5.5"
