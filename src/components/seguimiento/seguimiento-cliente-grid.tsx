@@ -508,7 +508,7 @@ export function SeguimientoClienteGrid({
 
   const { isAdmin } = useCurrentUser()
   const [selectedAsesor, setSelectedAsesor] = useState<string>("")
-  const [dbAdvisors, setDbAdvisors] = useState<string[]>([])
+  const [dbAdvisors, setDbAdvisors] = useState<{label: string, value: string}[]>([])
 
   useEffect(() => {
     async function fetchAdvisors() {
@@ -522,14 +522,17 @@ export function SeguimientoClienteGrid({
         const { data, error } = await supabase
           .from("perfiles")
           .select("full_name, email, role")
+          .in("role", ["ejecutivo_comercial", "auxiliar_comercial"])
+          
         if (!error && data) {
           const names = (data as PerfilItem[])
             .map((p: PerfilItem) => {
               const name = typeof p.full_name === "string" && p.full_name.trim() ? p.full_name.trim() : ""
               const mail = typeof p.email === "string" && p.email.trim() ? p.email.trim() : ""
-              return name || mail
+              if (!mail) return null
+              return { label: name || mail, value: mail }
             })
-            .filter(Boolean) as string[]
+            .filter(Boolean) as {label: string, value: string}[]
           setDbAdvisors(names)
         }
       } catch {
@@ -593,18 +596,8 @@ export function SeguimientoClienteGrid({
   }
 
   const uniqueAdvisors = useMemo(() => {
-    const set = new Set<string>()
-    dbAdvisors.forEach((adv) => set.add(adv))
-    catalogs?.asesores?.forEach((adv) => {
-      if (adv && adv.trim()) set.add(adv.trim())
-    })
-    rows.forEach((r) => {
-      if (r.asesor && r.asesor.trim()) set.add(r.asesor.trim())
-      if (r.creado_por && r.creado_por.trim()) set.add(r.creado_por.trim())
-      if (r.asesor_email && r.asesor_email.trim()) set.add(r.asesor_email.trim())
-    })
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"))
-  }, [dbAdvisors, catalogs, rows])
+    return [...dbAdvisors].sort((a, b) => a.label.localeCompare(b.label, "es"))
+  }, [dbAdvisors])
 
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
@@ -996,8 +989,8 @@ export function SeguimientoClienteGrid({
               >
                 <option value="">👤 Todos los Asesores</option>
                 {uniqueAdvisors.map((adv) => (
-                  <option key={adv} value={adv}>
-                    👤 {adv}
+                  <option key={adv.value} value={adv.value}>
+                    👤 {adv.label}
                   </option>
                 ))}
               </select>
