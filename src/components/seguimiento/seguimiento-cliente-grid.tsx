@@ -523,7 +523,8 @@ export function SeguimientoClienteGrid({
           .from("perfiles")
           .select("full_name, email, role")
           .in("role", ["ejecutivo_comercial", "auxiliar_comercial"])
-          
+          .eq("tabla_seguimiento", tablaId === 2 ? "tabla2" : "tabla1")
+          .not("email", "like", "%@crm.com")
         if (!error && data) {
           const names = (data as PerfilItem[])
             .map((p: PerfilItem) => {
