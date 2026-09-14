@@ -315,13 +315,19 @@ export function DataTable<TData, TValue>({
         return () => window.cancelAnimationFrame(frameId)
     }, [rows.length, scrollOffset])
 
-    // Notify parent about filtered items
+    // Notify parent about filtered items without infinite re-render loop
+    const filteredRows = table.getFilteredRowModel().rows
+    const lastNotifiedSigRef = React.useRef<string>("")
+
     React.useEffect(() => {
-        if (onFilteredDataChange) {
-            const filteredItems = table.getFilteredRowModel().rows.map(row => row.original)
-            onFilteredDataChange(filteredItems)
-        }
-    }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+        if (!onFilteredDataChange) return
+        const firstId = (filteredRows[0]?.original as Record<string, unknown>)?.id ?? ""
+        const lastId = (filteredRows[filteredRows.length - 1]?.original as Record<string, unknown>)?.id ?? ""
+        const signature = `${filteredRows.length}:${firstId}:${lastId}`
+        if (lastNotifiedSigRef.current === signature) return
+        lastNotifiedSigRef.current = signature
+        onFilteredDataChange(filteredRows.map((row) => row.original))
+    }, [filteredRows, onFilteredDataChange])
 
     return (
         <div className="flex flex-col h-full bg-white font-sans text-sm">
