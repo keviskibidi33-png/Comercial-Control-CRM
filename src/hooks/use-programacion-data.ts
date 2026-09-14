@@ -369,9 +369,6 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             )
             .subscribe((status) => {
                 setRealtimeStatus(status)
-                if (status === "CHANNEL_ERROR") {
-                    toast.error("Error de conexión en tiempo real")
-                }
             })
 
         return () => {
