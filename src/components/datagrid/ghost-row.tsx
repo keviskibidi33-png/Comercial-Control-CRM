@@ -11,7 +11,7 @@ import { toast } from "sonner"
 // Zod Schema for validation
 const insertSchema = z.object({
     recep_numero: z.string().min(1, "Requerido"),
-    ot: z.string().min(1, "Requerido"),
+    ot: z.string().optional(),
     // Add other validations as needed
 })
 
@@ -179,9 +179,34 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
             ot: newData['ot' as keyof TData]
         }
 
+        const existingData = (table.options.data as any[]) || []
+
+        // --- DUPLICATE RECEP NUMERO CHECK ---
+        const recepNumero = String(newData['recep_numero' as keyof TData] ?? "").trim()
+        if (recepNumero) {
+            const isDuplicateRecep = existingData.some(row =>
+                String(row.recep_numero ?? "").trim().toLowerCase() === recepNumero.toLowerCase()
+            )
+
+            if (isDuplicateRecep) {
+                toast.error("N° de Recepción ya registrado", {
+                    description: `La recepción "${recepNumero}" ya existe en el sistema. No se permiten registros duplicados.`,
+                })
+                return
+            }
+        }
+
+        // --- CLIENTE NOMBRE VALIDATION (Prevent dates in client column) ---
+        const clienteNombre = String(newData['cliente_nombre' as keyof TData] ?? "").trim()
+        if (clienteNombre && /^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}$/.test(clienteNombre)) {
+            toast.error("Formato de cliente inválido", {
+                description: `"${clienteNombre}" parece ser una fecha, no una razón social o cliente. Verifique las columnas antes de guardar.`,
+            })
+            return
+        }
+
         const codigoMuestra = newData['codigo_muestra' as keyof TData] as string
         if (codigoMuestra) {
-            const existingData = (table.options.data as any[]) || []
             const isDuplicate = existingData.some(row =>
                 row.codigo_muestra?.trim().toLowerCase() === codigoMuestra.trim().toLowerCase()
             )
