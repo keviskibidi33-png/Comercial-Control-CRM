@@ -3,7 +3,7 @@
 import React from "react"
 import { FlaskConical, Briefcase, Users, BarChart3 } from "lucide-react"
 
-export type CommercialModuleTab = "lab" | "com" | "seguimiento" | "seguimiento2" | "resumen_comercial_1" | "publicidad"
+export type CommercialModuleTab = "lab" | "com" | "seguimiento" | "seguimiento2" | "seguimiento3" | "resumen_comercial_1" | "publicidad"
 
 interface CommercialModuleTabsProps {
   activeTab: CommercialModuleTab
@@ -19,6 +19,8 @@ interface CommercialModuleTabsProps {
   canViewTabla1?: boolean
   /** If false, Tabla 2 (seguimiento2) is hidden */
   canViewTabla2?: boolean
+  /** If false, Tabla 3 (seguimiento3) is hidden */
+  canViewTabla3?: boolean
   /** If false, the Publicidad tab is hidden */
   canViewPublicidad?: boolean
 }
@@ -32,9 +34,10 @@ export function CommercialModuleTabs({
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewTabla3 = true,
   canViewPublicidad = true,
 }: CommercialModuleTabsProps) {
-  const isAdminView = canViewTabla1 && canViewTabla2
+  const isAdminView = (canViewTabla1 && canViewTabla2) || (canViewTabla2 && canViewTabla3)
 
   const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
     lab: {
@@ -46,11 +49,15 @@ export function CommercialModuleTabs({
       icon: <Briefcase className="h-3.5 w-3.5" />,
     },
     seguimiento: {
-      label: "Seguimiento 1",
+      label: isAdminView ? "Seguimiento 1 (B2B)" : "Seguimiento 1",
       icon: <Users className="h-3.5 w-3.5" />,
     },
     seguimiento2: {
-      label: "Seguimiento 2",
+      label: isAdminView ? "Seguimiento 2 (Rossy)" : "Seguimiento 2",
+      icon: <Users className="h-3.5 w-3.5" />,
+    },
+    seguimiento3: {
+      label: isAdminView ? "Seguimiento 3 (Sergio)" : "Seguimiento 3",
       icon: <Users className="h-3.5 w-3.5" />,
     },
     resumen_comercial_1: {
@@ -72,8 +79,10 @@ export function CommercialModuleTabs({
     if (tab === "resumen_comercial_1" && !canViewKpis) return false
     // Hide Tabla 1 ("Seguimiento") for non-legacy commercial users
     if (tab === "seguimiento" && !canViewTabla1) return false
-    // Hide Tabla 2 ("Seguimiento 2") for legacy users
+    // Hide Tabla 2 ("Seguimiento 2") when not permitted
     if (tab === "seguimiento2" && !canViewTabla2) return false
+    // Hide Tabla 3 ("Seguimiento 3") when not permitted
+    if (tab === "seguimiento3" && !canViewTabla3) return false
     // Hide Publicidad tab when disabled
     if (tab === "publicidad" && !canViewPublicidad) return false
     return true

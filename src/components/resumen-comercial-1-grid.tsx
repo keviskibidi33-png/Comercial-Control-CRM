@@ -545,6 +545,7 @@ export default function ResumenComercial1Grid({
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewTabla3 = true,
   canViewPublicidad = true,
 }: {
   activeModuleTab: CommercialModuleTab
@@ -554,6 +555,7 @@ export default function ResumenComercial1Grid({
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewTabla3?: boolean
   canViewPublicidad?: boolean
 }) {
   const current = getCurrentMonthYear()
@@ -675,6 +677,7 @@ export default function ResumenComercial1Grid({
             canViewKpis={canViewKpis}
             canViewTabla1={canViewTabla1}
             canViewTabla2={canViewTabla2}
+            canViewTabla3={canViewTabla3}
             canViewPublicidad={canViewPublicidad}
           />
         </div>

@@ -39,6 +39,7 @@ interface FixedProgramacionEditorProps {
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewTabla3?: boolean
   canViewPublicidad?: boolean
 }
 
@@ -139,6 +140,7 @@ export function FixedProgramacionEditor({
   canViewKpis,
   canViewTabla1,
   canViewTabla2,
+  canViewTabla3,
   canViewPublicidad,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
@@ -238,6 +240,7 @@ export function FixedProgramacionEditor({
               canViewKpis={canViewKpis ?? true}
               canViewTabla1={canViewTabla1 ?? true}
               canViewTabla2={canViewTabla2 ?? true}
+              canViewTabla3={canViewTabla3 ?? true}
               canViewPublicidad={canViewPublicidad ?? true}
             />
           ) : null}

@@ -356,18 +356,23 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
   })
 
   // Exportar Excel
-  const exportToExcel = async () => {
+  const exportToExcel = async (options?: { asesor?: string; ids?: number[]; filename?: string }) => {
     try {
       const token = getStoredToken()
       const headers: Record<string, string> = {}
       if (token) {
         headers["Authorization"] = `Bearer ${token}`
       }
+      const query = new URLSearchParams()
+      if (options?.asesor) query.set("asesor", options.asesor)
+      if (options?.ids && options.ids.length > 0) query.set("ids", options.ids.join(","))
+      const queryStr = query.toString() ? `?${query.toString()}` : ""
+
       const baseUrls = getApiBaseUrls()
       let response: Response | null = null
 
       for (let i = 0; i < baseUrls.length; i += 1) {
-        const res = await fetch(`${baseUrls[i]}/api/seguimiento-comercial/export`, { headers })
+        const res = await fetch(`${baseUrls[i]}/api/seguimiento-comercial/export${queryStr}`, { headers })
         if (res.ok) {
           response = res
           break
@@ -386,7 +391,9 @@ export function useSeguimientoComercial(filters: { search?: string; asesor?: str
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "Seguimiento_cliente_comercial.xlsx"
+      const safeAsesor = options?.asesor ? options.asesor.trim().replace(/\s+/g, "_") : ""
+      const fallbackName = safeAsesor ? `Seguimiento_comercial_${safeAsesor}.xlsx` : "Seguimiento_cliente_comercial.xlsx"
+      a.download = options?.filename || fallbackName
       document.body.appendChild(a)
       a.click()
       a.remove()

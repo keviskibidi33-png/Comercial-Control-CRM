@@ -22,14 +22,16 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
   const [tabAutoSet, setTabAutoSet] = useState(false)
-  const { canViewLab, canViewCom, canViewKpis, canViewTabla1, canViewTabla2, canViewPublicidad, loading } = useCurrentUser()
+  const { canViewLab, canViewCom, canViewKpis, canViewTabla1, canViewTabla2, canViewTabla3, canViewPublicidad, isAdmin, loading } = useCurrentUser()
 
   // Once permissions load, auto-navigate to the correct initial tab
-  // for users who only have one tabla assigned or restricted access (e.g. asesorcomercial2).
+  // for users who only have one tabla assigned or restricted access (e.g. Rossy or Sergio).
   if (!loading && !tabAutoSet) {
     setTabAutoSet(true)
     if (activeTab === "com" && !canViewCom) {
-      if (canViewTabla2) {
+      if (canViewTabla3 && !canViewTabla2 && !canViewTabla1) {
+        setActiveTab("seguimiento3")
+      } else if (canViewTabla2 && !canViewTabla1) {
         setActiveTab("seguimiento2")
       } else if (canViewTabla1) {
         setActiveTab("seguimiento")
@@ -37,32 +39,41 @@ function CommercialHome() {
         setActiveTab("lab")
       }
     } else if (activeTab === "com") {
-      const onlyTabla1 = canViewTabla1 && !canViewTabla2
-      const onlyTabla2 = canViewTabla2 && !canViewTabla1
+      const onlyTabla1 = canViewTabla1 && !canViewTabla2 && !canViewTabla3
+      const onlyTabla2 = canViewTabla2 && !canViewTabla1 && !canViewTabla3
+      const onlyTabla3 = canViewTabla3 && !canViewTabla1 && !canViewTabla2
       if (onlyTabla1) {
         setActiveTab("seguimiento")
       } else if (onlyTabla2) {
         setActiveTab("seguimiento2")
+      } else if (onlyTabla3) {
+        setActiveTab("seguimiento3")
       }
     }
   }
 
   /**
    * Safe active tab resolution:
-   * 1. If tab is Lab but !canViewLab -> redirect
-   * 2. If tab is Comercial but !canViewCom -> redirect to "seguimiento2"
-   * 3. If tab is Publicidad but !canViewPublicidad -> redirect to "seguimiento2"
-   * 4. If tab is KPI but !canViewKpis -> redirect to default "com" / "seguimiento2"
-   * 5. If tab is Tabla 1 (seguimiento) but !canViewTabla1 -> redirect to Tabla 2 (seguimiento2)
-   * 6. If tab is Tabla 2 (seguimiento2) but !canViewTabla2 -> redirect to Tabla 1 (seguimiento)
+   * Redirects if current active tab is not permitted for the user.
    */
   const safeActiveTab: CommercialModuleTab = (() => {
-    if (activeTab === "com" && !canViewCom) return canViewTabla2 ? "seguimiento2" : canViewLab ? "lab" : "seguimiento2"
-    if (activeTab === "publicidad" && !canViewPublicidad) return canViewTabla2 ? "seguimiento2" : canViewCom ? "com" : "lab"
-    if (activeTab === "lab" && !canViewLab) return canViewTabla2 ? "seguimiento2" : "com"
-    if (activeTab === "resumen_comercial_1" && !canViewKpis) return canViewCom ? "com" : "seguimiento2"
-    if (activeTab === "seguimiento" && !canViewTabla1) return "seguimiento2"
-    if (activeTab === "seguimiento2" && !canViewTabla2) return "seguimiento"
+    const fallbackTab: CommercialModuleTab = canViewTabla3
+      ? "seguimiento3"
+      : canViewTabla2
+      ? "seguimiento2"
+      : canViewTabla1
+      ? "seguimiento"
+      : canViewCom
+      ? "com"
+      : "lab"
+
+    if (activeTab === "com" && !canViewCom) return fallbackTab
+    if (activeTab === "publicidad" && !canViewPublicidad) return fallbackTab
+    if (activeTab === "lab" && !canViewLab) return fallbackTab
+    if (activeTab === "resumen_comercial_1" && !canViewKpis) return fallbackTab
+    if (activeTab === "seguimiento" && !canViewTabla1) return fallbackTab
+    if (activeTab === "seguimiento2" && !canViewTabla2) return fallbackTab
+    if (activeTab === "seguimiento3" && !canViewTabla3) return fallbackTab
     return activeTab
   })()
 
@@ -73,6 +84,7 @@ function CommercialHome() {
     if (tab === "resumen_comercial_1" && !canViewKpis) return
     if (tab === "seguimiento" && !canViewTabla1) return
     if (tab === "seguimiento2" && !canViewTabla2) return
+    if (tab === "seguimiento3" && !canViewTabla3) return
     if (tab === "publicidad" && !canViewPublicidad) return
     setActiveTab(tab)
   }
@@ -108,6 +120,7 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "com" ? (
@@ -127,6 +140,7 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "seguimiento" ? (
@@ -138,6 +152,7 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
           ) : safeActiveTab === "seguimiento2" ? (
@@ -149,7 +164,24 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
+              forcedAsesor={isAdmin ? "Rossy" : undefined}
+              seguimientoTitle={isAdmin ? "Seguimiento 2 (Rossy)" : "Seguimiento 2"}
+            />
+          ) : safeActiveTab === "seguimiento3" ? (
+            <SeguimientoClienteGrid2
+              activeModuleTab={safeActiveTab}
+              onModuleTabChange={handleTabChange}
+              canViewLab={canViewLab}
+              canViewCom={canViewCom}
+              canViewKpis={canViewKpis}
+              canViewTabla1={canViewTabla1}
+              canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
+              canViewPublicidad={canViewPublicidad}
+              forcedAsesor={isAdmin ? "Sergio" : undefined}
+              seguimientoTitle={isAdmin ? "Seguimiento 3 (Sergio)" : "Seguimiento 3"}
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid
@@ -160,6 +192,7 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
           ) : (
@@ -171,6 +204,7 @@ function CommercialHome() {
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
           )}

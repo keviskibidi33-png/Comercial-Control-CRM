@@ -208,9 +208,14 @@ export interface SeguimientoClienteGridProps {
   canViewKpis?: boolean
   canViewTabla1?: boolean
   canViewTabla2?: boolean
+  canViewTabla3?: boolean
   canViewPublicidad?: boolean
   /** Permite alternar entre Tabla 1 (Seguimiento A) y Tabla 2 (Seguimiento B). Defaults to 1. */
   tablaId?: 1 | 2
+  /** Si se especifica, filtra automáticamente por este asesor (ej: 'Rossy', 'Sergio') */
+  forcedAsesor?: string
+  /** Título personalizado para la cabecera (ej: 'Seguimiento 2', 'Seguimiento 3') */
+  seguimientoTitle?: string
 }
 
 type SortDirection = "asc" | "desc"
@@ -227,9 +232,24 @@ export function SeguimientoClienteGrid({
   canViewKpis = true,
   canViewTabla1 = true,
   canViewTabla2 = true,
+  canViewTabla3 = true,
   canViewPublicidad = true,
   tablaId = 1,
+  forcedAsesor,
+  seguimientoTitle,
 }: SeguimientoClienteGridProps) {
+  const { isAdmin, email, displayName } = useCurrentUser()
+  const currentUserName = displayName || email || ""
+  const currentUserEmail = email || ""
+  const [selectedAsesor, setSelectedAsesor] = useState<string>(forcedAsesor || "")
+  const [dbAdvisors, setDbAdvisors] = useState<{label: string, value: string}[]>([])
+
+  useEffect(() => {
+    if (forcedAsesor) {
+      setSelectedAsesor(forcedAsesor)
+    }
+  }, [forcedAsesor])
+
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
   const [commentDraft, setCommentDraft] = useState("")
@@ -421,7 +441,14 @@ export function SeguimientoClienteGrid({
     if (isGhostSubmitting) return
     setIsGhostSubmitting(true)
     
-    insertRow(ghostRow, {
+    const advisorToAssign = ghostRow.asesor || forcedAsesor || selectedAsesor || (!isAdmin ? currentUserName : undefined)
+    const rowToInsert: Partial<SeguimientoRow> = {
+      ...ghostRow,
+      asesor: advisorToAssign || undefined,
+      creado_por: currentUserName || undefined,
+    }
+
+    insertRow(rowToInsert, {
       onSuccess: () => {
         setGhostRow({
           ...DEFAULT_GHOST_ROW,
@@ -506,10 +533,6 @@ export function SeguimientoClienteGrid({
     isMutating
   } = tablaId === 2 ? h2 : h1
 
-  const { isAdmin } = useCurrentUser()
-  const [selectedAsesor, setSelectedAsesor] = useState<string>("")
-  const [dbAdvisors, setDbAdvisors] = useState<{label: string, value: string}[]>([])
-
   useEffect(() => {
     async function fetchAdvisors() {
       try {
@@ -519,19 +542,26 @@ export function SeguimientoClienteGrid({
           role?: string | null
         }
         const supabase = createClient()
-        const { data, error } = await supabase
+        const query = supabase
           .from("perfiles")
           .select("full_name, email, role")
           .in("role", ["ejecutivo_comercial", "auxiliar_comercial"])
-          .eq("tabla_seguimiento", tablaId === 2 ? "tabla2" : "tabla1")
           .not("email", "like", "%@crm.com")
+
+        if (tablaId === 1) {
+          query.eq("tabla_seguimiento", "tabla1")
+        } else {
+          query.neq("tabla_seguimiento", "tabla1")
+        }
+
+        const { data, error } = await query
         if (!error && data) {
           const names = (data as PerfilItem[])
             .map((p: PerfilItem) => {
               const name = typeof p.full_name === "string" && p.full_name.trim() ? p.full_name.trim() : ""
               const mail = typeof p.email === "string" && p.email.trim() ? p.email.trim() : ""
-              if (!mail) return null
-              return { label: name || mail, value: mail }
+              if (!mail && !name) return null
+              return { label: name || mail, value: name || mail }
             })
             .filter(Boolean) as {label: string, value: string}[]
           setDbAdvisors(names)
@@ -541,7 +571,7 @@ export function SeguimientoClienteGrid({
       }
     }
     fetchAdvisors()
-  }, [])
+  }, [tablaId])
   const [activeCell, setActiveCell] = useState<{ id: number; field: keyof SeguimientoRow } | null>(null)
   const [suggestionQuery, setSuggestionQuery] = useState("")
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1)
@@ -602,6 +632,20 @@ export function SeguimientoClienteGrid({
 
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
+      // Non-admins (commercial advisors) must strictly only see their own records
+      if (!isAdmin) {
+        const myName = (currentUserName || "").toLowerCase().trim()
+        const myMail = (currentUserEmail || "").toLowerCase().trim()
+        const aName = (r.asesor || "").toLowerCase().trim()
+        const cPor = (r.creado_por || "").toLowerCase().trim()
+        const aMail = (r.asesor_email || "").toLowerCase().trim()
+
+        const isMine =
+          (myName && (aName.includes(myName) || cPor.includes(myName) || (aName.length > 3 && myName.includes(aName)) || (cPor.length > 3 && myName.includes(cPor)))) ||
+          (myMail && (aMail.includes(myMail) || (aMail.length > 3 && myMail.includes(aMail))))
+        if (!isMine) return false
+      }
+
       if (selectedAsesor) {
         const selLower = selectedAsesor.toLowerCase().trim()
         const aName = (r.asesor || "").toLowerCase().trim()
@@ -648,7 +692,7 @@ export function SeguimientoClienteGrid({
 
       return true
     })
-  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth])
+  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth, isAdmin, currentUserName, currentUserEmail])
 
   const sortedRows = useMemo(() => {
     const baseRows = [...filteredRows]
@@ -790,6 +834,29 @@ export function SeguimientoClienteGrid({
     { key: "categoria_servicio", label: "CATEGORIA\nCLIENTE", width: "w-[140px] min-w-[140px] max-w-[140px]", type: "catalog", catalogKey: "categorias_servicio" },
   ]
 
+  const handleExportExcel = async () => {
+    try {
+      const currentAdvisor = forcedAsesor || selectedAsesor || (!isAdmin ? currentUserName : undefined)
+      const currentIds = filteredRows.map((r) => r.id).filter(Boolean) as number[]
+      const baseName = seguimientoTitle
+        ? seguimientoTitle.replace(/[^\w\d]/g, "_")
+        : tablaId === 2
+        ? "Seguimiento_2"
+        : "Seguimiento_1"
+      const dateStr = new Date().toISOString().split("T")[0]
+      const filename = `${baseName}_${dateStr}.xlsx`
+
+      await exportToExcel({
+        asesor: currentAdvisor || undefined,
+        ids: currentIds.length > 0 ? currentIds : undefined,
+        filename,
+      })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al exportar"
+      toast.error(msg)
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       {/* Module Header */}
@@ -801,7 +868,7 @@ export function SeguimientoClienteGrid({
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold tracking-tight text-zinc-800">
-                {tablaId === 2 ? "Seguimiento 2" : "Seguimiento 1"}
+                {seguimientoTitle || (tablaId === 2 ? "Seguimiento 2" : "Seguimiento 1")}
               </h1>
               <p className="text-[11px] text-zinc-500">
                 Seguimiento comercial, entregas y evidencia de atención.
@@ -821,6 +888,7 @@ export function SeguimientoClienteGrid({
             canViewKpis={canViewKpis}
             canViewTabla1={canViewTabla1}
             canViewTabla2={canViewTabla2}
+            canViewTabla3={canViewTabla3}
             canViewPublicidad={canViewPublicidad}
           />
         </div>
@@ -837,7 +905,7 @@ export function SeguimientoClienteGrid({
           </button>
 
           <button
-            onClick={exportToExcel}
+            onClick={handleExportExcel}
             disabled={isMutating || isLoading || total === 0}
             className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
           >
