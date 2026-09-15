@@ -407,27 +407,40 @@ export function useCurrentUser() {
         },
         isAdmin: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
-            return rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const isAdminEmail = eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            return rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || isAdminEmail
         })(),
         /** Specific restrictions for individual advisors */
         isAsesorComercial2: isAsesorComercial2(email, displayName, qIsAdvisor2Param),
         isAsesorComercial3: isAsesorComercial3(email, displayName, qIsAdvisor3Param),
         /** Lab tab is visible */
         canViewLab: true,
-        /** Comercial tab is hidden for individual commercial advisors */
-        canViewCom: qCanViewCom !== null
-            ? qCanViewCom
-            : !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3"),
-        /** Publicidad tab is hidden for individual commercial advisors */
-        canViewPublicidad: qCanViewPublicidad !== null
-            ? qCanViewPublicidad
-            : !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3"),
+        /** Comercial tab is hidden for individual commercial advisors, always visible for admin */
+        canViewCom: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            if (isSuperAdmin) return true
+            if (qCanViewCom !== null) return qCanViewCom
+            return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
+        })(),
+        /** Publicidad tab is hidden for individual commercial advisors, always visible for admin */
+        canViewPublicidad: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            if (isSuperAdmin) return true
+            if (qCanViewPublicidad !== null) return qCanViewPublicidad
+            return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
+        })(),
         // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins and commercial advisors.
         canViewKpis: (() => {
             if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return true
             // Admin always sees KPI regardless of show_kpi
             const rNorm = (role || qRole || "").toLowerCase()
-            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            if (rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe") return true
             // DB value takes priority once loaded
             if (showKpi !== null) return showKpi
             // URL param as fast first-render value
@@ -437,34 +450,30 @@ export function useCurrentUser() {
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
         isLegacyUser: isLegacyTrackingUser(email, displayName),
-        /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins (blocked for advisor 2 & 3) */
+        /** Tabla 1 (seguimiento) is visible for Yerly/Silvia, users assigned to tabla1, and Admins */
         canViewTabla1: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            if (isSuperAdmin) return true
             if (qCanViewTabla1 !== null) return qCanViewTabla1
             if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param)) return false
-            const rNorm = (role || qRole || "").toLowerCase()
-            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
             if (tablaSeguimiento === "tabla1") return true
             if (tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return false
             return isLegacyTrackingUser(email, displayName)
         })(),
-        /** Tabla 2 (seguimiento2) is visible for Rossy, users assigned to tabla2, and Admins */
+        /** Tabla 2 (seguimiento2) is visible for Rossy, Sergio, users assigned to tabla2/3, and Admins */
         canViewTabla2: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            if (isSuperAdmin) return true
             if (qCanViewTabla2 !== null) return qCanViewTabla2
-            const rNorm = (role || qRole || "").toLowerCase()
-            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
-            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return false
-            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return true
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return true
             return false
         })(),
-        /** Tabla 3 (seguimiento3) is visible for Sergio, users assigned to tabla3, and Admins */
-        canViewTabla3: (() => {
-            if (qCanViewTabla3 !== null) return qCanViewTabla3
-            const rNorm = (role || qRole || "").toLowerCase()
-            if (rNorm.includes("admin") || rNorm.includes("gerencia") || qIsAdmin) return true
-            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return false
-            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return true
-            return false
-        })(),
+        /** Tabla 3 deprecated - all in Tabla 2 */
+        canViewTabla3: false,
     }
 }
 

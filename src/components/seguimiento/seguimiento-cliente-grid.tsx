@@ -551,7 +551,7 @@ export function SeguimientoClienteGrid({
         if (tablaId === 1) {
           query.eq("tabla_seguimiento", "tabla1")
         } else {
-          query.neq("tabla_seguimiento", "tabla1")
+          query.or("tabla_seguimiento.is.null,tabla_seguimiento.neq.tabla1")
         }
 
         const { data, error } = await query
@@ -561,7 +561,8 @@ export function SeguimientoClienteGrid({
               const name = typeof p.full_name === "string" && p.full_name.trim() ? p.full_name.trim() : ""
               const mail = typeof p.email === "string" && p.email.trim() ? p.email.trim() : ""
               if (!mail && !name) return null
-              return { label: name || mail, value: name || mail }
+              const label = name && mail ? `${name} (${mail.split("@")[0]})` : name || mail
+              return { label, value: mail || name }
             })
             .filter(Boolean) as {label: string, value: string}[]
           setDbAdvisors(names)
@@ -627,8 +628,16 @@ export function SeguimientoClienteGrid({
   }
 
   const uniqueAdvisors = useMemo(() => {
-    return [...dbAdvisors].sort((a, b) => a.label.localeCompare(b.label, "es"))
-  }, [dbAdvisors])
+    const map = new Map<string, { label: string; value: string }>()
+    dbAdvisors.forEach((a) => map.set(a.value.toLowerCase(), a))
+    rows.forEach((r) => {
+      const adv = (r.asesor || "").trim()
+      if (adv && !map.has(adv.toLowerCase())) {
+        map.set(adv.toLowerCase(), { label: adv, value: adv })
+      }
+    })
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "es"))
+  }, [dbAdvisors, rows])
 
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
@@ -651,13 +660,32 @@ export function SeguimientoClienteGrid({
         const aName = (r.asesor || "").toLowerCase().trim()
         const cPor = (r.creado_por || "").toLowerCase().trim()
         const aMail = (r.asesor_email || "").toLowerCase().trim()
-        const matchesAsesor =
+
+        const isRossyFilter = selLower.includes("rossy") || selLower.includes("ejecutivocomercial2") || selLower.includes("asesorcomercial2")
+        const isSergioFilter = selLower.includes("sergio") || selLower.includes("ejecutivocomercial3") || selLower.includes("asesorcomercial3")
+        const isSilviaFilter = selLower.includes("silvia") || selLower.includes("asesorcomercial@") || selLower.includes("speralta")
+        const isYerlyFilter = selLower.includes("yerly") || selLower.includes("asesorcomercial1") || selLower.includes("yyerly")
+
+        const isRossyRow = aName.includes("rossy") || cPor.includes("ejecutivocomercial2") || cPor.includes("asesorcomercial2") || aMail.includes("ejecutivocomercial2")
+        const isSergioRow = aName.includes("sergio") || cPor.includes("ejecutivocomercial3") || cPor.includes("asesorcomercial3") || aMail.includes("ejecutivocomercial3")
+        const isSilviaRow = aName.includes("silvia") || cPor.includes("asesorcomercial@") || aMail.includes("asesorcomercial@")
+        const isYerlyRow = aName.includes("yerly") || cPor.includes("asesorcomercial1") || aMail.includes("asesorcomercial1")
+
+        let matchesAsesor =
           aName.includes(selLower) ||
           cPor.includes(selLower) ||
           aMail.includes(selLower) ||
-          selLower.includes(aName && aName.length > 3 ? aName : "___") ||
-          selLower.includes(cPor && cPor.length > 3 ? cPor : "___") ||
-          selLower.includes(aMail && aMail.length > 3 ? aMail : "___")
+          (aName.length > 3 && selLower.includes(aName)) ||
+          (cPor.length > 3 && selLower.includes(cPor)) ||
+          (aMail.length > 3 && selLower.includes(aMail))
+
+        if (!matchesAsesor) {
+          if (isRossyFilter && isRossyRow) matchesAsesor = true
+          else if (isSergioFilter && isSergioRow) matchesAsesor = true
+          else if (isSilviaFilter && isSilviaRow) matchesAsesor = true
+          else if (isYerlyFilter && isYerlyRow) matchesAsesor = true
+        }
+
         if (!matchesAsesor) return false
       }
 

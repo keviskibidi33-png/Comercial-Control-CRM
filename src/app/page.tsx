@@ -155,33 +155,18 @@ function CommercialHome() {
               canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
             />
-          ) : safeActiveTab === "seguimiento2" ? (
+          ) : safeActiveTab === "seguimiento2" || (safeActiveTab as string) === "seguimiento3" ? (
             <SeguimientoClienteGrid2
-              activeModuleTab={safeActiveTab}
+              activeModuleTab="seguimiento2"
               onModuleTabChange={handleTabChange}
               canViewLab={canViewLab}
               canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
-              canViewTabla3={canViewTabla3}
+              canViewTabla3={false}
               canViewPublicidad={canViewPublicidad}
-              forcedAsesor={isAdmin ? "Rossy" : undefined}
-              seguimientoTitle={isAdmin ? "Seguimiento 2 (Rossy)" : "Seguimiento 2"}
-            />
-          ) : safeActiveTab === "seguimiento3" ? (
-            <SeguimientoClienteGrid2
-              activeModuleTab={safeActiveTab}
-              onModuleTabChange={handleTabChange}
-              canViewLab={canViewLab}
-              canViewCom={canViewCom}
-              canViewKpis={canViewKpis}
-              canViewTabla1={canViewTabla1}
-              canViewTabla2={canViewTabla2}
-              canViewTabla3={canViewTabla3}
-              canViewPublicidad={canViewPublicidad}
-              forcedAsesor={isAdmin ? "Sergio" : undefined}
-              seguimientoTitle={isAdmin ? "Seguimiento 3 (Sergio)" : "Seguimiento 3"}
+              seguimientoTitle="Seguimiento 2"
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid
