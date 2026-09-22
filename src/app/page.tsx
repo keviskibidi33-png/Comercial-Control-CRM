@@ -157,16 +157,17 @@ function CommercialHome() {
             />
           ) : safeActiveTab === "seguimiento2" || (safeActiveTab as string) === "seguimiento3" ? (
             <SeguimientoClienteGrid2
-              activeModuleTab="seguimiento2"
+              activeModuleTab={safeActiveTab}
               onModuleTabChange={handleTabChange}
               canViewLab={canViewLab}
               canViewCom={canViewCom}
               canViewKpis={canViewKpis}
               canViewTabla1={canViewTabla1}
               canViewTabla2={canViewTabla2}
-              canViewTabla3={false}
+              canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
-              seguimientoTitle="Seguimiento 2"
+              seguimientoTitle={safeActiveTab === "seguimiento3" ? "Seguimiento 3" : "Seguimiento 2"}
+              forcedAsesor={safeActiveTab === "seguimiento3" ? "Sergio" : safeActiveTab === "seguimiento2" && isAdmin ? "Rossy" : undefined}
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid

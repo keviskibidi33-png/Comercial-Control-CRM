@@ -474,7 +474,7 @@ export function useCurrentUser() {
             if (tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return false
             return isLegacyTrackingUser(email, displayName)
         })(),
-        /** Tabla 2 (seguimiento2) is visible for Rossy, Sergio, users assigned to tabla2/3, and Admins */
+        /** Tabla 2 (seguimiento2) is visible for Rossy, users assigned to tabla2, and Admins */
         canViewTabla2: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
@@ -482,11 +482,22 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla2 !== null) return qCanViewTabla2
-            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return true
+            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return false
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return true
             return false
         })(),
-        /** Tabla 3 deprecated - all in Tabla 2 */
-        canViewTabla3: false,
+        /** Tabla 3 (seguimiento3) is visible for Sergio, users assigned to tabla3, and Admins */
+        canViewTabla3: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            if (isSuperAdmin) return true
+            if (qCanViewTabla3 !== null) return qCanViewTabla3
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return false
+            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return true
+            return false
+        })(),
     }
 }
 

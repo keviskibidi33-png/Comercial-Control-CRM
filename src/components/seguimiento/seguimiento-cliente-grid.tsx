@@ -1201,6 +1201,7 @@ export function SeguimientoClienteGrid({
 
                   // Renders Read-Only 'N°' cell
                   if (isNo) {
+                    const rowNumber = (currentPage - 1) * pageSize + idx + 1
                     return (
                       <td
                         key={col.key}
@@ -1209,9 +1210,9 @@ export function SeguimientoClienteGrid({
                           ${isPinned ? `sticky z-10 ${idx % 2 === 0 ? "bg-zinc-50" : "bg-zinc-100"} group-hover:bg-sky-100` : "bg-zinc-50"}
                           ${isPinned ? "shadow-[inset_-1px_0_0_0_#d4d4d8]" : "shadow-[inset_-1px_0_0_0_#e4e4e7]"}
                         `}
-                        title={String(cellValue ?? row.id)}
+                        title={String(rowNumber)}
                       >
-                        {cellValue ?? row.id}
+                        {rowNumber}
                       </td>
                     )
                   }
