@@ -117,6 +117,7 @@ export function useCurrentUser() {
                 ? "ADMIN"
                 : "LAB"
 
+    const qTargetTab = (searchParams.get("targetTab") as any) || null
     const qEmail = searchParams.get("email") || searchParams.get("userEmail") || null
     const qIsAdvisor2Param = searchParams.get("isAsesorComercial2") === "true" || searchParams.get("targetTab") === "seguimiento2"
     const qIsAdvisor3Param = searchParams.get("isAsesorComercial3") === "true" || searchParams.get("targetTab") === "seguimiento3"
@@ -487,6 +488,7 @@ export function useCurrentUser() {
             return false
         })(),
         /** Tabla 3 (seguimiento3) is visible for Sergio, users assigned to tabla3, and Admins */
+        targetTab: qTargetTab,
         canViewTabla3: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()

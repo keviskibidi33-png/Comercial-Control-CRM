@@ -22,14 +22,30 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 function CommercialHome() {
   const [activeTab, setActiveTab] = useState<CommercialModuleTab>("com")
   const [tabAutoSet, setTabAutoSet] = useState(false)
-  const { canViewLab, canViewCom, canViewKpis, canViewTabla1, canViewTabla2, canViewTabla3, canViewPublicidad, isAdmin, loading } = useCurrentUser()
+  const { targetTab, canViewLab, canViewCom, canViewKpis, canViewTabla1, canViewTabla2, canViewTabla3, canViewPublicidad, isAdmin, loading } = useCurrentUser()
 
   // Once permissions load, auto-navigate to the correct initial tab
   // for users who only have one tabla assigned or restricted access (e.g. Rossy or Sergio).
   if (!loading && !tabAutoSet) {
     setTabAutoSet(true)
-    if (activeTab === "com" && !canViewCom) {
-      if (canViewTabla3 && !canViewTabla2 && !canViewTabla1) {
+    if (targetTab === "publicidad" && canViewPublicidad) {
+      setActiveTab("publicidad")
+    } else if (targetTab === "seguimiento3" && canViewTabla3) {
+      setActiveTab("seguimiento3")
+    } else if (targetTab === "seguimiento2" && canViewTabla2) {
+      setActiveTab("seguimiento2")
+    } else if (targetTab === "seguimiento" && canViewTabla1) {
+      setActiveTab("seguimiento")
+    } else if (targetTab === "lab" && canViewLab) {
+      setActiveTab("lab")
+    } else if (targetTab === "resumen_comercial_1" && canViewKpis) {
+      setActiveTab("resumen_comercial_1")
+    } else if (targetTab === "com" && canViewCom) {
+      setActiveTab("com")
+    } else if (activeTab === "com" && !canViewCom) {
+      if (canViewPublicidad && !canViewTabla1 && !canViewTabla2 && !canViewTabla3 && !canViewLab) {
+        setActiveTab("publicidad")
+      } else if (canViewTabla3 && !canViewTabla2 && !canViewTabla1) {
         setActiveTab("seguimiento3")
       } else if (canViewTabla2 && !canViewTabla1) {
         setActiveTab("seguimiento2")
@@ -37,6 +53,8 @@ function CommercialHome() {
         setActiveTab("seguimiento")
       } else if (canViewLab) {
         setActiveTab("lab")
+      } else if (canViewPublicidad) {
+        setActiveTab("publicidad")
       }
     } else if (activeTab === "com") {
       const onlyTabla1 = canViewTabla1 && !canViewTabla2 && !canViewTabla3
@@ -65,6 +83,8 @@ function CommercialHome() {
       ? "seguimiento"
       : canViewCom
       ? "com"
+      : canViewPublicidad
+      ? "publicidad"
       : "lab"
 
     if (activeTab === "com" && !canViewCom) return fallbackTab
