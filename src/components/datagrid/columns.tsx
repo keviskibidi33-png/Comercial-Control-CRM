@@ -562,7 +562,7 @@ const CotizacionCell = React.memo(({ getValue, row: { original }, column: { id }
         }
 
         if (finalValue !== value) {
-            table.options.meta?.updateData(original.id, id, finalValue)
+            table.options.meta?.updateData(original.id, id, finalValue || null)
         }
     }
 
