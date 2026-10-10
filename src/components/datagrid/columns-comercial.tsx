@@ -10,10 +10,13 @@ import { cn } from "@/lib/utils"
 // Import shared smart cells from the main columns file
 import {
     EditableCell,
+    EditableCellProps,
     SmartDateCell,
     CotizacionCell,
     CostoServicioCell
 } from "./columns"
+import { AsesorSelect } from "./asesor-select"
+import { ClasificacionClienteSelect } from "./clasificacion-cliente-select"
 
 const SortableHeader = ({ column, title, className }: { column: Column<ProgramacionServicio, unknown>, title: string, className?: string }) => {
     return (
@@ -26,6 +29,50 @@ const SortableHeader = ({ column, title, className }: { column: Column<Programac
         </div>
     )
 }
+
+const AsesorComercialCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {
+    const value = (getValue() as string) || "-"
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = table.options.meta as any
+    const canWrite = meta?.canWrite !== false
+
+    const handleChange = (newValue: string) => {
+        if (!canWrite) return
+        if (newValue !== value) {
+            table.options.meta?.updateData(original.id, id, newValue)
+        }
+    }
+
+    return (
+        <div className="w-full h-full flex items-center justify-center p-1">
+            <AsesorSelect value={value} onChange={handleChange} disabled={!canWrite} />
+        </div>
+    )
+})
+AsesorComercialCell.displayName = "AsesorComercialCell"
+
+const ClasificacionClienteCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {
+    const value = (getValue() as string) || "-"
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = table.options.meta as any
+    const canWrite = meta?.canWrite !== false
+
+    const handleChange = (newValue: string) => {
+        if (!canWrite) return
+        if (newValue !== value) {
+            table.options.meta?.updateData(original.id, id, newValue)
+        }
+    }
+
+    return (
+        <div className="w-full h-full flex items-center justify-center p-1">
+            <ClasificacionClienteSelect value={value} onChange={handleChange} disabled={!canWrite} />
+        </div>
+    )
+})
+ClasificacionClienteCell.displayName = "ClasificacionClienteCell"
 
 export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
     {
@@ -114,6 +161,18 @@ export const columnsComercial: ColumnDef<ProgramacionServicio>[] = [
         size: 110, minSize: 110, maxSize: 150, enableResizing: true,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         cell: (props: any) => <EditableCell {...props} className="text-zinc-800 text-[12px] text-center" />,
+    },
+    {
+        accessorKey: "asesor_comercial",
+        header: ({ column }) => <SortableHeader column={column} title={`ASESOR\nCOMERCIAL`} />,
+        size: 120, minSize: 110, maxSize: 170, enableResizing: true,
+        cell: AsesorComercialCell,
+    },
+    {
+        accessorKey: "clasificacion_cliente",
+        header: ({ column }) => <SortableHeader column={column} title={`CLASIFICACIÓN\nCLIENTE`} />,
+        size: 130, minSize: 120, maxSize: 180, enableResizing: true,
+        cell: ClasificacionClienteCell,
     },
     {
         accessorKey: "dias_atraso_envio_coti",

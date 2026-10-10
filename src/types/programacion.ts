@@ -23,6 +23,8 @@ export interface ProgramacionServicio {
     fecha_solicitud_com?: string | null
     fecha_entrega_com?: string | null
     evidencia_solicitud_envio?: string | null
+    asesor_comercial?: string | null
+    clasificacion_cliente?: string | null
     dias_atraso_envio_coti?: number | null
     motivo_dias_atraso_com?: string | null
     numero_factura?: string | null

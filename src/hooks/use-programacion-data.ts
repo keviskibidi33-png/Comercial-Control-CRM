@@ -400,7 +400,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         pendingLocalIds.current.add(rowId)
 
         try {
-            const commercialFields = ['fecha_solicitud_com', 'fecha_entrega_com', 'evidencia_solicitud_envio', 'dias_atraso_envio_coti', 'motivo_dias_atraso_com', 'costo_servicio']
+            const commercialFields = ['fecha_solicitud_com', 'fecha_entrega_com', 'evidencia_solicitud_envio', 'asesor_comercial', 'clasificacion_cliente', 'dias_atraso_envio_coti', 'motivo_dias_atraso_com', 'costo_servicio']
             const adminFields = ['numero_factura', 'estado_pago', 'estado_autorizar', 'nota_admin', 'orden_servicio', 'numero_valorizacion']
 
             let targetTable = "programacion_lab"
@@ -449,6 +449,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
         delete labData.fecha_solicitud_com
         delete labData.fecha_entrega_com
         delete labData.evidencia_solicitud_envio
+        delete labData.asesor_comercial
+        delete labData.clasificacion_cliente
         delete labData.motivo_dias_atraso_com
         delete labData.numero_factura
         delete labData.estado_pago
@@ -487,6 +489,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             if (newRow.fecha_solicitud_com) commercialData.fecha_solicitud_com = newRow.fecha_solicitud_com
             if (newRow.fecha_entrega_com) commercialData.fecha_entrega_com = newRow.fecha_entrega_com
             if (newRow.evidencia_solicitud_envio) commercialData.evidencia_solicitud_envio = newRow.evidencia_solicitud_envio
+            if (newRow.asesor_comercial) commercialData.asesor_comercial = newRow.asesor_comercial
+            if (newRow.clasificacion_cliente) commercialData.clasificacion_cliente = newRow.clasificacion_cliente
             if (newRow.motivo_dias_atraso_com) commercialData.motivo_dias_atraso_com = newRow.motivo_dias_atraso_com
             if (newRow.costo_servicio !== undefined && newRow.costo_servicio !== null && newRow.costo_servicio !== '') commercialData.costo_servicio = newRow.costo_servicio
 

@@ -6,6 +6,8 @@ import { z } from "zod"
 import { StatusSelect } from "./status-select"
 import { PaymentSelect } from "./payment-select"
 import { AuthorizationSelect } from "./authorization-select"
+import { AsesorSelect } from "./asesor-select"
+import { ClasificacionClienteSelect } from "./clasificacion-cliente-select"
 import { toast } from "sonner"
 
 // Zod Schema for validation
@@ -352,6 +354,8 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
                 const isStatus = colId === 'estado_trabajo'
                 const isPaymentStatus = colId === 'estado_pago'
                 const isAutorizacion = colId === 'autorizacion_lab'
+                const isAsesor = colId === 'asesor_comercial'
+                const isClasificacion = colId === 'clasificacion_cliente'
 
                 // Check permissions for this column
                 const canWrite = getCanWriteColumn(colId)
@@ -389,6 +393,14 @@ export function GhostRow<TData>({ table, onInsert }: GhostRowProps<TData>) {
                         ) : isAutorizacion ? (
                             <div className="w-full h-full flex items-center justify-center">
                                 <AuthorizationSelect value={value} onChange={(val) => handleChange(colId, val)} />
+                            </div>
+                        ) : isAsesor ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <AsesorSelect value={value} onChange={(val) => handleChange(colId, val)} />
+                            </div>
+                        ) : isClasificacion ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <ClasificacionClienteSelect value={value} onChange={(val) => handleChange(colId, val)} />
                             </div>
                         ) : (
                             <input
