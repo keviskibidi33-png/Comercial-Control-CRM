@@ -265,6 +265,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
                 const { data, error } = await (supabase
                     .from("cuadro_control") as unknown as DbQueryBuilder<ProgramacionServicio[]>)
                     .select("*")
+                    .order("fecha_recepcion", { ascending: true })
+                    .order("recep_numero", { ascending: true })
                     .order("item_numero", { ascending: true })
                     .range(from, to)
 
