@@ -395,7 +395,27 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
         // 1. Optimistic Update in Cache (instant UI)
         queryClient.setQueryData(["programacion"], (oldData: ProgramacionServicio[] = []) => {
-            return oldData.map(row => row.id === rowId ? { ...row, [field]: normalizedValue, ...derivedUpdates } : row)
+            const isClientBroadField = field === "asesor_comercial" || field === "clasificacion_cliente"
+            if (!isClientBroadField) {
+                return oldData.map(row => row.id === rowId ? { ...row, [field]: normalizedValue, ...derivedUpdates } : row)
+            }
+
+            const targetRow = oldData.find(r => r.id === rowId)
+            const targetClient = (targetRow?.cliente_nombre || "").trim().toUpperCase().replace(/\s+/g, " ")
+
+            return oldData.map(row => {
+                if (row.id === rowId) {
+                    return { ...row, [field]: normalizedValue, ...derivedUpdates }
+                }
+                const rowClient = (row.cliente_nombre || "").trim().toUpperCase().replace(/\s+/g, " ")
+                if (targetClient && rowClient && (
+                    rowClient === targetClient ||
+                    (targetClient.length >= 8 && (rowClient.startsWith(targetClient) || targetClient.startsWith(rowClient)))
+                )) {
+                    return { ...row, [field]: normalizedValue }
+                }
+                return row
+            })
         })
 
         // 2. Mark this ID so realtime skips the echo
@@ -422,6 +442,12 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
                 .eq(idField, rowId)
 
             if (error) throw error
+
+            if (field === "asesor_comercial" || field === "clasificacion_cliente") {
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ["programacion"] })
+                }, 1000)
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : "No se pudo guardar el cambio"
             console.error("[Programacion] Error al actualizar un registro:", message)
