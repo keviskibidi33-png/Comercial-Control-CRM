@@ -672,6 +672,7 @@ export default function ResumenComercial1Grid({
             activeTab={activeModuleTab}
             onTabChange={onModuleTabChange}
             className="min-w-0 flex-1"
+            isAdmin={isAdmin}
             canViewLab={canViewLab}
             canViewCom={canViewCom}
             canViewKpis={canViewKpis}

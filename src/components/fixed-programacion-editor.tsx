@@ -143,7 +143,7 @@ export function FixedProgramacionEditor({
   canViewTabla3,
   canViewPublicidad,
 }: FixedProgramacionEditorProps) {
-  const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions } = useCurrentUser()
+  const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions, isAdmin } = useCurrentUser()
   const { data, isLoading, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
   const [filteredItems, setFilteredItems] = React.useState<ProgramacionServicio[]>([])
   const [activeViewMode, setActiveViewMode] = React.useState<ViewMode>(viewMode)
@@ -235,6 +235,7 @@ export function FixedProgramacionEditor({
               activeTab={activeModuleTab}
               onTabChange={onModuleTabChange}
               className="min-w-0 flex-1"
+              isAdmin={isAdmin}
               canViewLab={canViewLab ?? true}
               canViewCom={canViewCom ?? true}
               canViewKpis={canViewKpis ?? true}

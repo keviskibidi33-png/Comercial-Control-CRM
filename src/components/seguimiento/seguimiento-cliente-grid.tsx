@@ -549,9 +549,9 @@ export function SeguimientoClienteGrid({
           .not("email", "like", "%@crm.com")
 
         if (tablaId === 1) {
-          query.eq("tabla_seguimiento", "tabla1")
+          query.or("tabla_seguimiento.eq.tabla1,tabla_seguimiento.like.%tabla1%")
         } else {
-          query.or("tabla_seguimiento.is.null,tabla_seguimiento.neq.tabla1")
+          query.or("tabla_seguimiento.is.null,tabla_seguimiento.like.%tabla2%,tabla_seguimiento.neq.tabla1")
         }
 
         const { data, error } = await query
@@ -627,17 +627,58 @@ export function SeguimientoClienteGrid({
     })
   }
 
+  const getCanonicalAdvisor = (raw: string): { key: string; label: string; value: string } | null => {
+    const s = (raw || "").toLowerCase().trim()
+    if (!s || s === "-" || s.includes("test") || s.includes("kevin") || s.includes("holanuevo") || s.includes("admin@nuevo.com")) {
+      return null
+    }
+    if (s.includes("silvia") || s.includes("asesorcomercial@") || s.includes("speralta")) {
+      return { key: "silvia", label: "Silvia Peralta", value: "Silvia" }
+    }
+    if (s.includes("yerly") || s.includes("asesorcomercial1") || s.includes("yyerly")) {
+      return { key: "yerly", label: "Yerly Infante", value: "Yerly" }
+    }
+    if (s.includes("rossy") || s.includes("ejecutivocomercial2") || s.includes("asesorcomercial2")) {
+      return { key: "rossy", label: "Rossy Prado", value: "Rossy" }
+    }
+    if (s.includes("sergio") || s.includes("ejecutivocomercial3") || s.includes("asesorcomercial3")) {
+      return { key: "sergio", label: "Sergio Diaz", value: "Sergio" }
+    }
+    if (s.includes("juan") || s.includes("jbarba") || s.includes("garcia")) {
+      return { key: "juan", label: "Juan Barba", value: "Juan" }
+    }
+    if (s.includes("carlos") || s.includes("comercial@geofal")) {
+      return { key: "carlos", label: "Carlos Mendoza", value: "Carlos" }
+    }
+    const cleanLabel = raw.replace(/\s*\([^)]*\)/g, "").trim()
+    return { key: s, label: cleanLabel, value: cleanLabel }
+  }
+
   const uniqueAdvisors = useMemo(() => {
     const map = new Map<string, { label: string; value: string }>()
-    dbAdvisors.forEach((a) => map.set(a.value.toLowerCase(), a))
-    rows.forEach((r) => {
-      const adv = (r.asesor || "").trim()
-      if (adv && !map.has(adv.toLowerCase())) {
-        map.set(adv.toLowerCase(), { label: adv, value: adv })
+
+    dbAdvisors.forEach((a) => {
+      const canonical = getCanonicalAdvisor(a.label) || getCanonicalAdvisor(a.value)
+      if (canonical && !map.has(canonical.key)) {
+        map.set(canonical.key, { label: canonical.label, value: canonical.value })
       }
     })
+
+    rows.forEach((r) => {
+      const adv = (r.asesor || "").trim()
+      const canonical = getCanonicalAdvisor(adv)
+      if (canonical && !map.has(canonical.key)) {
+        map.set(canonical.key, { label: canonical.label, value: canonical.value })
+      }
+    })
+
+    if (tablaId === 1) {
+      if (!map.has("silvia")) map.set("silvia", { label: "Silvia Peralta", value: "Silvia" })
+      if (!map.has("yerly")) map.set("yerly", { label: "Yerly Infante", value: "Yerly" })
+    }
+
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "es"))
-  }, [dbAdvisors, rows])
+  }, [dbAdvisors, rows, tablaId])
 
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
@@ -665,11 +706,13 @@ export function SeguimientoClienteGrid({
         const isSergioFilter = selLower.includes("sergio") || selLower.includes("ejecutivocomercial3") || selLower.includes("asesorcomercial3")
         const isSilviaFilter = selLower.includes("silvia") || selLower.includes("asesorcomercial@") || selLower.includes("speralta")
         const isYerlyFilter = selLower.includes("yerly") || selLower.includes("asesorcomercial1") || selLower.includes("yyerly")
+        const isJuanFilter = selLower.includes("juan") || selLower.includes("jbarba") || selLower.includes("garcia")
 
         const isRossyRow = aName.includes("rossy") || cPor.includes("ejecutivocomercial2") || cPor.includes("asesorcomercial2") || aMail.includes("ejecutivocomercial2")
         const isSergioRow = aName.includes("sergio") || cPor.includes("ejecutivocomercial3") || cPor.includes("asesorcomercial3") || aMail.includes("ejecutivocomercial3")
         const isSilviaRow = aName.includes("silvia") || cPor.includes("asesorcomercial@") || aMail.includes("asesorcomercial@")
         const isYerlyRow = aName.includes("yerly") || cPor.includes("asesorcomercial1") || aMail.includes("asesorcomercial1")
+        const isJuanRow = aName.includes("juan") || cPor.includes("jbarba") || aMail.includes("jbarba")
 
         let matchesAsesor =
           aName.includes(selLower) ||
@@ -684,6 +727,7 @@ export function SeguimientoClienteGrid({
           else if (isSergioFilter && isSergioRow) matchesAsesor = true
           else if (isSilviaFilter && isSilviaRow) matchesAsesor = true
           else if (isYerlyFilter && isYerlyRow) matchesAsesor = true
+          else if (isJuanFilter && isJuanRow) matchesAsesor = true
         }
 
         if (!matchesAsesor) return false
@@ -911,6 +955,7 @@ export function SeguimientoClienteGrid({
             activeTab={activeModuleTab}
             onTabChange={onModuleTabChange}
             className="min-w-0 flex-1"
+            isAdmin={isAdmin}
             canViewLab={canViewLab}
             canViewCom={canViewCom}
             canViewKpis={canViewKpis}

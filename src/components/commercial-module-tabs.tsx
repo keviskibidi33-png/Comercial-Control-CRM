@@ -23,6 +23,8 @@ interface CommercialModuleTabsProps {
   canViewTabla3?: boolean
   /** If false, the Publicidad tab is hidden */
   canViewPublicidad?: boolean
+  /** Indicates whether the current viewer is an administrator */
+  isAdmin?: boolean
 }
 
 export function CommercialModuleTabs({
@@ -36,8 +38,9 @@ export function CommercialModuleTabs({
   canViewTabla2 = true,
   canViewTabla3 = true,
   canViewPublicidad = true,
+  isAdmin = false,
 }: CommercialModuleTabsProps) {
-  const isAdminView = canViewTabla1 && canViewTabla2
+  const isAdminView = Boolean(isAdmin && canViewTabla1 && canViewTabla2)
 
   const TAB_LABELS: Record<CommercialModuleTab, { label: string; icon: React.ReactNode }> = {
     lab: {

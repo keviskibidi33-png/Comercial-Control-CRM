@@ -60,7 +60,8 @@ function CommercialHome() {
       const onlyTabla1 = canViewTabla1 && !canViewTabla2 && !canViewTabla3
       const onlyTabla2 = canViewTabla2 && !canViewTabla1 && !canViewTabla3
       const onlyTabla3 = canViewTabla3 && !canViewTabla1 && !canViewTabla2
-      if (onlyTabla1) {
+      const isMultiTablaAdvisor = canViewTabla1 && canViewTabla2 && !isAdmin
+      if (onlyTabla1 || isMultiTablaAdvisor) {
         setActiveTab("seguimiento")
       } else if (onlyTabla2) {
         setActiveTab("seguimiento2")

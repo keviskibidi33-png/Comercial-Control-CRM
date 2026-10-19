@@ -119,6 +119,7 @@ export function useCurrentUser() {
 
     const qTargetTab = (searchParams.get("targetTab") as any) || null
     const qEmail = searchParams.get("email") || searchParams.get("userEmail") || null
+    const qIsAdvisor1Param = searchParams.get("isAsesorComercial1") === "true"
     const qIsAdvisor2Param = searchParams.get("isAsesorComercial2") === "true" || searchParams.get("targetTab") === "seguimiento2"
     const qIsAdvisor3Param = searchParams.get("isAsesorComercial3") === "true" || searchParams.get("targetTab") === "seguimiento3"
     const qCanViewCom = searchParams.has("canViewCom") ? searchParams.get("canViewCom") === "true" : null
@@ -433,7 +434,7 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewCom !== null) return qCanViewCom
-            return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
+            return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
         /** Publicidad tab is hidden for individual commercial advisors, always visible for admin */
         canViewPublicidad: (() => {
@@ -443,14 +444,14 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewPublicidad !== null) return qCanViewPublicidad
-            return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
+            return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
         // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins and commercial advisors.
         canViewKpis: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return true
+            if (isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3" || (tablaSeguimiento && tablaSeguimiento.includes("tabla1"))) return true
             // Admin always sees KPI regardless of show_kpi
             if (rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe") return true
             // DB value takes priority once loaded
@@ -470,8 +471,9 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla1 !== null) return qCanViewTabla1
+            if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
             if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param)) return false
-            if (tablaSeguimiento === "tabla1") return true
+            if (tablaSeguimiento === "tabla1" || tablaSeguimiento === "ambas" || (tablaSeguimiento && tablaSeguimiento.includes("tabla1"))) return true
             if (tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3") return false
             return isLegacyTrackingUser(email, displayName)
         })(),
@@ -483,8 +485,9 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla2 !== null) return qCanViewTabla2
+            if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
             if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return false
-            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return true
+            if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "ambas" || (tablaSeguimiento && tablaSeguimiento.includes("tabla2"))) return true
             return false
         })(),
         /** Tabla 3 (seguimiento3) is visible for Sergio, users assigned to tabla3, and Admins */
@@ -501,6 +504,23 @@ export function useCurrentUser() {
             return false
         })(),
     }
+}
+
+export function isAsesorComercial1(
+    email?: string | null,
+    displayName?: string | null,
+    paramFlag?: boolean,
+): boolean {
+    if (paramFlag) return true
+    const normEmail = String(email || "").toLowerCase().trim()
+    const normName = String(displayName || "").toLowerCase().trim()
+    return (
+        normEmail === "asesorcomercial1@geofal.com.pe" ||
+        normEmail === "ejecutivocomercial1@geofal.com.pe" ||
+        normEmail.includes("asesorcomercial1") ||
+        normEmail.includes("ejecutivocomercial1") ||
+        normName.includes("yerly")
+    )
 }
 
 export function isAsesorComercial2(

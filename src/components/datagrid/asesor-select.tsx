@@ -15,6 +15,7 @@ const ASESOR_OPTIONS = [
     { value: "Silvia", label: "Silvia", color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" },
     { value: "Sergio", label: "Sergio", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
     { value: "Rossy", label: "Rossy", color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100" },
+    { value: "Yerly", label: "Yerly", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
     { value: "-", label: "-", color: "bg-zinc-50 text-zinc-400 border-zinc-200 hover:bg-zinc-100" },
 ]
 
@@ -24,6 +25,7 @@ const getAsesorColor = (asesor: string) => {
     if (a === "silvia") return "bg-purple-50 text-purple-700 border-purple-200"
     if (a === "sergio") return "bg-emerald-50 text-emerald-700 border-emerald-200"
     if (a === "rossy") return "bg-rose-50 text-rose-700 border-rose-200"
+    if (a === "yerly") return "bg-amber-50 text-amber-700 border-amber-200"
     return "bg-zinc-50 text-zinc-400 border-zinc-200"
 }
 
