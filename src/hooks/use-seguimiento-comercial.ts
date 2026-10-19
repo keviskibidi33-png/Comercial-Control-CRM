@@ -37,7 +37,7 @@ const getStoredToken = (): string | null => {
   return localStorage.getItem("programacion_access_token") || localStorage.getItem("token")
 }
 
-async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
+export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const token = getStoredToken()
   const headers: Record<string, string> = {
     ...((options.headers as Record<string, string>) || {}),

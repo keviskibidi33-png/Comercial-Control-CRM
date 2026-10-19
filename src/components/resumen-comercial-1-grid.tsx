@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { BarChart3, FileCheck2, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { BarChart3, Download, FileCheck2, FileSpreadsheet, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { toast } from "sonner"
 
-import { useSeguimientoComercial, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
+import { useSeguimientoComercial, fetchWithAuth, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { useSeguimientoComercial2 } from "@/hooks/use-seguimiento-comercial-2"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useCurrentUser } from "@/hooks/use-current-user"
@@ -495,6 +496,275 @@ function ClientsTable({ data, loading }: { data: CommercialTrackingKpis; loading
   )
 }
 
+export type AdvisorFilter = "ALL" | "SILVIA" | "ROSSY" | "SERGIO"
+
+function matchesAdvisor(
+  row: SeguimientoRow & { _sourceTable?: 1 | 2 },
+  advisor: "SILVIA" | "ROSSY" | "SERGIO"
+): boolean {
+  const aName = (row.asesor || "").toLowerCase().trim()
+  const cPor = (row.creado_por || "").toLowerCase().trim()
+  const aMail = (row.asesor_email || "").toLowerCase().trim()
+
+  if (advisor === "SERGIO") {
+    return (
+      aName.includes("sergio") ||
+      cPor.includes("ejecutivocomercial3") ||
+      cPor.includes("asesorcomercial3") ||
+      aMail.includes("ejecutivocomercial3") ||
+      aMail.includes("asesorcomercial3")
+    )
+  }
+
+  if (advisor === "ROSSY") {
+    return (
+      aName.includes("rossy") ||
+      cPor.includes("ejecutivocomercial2") ||
+      cPor.includes("asesorcomercial2") ||
+      aMail.includes("ejecutivocomercial2") ||
+      aMail.includes("asesorcomercial2")
+    )
+  }
+
+  if (advisor === "SILVIA") {
+    if (
+      aName.includes("sergio") ||
+      cPor.includes("ejecutivocomercial3") ||
+      cPor.includes("asesorcomercial3") ||
+      aName.includes("rossy") ||
+      cPor.includes("ejecutivocomercial2") ||
+      cPor.includes("asesorcomercial2")
+    ) {
+      return false
+    }
+
+    return (
+      aName.includes("silvia") ||
+      aName.includes("yerly") ||
+      aName.includes("speralta") ||
+      cPor.includes("asesorcomercial@") ||
+      cPor.includes("asesorcomercial1") ||
+      aMail.includes("asesorcomercial@") ||
+      aMail.includes("asesorcomercial1") ||
+      row._sourceTable === 1
+    )
+  }
+
+  return false
+}
+
+function calculateWeeklyLeadsByAdvisor(
+  rows: (SeguimientoRow & { _sourceTable?: 1 | 2 })[],
+  selectedMonth: string,
+  selectedYear: number
+) {
+  const month = Number.parseInt(selectedMonth, 10)
+  const startDate = `${selectedYear}-${String(month).padStart(2, "0")}-01`
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? selectedYear + 1 : selectedYear
+  const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
+
+  const silvia: [number, number, number, number] = [0, 0, 0, 0]
+  const rossy: [number, number, number, number] = [0, 0, 0, 0]
+  const sergio: [number, number, number, number] = [0, 0, 0, 0]
+
+  for (const row of rows) {
+    const datePart = getRowDate(row)
+    if (!datePart || datePart < startDate || datePart >= endDate) continue
+    if (!hasQuoteNumber(row.numero_cotizacion)) continue
+
+    const day = Number.parseInt(datePart.slice(8, 10), 10)
+    const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
+    if (weekIndex === null) continue
+
+    if (matchesAdvisor(row, "SERGIO")) {
+      sergio[weekIndex] += 1
+    } else if (matchesAdvisor(row, "ROSSY")) {
+      rossy[weekIndex] += 1
+    } else if (matchesAdvisor(row, "SILVIA")) {
+      silvia[weekIndex] += 1
+    }
+  }
+
+  return { silvia, rossy, sergio }
+}
+
+function LeadsAssignmentTable({
+  leads,
+  loading,
+  selectedAdvisor,
+  onSelectAdvisor,
+  onExport,
+  isExporting,
+}: {
+  leads: {
+    silvia: [number, number, number, number]
+    rossy: [number, number, number, number]
+    sergio: [number, number, number, number]
+  }
+  loading: boolean
+  selectedAdvisor: AdvisorFilter
+  onSelectAdvisor: (advisor: AdvisorFilter) => void
+  onExport: () => void
+  isExporting: boolean
+}) {
+  const totSilvia = leads.silvia.reduce((a, b) => a + b, 0)
+  const totRossy = leads.rossy.reduce((a, b) => a + b, 0)
+  const totSergio = leads.sergio.reduce((a, b) => a + b, 0)
+
+  const totS1 = leads.silvia[0] + leads.rossy[0] + leads.sergio[0]
+  const totS2 = leads.silvia[1] + leads.rossy[1] + leads.sergio[1]
+  const totS3 = leads.silvia[2] + leads.rossy[2] + leads.sergio[2]
+  const totS4 = leads.silvia[3] + leads.rossy[3] + leads.sergio[3]
+  const totOverall = totS1 + totS2 + totS3 + totS4
+
+  const advisors = [
+    { key: "SILVIA" as const, name: "Silvia", weekly: leads.silvia, total: totSilvia },
+    { key: "ROSSY" as const, name: "Rossy", weekly: leads.rossy, total: totRossy },
+    { key: "SERGIO" as const, name: "Sergio", weekly: leads.sergio, total: totSergio },
+  ]
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Resumen de Asignación de Leads y Metas
+          </h3>
+        </div>
+        <button
+          onClick={onExport}
+          disabled={isExporting}
+          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Descargar archivo Excel oficial con formato de metas y leads"
+        >
+          {isExporting ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
+          <span>{isExporting ? "Generando Excel..." : "Exportar Metas (Excel)"}</span>
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-230 w-full text-xs border-collapse">
+          <thead>
+            {/* Banner superior idéntico a la imagen */}
+            <tr className="bg-[#d9d9d9] text-slate-900 border-b border-slate-400">
+              <th
+                colSpan={7}
+                className="px-4 py-2 text-center text-xs font-black uppercase tracking-wide border border-slate-400"
+              >
+                Cuadro de resumen de asignación de Leads
+              </th>
+            </tr>
+            {/* Cabecera azul marino idéntica a la imagen */}
+            <tr className="bg-[#003366] text-white">
+              <th className="w-48 border border-slate-400 px-3 py-2 text-left font-bold uppercase">
+                Acciones
+              </th>
+              <th className="w-36 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Meta
+              </th>
+              <th className="w-28 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Semana 1
+              </th>
+              <th className="w-28 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Semana 2
+              </th>
+              <th className="w-28 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Semana 3
+              </th>
+              <th className="w-28 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Semana 4
+              </th>
+              <th className="w-28 border border-slate-400 px-3 py-2 text-center font-bold uppercase">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <LoadingRows rows={4} columns={7} />
+            ) : (
+              <>
+                {advisors.map((adv) => {
+                  const isSelected = selectedAdvisor === adv.key
+                  return (
+                    <tr
+                      key={adv.key}
+                      onClick={() => onSelectAdvisor(isSelected ? "ALL" : adv.key)}
+                      className={`cursor-pointer border-b border-slate-200 transition-colors ${
+                        isSelected
+                          ? "bg-blue-50/90 font-semibold"
+                          : "hover:bg-slate-50/80"
+                      }`}
+                      title={`Clic para filtrar las tablas inferiores por ${adv.name}`}
+                    >
+                      <td className="border border-slate-300 px-3 py-2.5 font-bold text-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span>{adv.name}</span>
+                          {isSelected && (
+                            <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">
+                              Filtrado
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2.5 text-center font-mono text-slate-400">
+                        {/* Vacío según requerimiento para llenado manual en Excel */}
+                        -
+                      </td>
+                      {adv.weekly.map((val, idx) => (
+                        <td
+                          key={idx}
+                          className="border border-slate-300 px-3 py-2.5 text-center font-mono tabular-nums text-slate-800"
+                        >
+                          {val > 0 ? val : ""}
+                        </td>
+                      ))}
+                      <td className="border border-slate-300 px-3 py-2.5 text-center font-mono font-bold tabular-nums text-slate-900">
+                        {adv.total > 0 ? adv.total : ""}
+                      </td>
+                    </tr>
+                  )
+                })}
+
+                {/* Total mes idéntico a la imagen */}
+                <tr className="bg-[#d9d9d9] font-black text-slate-900 border-t-2 border-b-4 border-slate-600">
+                  <td className="border border-slate-400 px-3 py-2.5 font-black">
+                    Total mes
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono text-slate-400">
+                    -
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
+                    {totS1}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
+                    {totS2}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
+                    {totS3}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
+                    {totS4}
+                  </td>
+                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
+                    {totOverall}
+                  </td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -605,7 +875,8 @@ export default function ResumenComercial1Grid({
   }, [resolvedAdvisorScope, displayName, normalizedEmail])
 
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: string; year: number } | null>(null)
-  const [selectedSource, setSelectedSource] = useState<"ALL" | "TABLA1" | "TABLA2">("ALL")
+  const [selectedAdvisor, setSelectedAdvisor] = useState<AdvisorFilter>("ALL")
+  const [isExporting, setIsExporting] = useState(false)
 
   const tracker1 = useSeguimientoComercial({
     limit: 10000,
@@ -615,42 +886,110 @@ export default function ResumenComercial1Grid({
     limit: 10000,
   })
 
-  const { rows, total, isLoading, refetch, errorMessage } = useMemo(() => {
-    if (!isAdmin) {
-      return canViewTabla1 ? tracker1 : tracker2
-    }
-    if (selectedSource === "TABLA1") return tracker1
-    if (selectedSource === "TABLA2") return tracker2
-    
-    // Consolidado for Admin: combine rows from both tables
-    const combinedRows = [...tracker1.rows, ...tracker2.rows]
-    return {
-      rows: combinedRows,
-      total: tracker1.total + tracker2.total,
-      isLoading: tracker1.isLoading || tracker2.isLoading,
-      refetch: () => {
-        tracker1.refetch()
-        tracker2.refetch()
-      },
-      errorMessage: tracker1.errorMessage || tracker2.errorMessage,
-    }
-  }, [isAdmin, canViewTabla1, selectedSource, tracker1, tracker2])
+  // Tag rows with their source table for accurate team assignment
+  const allTaggedRows = useMemo(() => {
+    const t1 = tracker1.rows.map((r) => ({ ...r, _sourceTable: 1 as const }))
+    const t2 = tracker2.rows.map((r) => ({ ...r, _sourceTable: 2 as const }))
+    return [...t1, ...t2]
+  }, [tracker1.rows, tracker2.rows])
 
-  const fuenteLabel = useMemo(() => {
-    if (!isAdmin) {
-      return "Fuente: Seguimiento 1"
-    }
-    if (selectedSource === "TABLA1") return "Fuente: Seguimiento 1"
-    if (selectedSource === "TABLA2") return "Fuente: Seguimiento 2"
-    return "Fuente: Consolidado General"
-  }, [isAdmin, selectedSource])
+  const isLoading = tracker1.isLoading || tracker2.isLoading
+  const errorMessage = tracker1.errorMessage || tracker2.errorMessage
+  const refetch = () => {
+    tracker1.refetch()
+    tracker2.refetch()
+  }
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
-  const latestPeriod = useMemo(() => getMonthYearFromRows(rows), [rows])
+  const latestPeriod = useMemo(() => getMonthYearFromRows(allTaggedRows), [allTaggedRows])
   const activePeriod = selectedPeriod ?? latestPeriod ?? current
   const activeValue = `${activePeriod.year}-${String(activePeriod.month).padStart(2, "0")}`
 
-  const kpis = useMemo(() => buildKpis(rows, activePeriod.month, activePeriod.year), [rows, activePeriod.month, activePeriod.year])
+  const weeklyLeadsByAdvisor = useMemo(
+    () => calculateWeeklyLeadsByAdvisor(allTaggedRows, activePeriod.month, activePeriod.year),
+    [allTaggedRows, activePeriod.month, activePeriod.year]
+  )
+
+  const filteredRowsForKpis = useMemo(() => {
+    if (!isAdmin) {
+      const scope = (resolvedAdvisorScope || "").toLowerCase()
+      if (scope.includes("silvia") || scope.includes("yerly") || scope.includes("asesorcomercial1")) {
+        return allTaggedRows.filter((r) => matchesAdvisor(r, "SILVIA"))
+      }
+      if (scope.includes("rossy")) {
+        return allTaggedRows.filter((r) => matchesAdvisor(r, "ROSSY"))
+      }
+      if (scope.includes("sergio")) {
+        return allTaggedRows.filter((r) => matchesAdvisor(r, "SERGIO"))
+      }
+      return canViewTabla1 ? tracker1.rows : tracker2.rows
+    }
+
+    if (selectedAdvisor === "SILVIA") {
+      return allTaggedRows.filter((r) => matchesAdvisor(r, "SILVIA"))
+    }
+    if (selectedAdvisor === "ROSSY") {
+      return allTaggedRows.filter((r) => matchesAdvisor(r, "ROSSY"))
+    }
+    if (selectedAdvisor === "SERGIO") {
+      return allTaggedRows.filter((r) => matchesAdvisor(r, "SERGIO"))
+    }
+    return allTaggedRows
+  }, [isAdmin, resolvedAdvisorScope, selectedAdvisor, allTaggedRows, canViewTabla1, tracker1.rows, tracker2.rows])
+
+  const kpis = useMemo(
+    () => buildKpis(filteredRowsForKpis, activePeriod.month, activePeriod.year),
+    [filteredRowsForKpis, activePeriod.month, activePeriod.year]
+  )
+
+  const fuenteLabel = useMemo(() => {
+    if (!isAdmin) {
+      return `Ámbito: ${scopeBadgeLabel}`
+    }
+    if (selectedAdvisor === "SILVIA") return "Asesor: Silvia Peralta"
+    if (selectedAdvisor === "ROSSY") return "Asesora: Rossy Prado"
+    if (selectedAdvisor === "SERGIO") return "Asesor: Sergio Diaz"
+    return "Ámbito: Consolidado General (Todos)"
+  }, [isAdmin, selectedAdvisor, scopeBadgeLabel])
+
+  const handleExportMetasExcel = async () => {
+    try {
+      setIsExporting(true)
+      const params = new URLSearchParams({
+        mes: String(Number.parseInt(activePeriod.month, 10)),
+        anio: String(activePeriod.year),
+        s1_silvia: String(weeklyLeadsByAdvisor.silvia[0]),
+        s2_silvia: String(weeklyLeadsByAdvisor.silvia[1]),
+        s3_silvia: String(weeklyLeadsByAdvisor.silvia[2]),
+        s4_silvia: String(weeklyLeadsByAdvisor.silvia[3]),
+        s1_rossy: String(weeklyLeadsByAdvisor.rossy[0]),
+        s2_rossy: String(weeklyLeadsByAdvisor.rossy[1]),
+        s3_rossy: String(weeklyLeadsByAdvisor.rossy[2]),
+        s4_rossy: String(weeklyLeadsByAdvisor.rossy[3]),
+        s1_sergio: String(weeklyLeadsByAdvisor.sergio[0]),
+        s2_sergio: String(weeklyLeadsByAdvisor.sergio[1]),
+        s3_sergio: String(weeklyLeadsByAdvisor.sergio[2]),
+        s4_sergio: String(weeklyLeadsByAdvisor.sergio[3]),
+      })
+
+      const res = await fetchWithAuth(`/api/seguimiento-comercial/export-kpi-metas?${params.toString()}`)
+      const blob = await (res as Response).blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `Resumen_Metas_Leads_${activePeriod.month}_${activePeriod.year}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success("Excel de metas y leads exportado exitosamente")
+    } catch (err) {
+      console.error("Export error:", err)
+      toast.error("Error al exportar metas de leads")
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
@@ -666,7 +1005,7 @@ export default function ResumenComercial1Grid({
               </h1>
               <p className="truncate text-[11px] text-zinc-500">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
-            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{total}</span>
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">{filteredRowsForKpis.length}</span>
           </div>
           <CommercialModuleTabs
             activeTab={activeModuleTab}
@@ -685,13 +1024,14 @@ export default function ResumenComercial1Grid({
         <div className="flex items-center gap-3">
           {isAdmin ? (
             <select
-              value={selectedSource}
-              onChange={(event) => setSelectedSource(event.target.value as "ALL" | "TABLA1" | "TABLA2")}
+              value={selectedAdvisor}
+              onChange={(event) => setSelectedAdvisor(event.target.value as AdvisorFilter)}
               className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 shadow-sm outline-none transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-md focus:border-blue-400 focus:ring-2 focus:ring-blue-100 active:translate-y-0"
             >
-              <option value="ALL">Consolidado General</option>
-              <option value="TABLA1">Seguimiento 1</option>
-              <option value="TABLA2">Seguimiento 2</option>
+              <option value="ALL">Consolidado General (Todos)</option>
+              <option value="SILVIA">Silvia</option>
+              <option value="ROSSY">Rossy</option>
+              <option value="SERGIO">Sergio</option>
             </select>
           ) : (
             <div className="flex h-9 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50/90 px-3 text-xs font-semibold text-blue-800 shadow-sm">
@@ -743,6 +1083,17 @@ export default function ResumenComercial1Grid({
               {fuenteLabel}
             </span>
           </div>
+
+          {/* Cuadro de resumen de asignación de Leads con Exportable Excel (Idéntico a la plantilla) */}
+          <LeadsAssignmentTable
+            leads={weeklyLeadsByAdvisor}
+            loading={isLoading}
+            selectedAdvisor={selectedAdvisor}
+            onSelectAdvisor={setSelectedAdvisor}
+            onExport={handleExportMetasExcel}
+            isExporting={isExporting}
+          />
+
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
             <span className="font-bold text-slate-800">Reglas:</span>{" "}
             <span className="text-blue-700 font-semibold">Cotización enviada</span>: Fecha de contacto + costo sin IGV + categoría cliente.{" "}
@@ -757,3 +1108,4 @@ export default function ResumenComercial1Grid({
     </div>
   )
 }
+
