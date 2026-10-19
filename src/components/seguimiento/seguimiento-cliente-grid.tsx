@@ -645,7 +645,7 @@ export function SeguimientoClienteGrid({
       return { key: "sergio", label: "Sergio Diaz", value: "Sergio" }
     }
     if (s.includes("juan") || s.includes("jbarba") || s.includes("garcia")) {
-      return { key: "juan", label: "Juan Barba", value: "Juan" }
+      return { key: "juan", label: "Juan", value: "Juan" }
     }
     if (s.includes("carlos") || s.includes("comercial@geofal")) {
       return { key: "carlos", label: "Carlos Mendoza", value: "Carlos" }
