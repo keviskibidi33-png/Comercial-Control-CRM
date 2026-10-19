@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { BarChart3, Download, FileCheck2, FileSpreadsheet, RefreshCw, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { BarChart3, Download, FileCheck2, FileSpreadsheet, RefreshCw, ShieldAlert, ShoppingCart, TrendingUp, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { useSeguimientoComercial, fetchWithAuth, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
@@ -845,10 +845,25 @@ export default function ResumenComercial1Grid({
     )
   }, [isAdminFromUrl, userLoading, normalizedRole])
 
+  // Yerly Infante tiene acceso administrativo a KPIs junto con Admin
+  const isYerly = useMemo(() => {
+    const nameHint = (displayName || "").toLowerCase()
+    const emailHint = normalizedEmail
+    return (
+      emailHint === "asesorcomercial1@geofal.com.pe" ||
+      emailHint === "ejecutivocomercial1@geofal.com.pe" ||
+      emailHint.includes("asesorcomercial1") ||
+      emailHint.includes("ejecutivocomercial1") ||
+      nameHint.includes("yerly")
+    )
+  }, [displayName, normalizedEmail])
+
+  const canManageKpis = isAdmin || isYerly
+
   // Detect Yerly-Silvia team by email/displayName.
   // Any other user uses their own displayName or email local part as scope.
   const resolvedAdvisorScope = useMemo(() => {
-    if (isAdmin || userLoading) return undefined
+    if (canManageKpis || userLoading) return undefined
     const nameHint = (displayName || "").toLowerCase()
     const emailHint = normalizedEmail
     // Yerly is Silvia's assistant → shares Silvia's scope
@@ -861,7 +876,7 @@ export default function ResumenComercial1Grid({
     }
     // Other advisors: use their display name if available, else undefined (backend resolves via JWT)
     return displayName || undefined
-  }, [isAdmin, userLoading, displayName, normalizedEmail])
+  }, [canManageKpis, userLoading, displayName, normalizedEmail])
 
   // Label shown in the locked badge for non-admin users
   const scopeBadgeLabel = useMemo(() => {
@@ -911,7 +926,7 @@ export default function ResumenComercial1Grid({
   )
 
   const filteredRowsForKpis = useMemo(() => {
-    if (!isAdmin) {
+    if (!canManageKpis) {
       const scope = (resolvedAdvisorScope || "").toLowerCase()
       if (scope.includes("silvia") || scope.includes("yerly") || scope.includes("asesorcomercial1")) {
         return allTaggedRows.filter((r) => matchesAdvisor(r, "SILVIA"))
@@ -935,7 +950,7 @@ export default function ResumenComercial1Grid({
       return allTaggedRows.filter((r) => matchesAdvisor(r, "SERGIO"))
     }
     return allTaggedRows
-  }, [isAdmin, resolvedAdvisorScope, selectedAdvisor, allTaggedRows, canViewTabla1, tracker1.rows, tracker2.rows])
+  }, [canManageKpis, resolvedAdvisorScope, selectedAdvisor, allTaggedRows, canViewTabla1, tracker1.rows, tracker2.rows])
 
   const kpis = useMemo(
     () => buildKpis(filteredRowsForKpis, activePeriod.month, activePeriod.year),
@@ -943,14 +958,14 @@ export default function ResumenComercial1Grid({
   )
 
   const fuenteLabel = useMemo(() => {
-    if (!isAdmin) {
+    if (!canManageKpis) {
       return `Ámbito: ${scopeBadgeLabel}`
     }
     if (selectedAdvisor === "SILVIA") return "Asesor: Silvia Peralta"
     if (selectedAdvisor === "ROSSY") return "Asesora: Rossy Prado"
     if (selectedAdvisor === "SERGIO") return "Asesor: Sergio Diaz"
     return "Ámbito: Consolidado General (Todos)"
-  }, [isAdmin, selectedAdvisor, scopeBadgeLabel])
+  }, [canManageKpis, selectedAdvisor, scopeBadgeLabel])
 
   const handleExportMetasExcel = async () => {
     try {
@@ -991,6 +1006,40 @@ export default function ResumenComercial1Grid({
     }
   }
 
+  // Guardia de seguridad: Acceso exclusivo para Yerly Infante y Administradores
+  if (!userLoading && !canViewKpis && !canManageKpis) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
+        <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
+          <CommercialModuleTabs
+            activeTab={activeModuleTab}
+            onTabChange={onModuleTabChange}
+            className="min-w-0 flex-1"
+            isAdmin={isAdmin}
+            canViewLab={canViewLab}
+            canViewCom={canViewCom}
+            canViewKpis={false}
+            canViewTabla1={canViewTabla1}
+            canViewTabla2={canViewTabla2}
+            canViewTabla3={canViewTabla3}
+            canViewPublicidad={canViewPublicidad}
+          />
+        </div>
+        <div className="flex flex-1 items-center justify-center p-8 text-center">
+          <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50/90 p-8 text-amber-900 shadow-sm">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-base font-bold text-amber-950">Acceso Restringido</h3>
+            <p className="mt-2 text-xs text-amber-800">
+              El panel de KPIs y metas de ventas está reservado exclusivamente para Yerly Infante y Administradores del sistema.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
       <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
@@ -1001,7 +1050,7 @@ export default function ResumenComercial1Grid({
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-semibold tracking-tight text-zinc-800">
-                {isAdmin ? "Resumen en KPIs" : "KPI Comercial Personal"}
+                {canManageKpis ? "Resumen en KPIs" : "KPI Comercial Personal"}
               </h1>
               <p className="truncate text-[11px] text-zinc-500">Cotizaciones enviadas, ventas y conversión semanal por categoría de cliente.</p>
             </div>
@@ -1022,7 +1071,7 @@ export default function ResumenComercial1Grid({
           />
         </div>
         <div className="flex items-center gap-3">
-          {isAdmin ? (
+          {canManageKpis ? (
             <select
               value={selectedAdvisor}
               onChange={(event) => setSelectedAdvisor(event.target.value as AdvisorFilter)}

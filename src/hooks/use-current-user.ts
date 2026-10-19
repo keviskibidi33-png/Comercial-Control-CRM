@@ -446,20 +446,19 @@ export function useCurrentUser() {
             if (qCanViewPublicidad !== null) return qCanViewPublicidad
             return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
-        // canViewKpis: driven by show_kpi from DB (perfiles). Falls back to URL param, then true for admins and commercial advisors.
+        // canViewKpis: restringido estrictamente a Administrador y Yerly Infante (asesorcomercial1)
         canViewKpis: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const nameNorm = (displayName || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            if (isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3" || (tablaSeguimiento && tablaSeguimiento.includes("tabla1"))) return true
             // Admin always sees KPI regardless of show_kpi
-            if (rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe") return true
-            // DB value takes priority once loaded
-            if (showKpi !== null) return showKpi
-            // URL param as fast first-render value
-            if (qShowKpi !== null) return qShowKpi
-            // Default: show KPI while loading (prevents tab flash-hiding)
-            return true
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
+            if (isSuperAdmin) return true
+            // Yerly Infante tiene acceso exclusivo
+            const isYerly = isAsesorComercial1(email, displayName, qIsAdvisor1Param) || eNorm === "asesorcomercial1@geofal.com.pe" || eNorm.includes("asesorcomercial1") || nameNorm.includes("yerly")
+            if (isYerly) return true
+            return false
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
         isLegacyUser: isLegacyTrackingUser(email, displayName),
@@ -557,19 +556,21 @@ export function isAsesorComercial3(
     )
 }
 
-const KPI_AUTHORIZED_IDENTITIES = ["irma.coaquira", "irma", "fabian", "labprueba"]
-
-export function isKpiAuthorizedUser(role: string | null | undefined, email: string | null | undefined, userId?: string | null): boolean {
+export function isKpiAuthorizedUser(role: string | null | undefined, email: string | null | undefined, displayName?: string | null): boolean {
     const normRole = String(role || "").toLowerCase().trim()
     const normEmail = String(email || "").toLowerCase().trim()
-    const normId = String(userId || "").toLowerCase().trim()
+    const normName = String(displayName || "").toLowerCase().trim()
 
-    if (normRole.includes("admin") || normRole.includes("gerencia") || normRole.includes("administrador") || normRole.includes("kpi")) {
+    if (normRole.includes("admin") || normRole.includes("gerencia") || normRole.includes("administrador") || normEmail === "admin@geofal.com.pe" || normEmail === "gerencia@geofal.com.pe" || normEmail === "speralta@geofal.com.pe") {
         return true
     }
 
-    return KPI_AUTHORIZED_IDENTITIES.some(
-        (id) => normEmail.includes(id) || normId.includes(id)
+    return (
+        normEmail === "asesorcomercial1@geofal.com.pe" ||
+        normEmail === "ejecutivocomercial1@geofal.com.pe" ||
+        normEmail.includes("asesorcomercial1") ||
+        normEmail.includes("ejecutivocomercial1") ||
+        normName.includes("yerly")
     )
 }
 
