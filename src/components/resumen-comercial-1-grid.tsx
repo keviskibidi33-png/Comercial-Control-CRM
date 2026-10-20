@@ -553,11 +553,30 @@ function matchesAdvisor(
   return false
 }
 
+export interface LeadClientItem {
+  asesor: string
+  cliente: string
+  cotizacion: string
+  fecha: string
+  estado?: string
+}
+
+export interface WeeklyLeadsResult {
+  silvia: [number, number, number, number]
+  rossy: [number, number, number, number]
+  sergio: [number, number, number, number]
+  clients: {
+    silvia: [LeadClientItem[], LeadClientItem[], LeadClientItem[], LeadClientItem[]]
+    rossy: [LeadClientItem[], LeadClientItem[], LeadClientItem[], LeadClientItem[]]
+    sergio: [LeadClientItem[], LeadClientItem[], LeadClientItem[], LeadClientItem[]]
+  }
+}
+
 function calculateWeeklyLeadsByAdvisor(
   rows: (SeguimientoRow & { _sourceTable?: 1 | 2 })[],
   selectedMonth: string,
   selectedYear: number
-) {
+): WeeklyLeadsResult {
   const month = Number.parseInt(selectedMonth, 10)
   const startDate = `${selectedYear}-${String(month).padStart(2, "0")}-01`
   const nextMonth = month === 12 ? 1 : month + 1
@@ -568,6 +587,12 @@ function calculateWeeklyLeadsByAdvisor(
   const rossy: [number, number, number, number] = [0, 0, 0, 0]
   const sergio: [number, number, number, number] = [0, 0, 0, 0]
 
+  const clients: WeeklyLeadsResult["clients"] = {
+    silvia: [[], [], [], []],
+    rossy: [[], [], [], []],
+    sergio: [[], [], [], []],
+  }
+
   for (const row of rows) {
     const datePart = getRowDate(row)
     if (!datePart || datePart < startDate || datePart >= endDate) continue
@@ -577,16 +602,40 @@ function calculateWeeklyLeadsByAdvisor(
     const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
     if (weekIndex === null) continue
 
+    const clientName = String(row.razon_social || row.persona_contacto || "Sin Razón Social").trim()
+    const cotizStr = String(row.numero_cotizacion || "").trim()
+
     if (matchesAdvisor(row, "SERGIO")) {
       sergio[weekIndex] += 1
+      clients.sergio[weekIndex].push({
+        asesor: "Sergio",
+        cliente: clientName,
+        cotizacion: cotizStr,
+        fecha: datePart,
+        estado: row.estado_seguimiento || row.estado_cliente,
+      })
     } else if (matchesAdvisor(row, "ROSSY")) {
       rossy[weekIndex] += 1
+      clients.rossy[weekIndex].push({
+        asesor: "Rossy",
+        cliente: clientName,
+        cotizacion: cotizStr,
+        fecha: datePart,
+        estado: row.estado_seguimiento || row.estado_cliente,
+      })
     } else if (matchesAdvisor(row, "SILVIA")) {
       silvia[weekIndex] += 1
+      clients.silvia[weekIndex].push({
+        asesor: "Silvia",
+        cliente: clientName,
+        cotizacion: cotizStr,
+        fecha: datePart,
+        estado: row.estado_seguimiento || row.estado_cliente,
+      })
     }
   }
 
-  return { silvia, rossy, sergio }
+  return { silvia, rossy, sergio, clients }
 }
 
 function LeadsAssignmentTable({
@@ -597,11 +646,7 @@ function LeadsAssignmentTable({
   onExport,
   isExporting,
 }: {
-  leads: {
-    silvia: [number, number, number, number]
-    rossy: [number, number, number, number]
-    sergio: [number, number, number, number]
-  }
+  leads: WeeklyLeadsResult
   loading: boolean
   selectedAdvisor: AdvisorFilter
   onSelectAdvisor: (advisor: AdvisorFilter) => void
@@ -619,9 +664,9 @@ function LeadsAssignmentTable({
   const totOverall = totS1 + totS2 + totS3 + totS4
 
   const advisors = [
-    { key: "SILVIA" as const, name: "Silvia", weekly: leads.silvia, total: totSilvia },
-    { key: "ROSSY" as const, name: "Rossy", weekly: leads.rossy, total: totRossy },
-    { key: "SERGIO" as const, name: "Sergio", weekly: leads.sergio, total: totSergio },
+    { key: "SILVIA" as const, clientKey: "silvia" as const, name: "Silvia", weekly: leads.silvia, total: totSilvia },
+    { key: "ROSSY" as const, clientKey: "rossy" as const, name: "Rossy", weekly: leads.rossy, total: totRossy },
+    { key: "SERGIO" as const, clientKey: "sergio" as const, name: "Sergio", weekly: leads.sergio, total: totSergio },
   ]
 
   return (
@@ -637,7 +682,7 @@ function LeadsAssignmentTable({
           onClick={onExport}
           disabled={isExporting}
           className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-          title="Descargar archivo Excel oficial con formato de metas y leads"
+          title="Descargar archivo Excel oficial con formato de metas y leads (incluye comentarios al poner el cursor y hoja detallada de clientes)"
         >
           {isExporting ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -692,6 +737,12 @@ function LeadsAssignmentTable({
               <>
                 {advisors.map((adv) => {
                   const isSelected = selectedAdvisor === adv.key
+                  const allAdvClients = (leads.clients?.[adv.clientKey] || []).flat()
+                  const advTotalTooltip = allAdvClients.length > 0
+                    ? `Total ${adv.name} (${allAdvClients.length} leads):\n` +
+                      allAdvClients.map((c, i) => `${i + 1}. ${c.cliente}${c.cotizacion ? ` [${c.cotizacion}]` : ""}`).join("\n")
+                    : undefined
+
                   return (
                     <tr
                       key={adv.key}
@@ -717,15 +768,31 @@ function LeadsAssignmentTable({
                         {/* Vacío según requerimiento para llenado manual en Excel */}
                         -
                       </td>
-                      {adv.weekly.map((val, idx) => (
-                        <td
-                          key={idx}
-                          className="border border-slate-300 px-3 py-2.5 text-center font-mono tabular-nums text-slate-800"
-                        >
-                          {val > 0 ? val : ""}
-                        </td>
-                      ))}
-                      <td className="border border-slate-300 px-3 py-2.5 text-center font-mono font-bold tabular-nums text-slate-900">
+                      {adv.weekly.map((val, idx) => {
+                        const cliList = leads.clients?.[adv.clientKey]?.[idx] || []
+                        const cellTooltip = cliList.length > 0
+                          ? `${adv.name} - Semana ${idx + 1} (${cliList.length} leads):\n` +
+                            cliList.map((c, i) => `${i + 1}. ${c.cliente}${c.cotizacion ? ` [${c.cotizacion}]` : ""}`).join("\n")
+                          : undefined
+
+                        return (
+                          <td
+                            key={idx}
+                            title={cellTooltip}
+                            className={`border border-slate-300 px-3 py-2.5 text-center font-mono tabular-nums text-slate-800 transition-colors ${
+                              val > 0 ? "hover:bg-blue-100/70 hover:font-bold cursor-help" : ""
+                            }`}
+                          >
+                            {val > 0 ? val : ""}
+                          </td>
+                        )
+                      })}
+                      <td
+                        title={advTotalTooltip}
+                        className={`border border-slate-300 px-3 py-2.5 text-center font-mono font-bold tabular-nums text-slate-900 transition-colors ${
+                          adv.total > 0 ? "hover:bg-blue-100/70 cursor-help" : ""
+                        }`}
+                      >
                         {adv.total > 0 ? adv.total : ""}
                       </td>
                     </tr>
@@ -740,21 +807,53 @@ function LeadsAssignmentTable({
                   <td className="border border-slate-400 px-3 py-2.5 text-center font-mono text-slate-400">
                     -
                   </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
-                    {totS1}
-                  </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
-                    {totS2}
-                  </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
-                    {totS3}
-                  </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
-                    {totS4}
-                  </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums">
-                    {totOverall}
-                  </td>
+                  {[0, 1, 2, 3].map((wIdx) => {
+                    const val = [totS1, totS2, totS3, totS4][wIdx]
+                    const weekClients = [
+                      ...(leads.clients?.silvia?.[wIdx] || []),
+                      ...(leads.clients?.rossy?.[wIdx] || []),
+                      ...(leads.clients?.sergio?.[wIdx] || []),
+                    ]
+                    const weekTooltip = weekClients.length > 0
+                      ? `Total Semana ${wIdx + 1} (${weekClients.length} leads):\n` +
+                        weekClients.map((c, i) => `${i + 1}. [${c.asesor}] ${c.cliente}${c.cotizacion ? ` [${c.cotizacion}]` : ""}`).join("\n")
+                      : undefined
+
+                    return (
+                      <td
+                        key={wIdx}
+                        title={weekTooltip}
+                        className={`border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums transition-colors ${
+                          val > 0 ? "hover:bg-slate-300/80 cursor-help" : ""
+                        }`}
+                      >
+                        {val}
+                      </td>
+                    )
+                  })}
+                  {(() => {
+                    const allClients = [
+                      ...(leads.clients?.silvia || []).flat(),
+                      ...(leads.clients?.rossy || []).flat(),
+                      ...(leads.clients?.sergio || []).flat(),
+                    ]
+                    const overallTooltip = allClients.length > 0
+                      ? `Total del Mes (${allClients.length} leads):\n` +
+                        allClients.slice(0, 40).map((c, i) => `${i + 1}. [${c.asesor}] ${c.cliente}${c.cotizacion ? ` [${c.cotizacion}]` : ""}`).join("\n") +
+                        (allClients.length > 40 ? `\n... y ${allClients.length - 40} clientes más (ver en Excel exportado)` : "")
+                      : undefined
+
+                    return (
+                      <td
+                        title={overallTooltip}
+                        className={`border border-slate-400 px-3 py-2.5 text-center font-mono tabular-nums transition-colors ${
+                          totOverall > 0 ? "hover:bg-slate-300/80 cursor-help" : ""
+                        }`}
+                      >
+                        {totOverall}
+                      </td>
+                    )
+                  })()}
                 </tr>
               </>
             )}
