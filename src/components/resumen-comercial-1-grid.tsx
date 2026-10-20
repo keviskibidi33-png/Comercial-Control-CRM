@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { useSeguimientoComercial, fetchWithAuth, type SeguimientoRow } from "@/hooks/use-seguimiento-comercial"
 import { useSeguimientoComercial2 } from "@/hooks/use-seguimiento-comercial-2"
+import { useProgramacionData } from "@/hooks/use-programacion-data"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useCurrentUser } from "@/hooks/use-current-user"
 
@@ -45,6 +46,11 @@ interface CommercialTrackingKpis {
 
 const moneyFormatter = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+})
+
+const currencyFormatter = new Intl.NumberFormat("es-PE", {
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
 
@@ -659,8 +665,16 @@ function calculateWeeklyLeadsByAdvisor(
   return { silvia, rossy, sergio, clients }
 }
 
+export interface MonthlySalesResult {
+  silvia: number
+  rossy: number
+  sergio: number
+  total: number
+}
+
 function LeadsAssignmentTable({
   leads,
+  monthlySales,
   loading,
   selectedAdvisor,
   onSelectAdvisor,
@@ -668,6 +682,7 @@ function LeadsAssignmentTable({
   isExporting,
 }: {
   leads: WeeklyLeadsResult
+  monthlySales: MonthlySalesResult
   loading: boolean
   selectedAdvisor: AdvisorFilter
   onSelectAdvisor: (advisor: AdvisorFilter) => void
@@ -685,9 +700,9 @@ function LeadsAssignmentTable({
   const totOverall = totS1 + totS2 + totS3 + totS4
 
   const advisors = [
-    { key: "SILVIA" as const, clientKey: "silvia" as const, name: "Silvia", weekly: leads.silvia, total: totSilvia },
-    { key: "ROSSY" as const, clientKey: "rossy" as const, name: "Rossy", weekly: leads.rossy, total: totRossy },
-    { key: "SERGIO" as const, clientKey: "sergio" as const, name: "Sergio", weekly: leads.sergio, total: totSergio },
+    { key: "SILVIA" as const, clientKey: "silvia" as const, name: "Silvia", weekly: leads.silvia, total: totSilvia, meta: monthlySales.silvia },
+    { key: "ROSSY" as const, clientKey: "rossy" as const, name: "Rossy", weekly: leads.rossy, total: totRossy, meta: monthlySales.rossy },
+    { key: "SERGIO" as const, clientKey: "sergio" as const, name: "Sergio", weekly: leads.sergio, total: totSergio, meta: monthlySales.sergio },
   ]
 
   return (
@@ -785,9 +800,11 @@ function LeadsAssignmentTable({
                           )}
                         </div>
                       </td>
-                      <td className="border border-slate-300 px-3 py-2.5 text-center font-mono text-slate-400">
-                        {/* Vacío según requerimiento para llenado manual en Excel */}
-                        -
+                      <td
+                        title={`Total de ventas del mes de ${adv.name} en la Tabla Comercial: S/ ${currencyFormatter.format(adv.meta)}`}
+                        className="border border-slate-300 px-3 py-2.5 text-right font-mono font-semibold tabular-nums text-slate-800"
+                      >
+                        {adv.meta > 0 ? `S/ ${currencyFormatter.format(adv.meta)}` : "-"}
                       </td>
                       {adv.weekly.map((val, idx) => {
                         const cliList = leads.clients?.[adv.clientKey]?.[idx] || []
@@ -825,8 +842,11 @@ function LeadsAssignmentTable({
                   <td className="border border-slate-400 px-3 py-2.5 font-black">
                     Total mes
                   </td>
-                  <td className="border border-slate-400 px-3 py-2.5 text-center font-mono text-slate-400">
-                    -
+                  <td
+                    title={`Total de ventas comerciales del mes: S/ ${currencyFormatter.format(monthlySales.total)}`}
+                    className="border border-slate-400 px-3 py-2.5 text-right font-mono font-black tabular-nums text-slate-900"
+                  >
+                    {monthlySales.total > 0 ? `S/ ${currencyFormatter.format(monthlySales.total)}` : "-"}
                   </td>
                   {[0, 1, 2, 3].map((wIdx) => {
                     const val = [totS1, totS2, totS3, totS4][wIdx]
@@ -1027,6 +1047,8 @@ export default function ResumenComercial1Grid({
   const [selectedAdvisor, setSelectedAdvisor] = useState<AdvisorFilter>("ALL")
   const [isExporting, setIsExporting] = useState(false)
 
+  const { data: programacionData = [], isLoading: progLoading, refetch: progRefetch } = useProgramacionData()
+
   const tracker1 = useSeguimientoComercial({
     limit: 10000,
   })
@@ -1042,17 +1064,54 @@ export default function ResumenComercial1Grid({
     return [...t1, ...t2]
   }, [tracker1.rows, tracker2.rows])
 
-  const isLoading = tracker1.isLoading || tracker2.isLoading
+  const isLoading = tracker1.isLoading || tracker2.isLoading || progLoading
   const errorMessage = tracker1.errorMessage || tracker2.errorMessage
   const refetch = () => {
     tracker1.refetch()
     tracker2.refetch()
+    progRefetch()
   }
 
   const availablePeriods = useMemo(() => generateAvailablePeriods(), [])
   const latestPeriod = useMemo(() => getMonthYearFromRows(allTaggedRows), [allTaggedRows])
   const activePeriod = selectedPeriod ?? latestPeriod ?? current
   const activeValue = `${activePeriod.year}-${String(activePeriod.month).padStart(2, "0")}`
+
+  // Total de ventas del mes por asesor extraído directamente de la Tabla Comercial (cuadro_control)
+  const monthlySalesByAdvisor = useMemo(() => {
+    const month = Number.parseInt(activePeriod.month, 10)
+    const startDate = `${activePeriod.year}-${String(month).padStart(2, "0")}-01`
+    const nextMonth = month === 12 ? 1 : month + 1
+    const nextYear = month === 12 ? activePeriod.year + 1 : activePeriod.year
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
+
+    let silvia = 0
+    let rossy = 0
+    let sergio = 0
+
+    for (const item of programacionData) {
+      const datePart =
+        toIsoDatePart(item.fecha_recepcion) ||
+        toIsoDatePart(item.fecha_inicio) ||
+        toIsoDatePart(item.fecha_solicitud_com)
+      if (!datePart || datePart < startDate || datePart >= endDate) continue
+
+      const amount = parseMoney(item.costo_servicio)
+      if (amount <= 0) continue
+
+      const asesor = (item.asesor_comercial || "").toLowerCase().trim()
+      if (asesor.includes("sergio")) {
+        sergio += amount
+      } else if (asesor.includes("rossy")) {
+        rossy += amount
+      } else if (asesor.includes("silvia") || asesor.includes("yerly") || asesor.includes("speralta")) {
+        silvia += amount
+      }
+    }
+
+    const total = silvia + rossy + sergio
+    return { silvia, rossy, sergio, total }
+  }, [programacionData, activePeriod.month, activePeriod.year])
 
   const weeklyLeadsByAdvisor = useMemo(
     () => calculateWeeklyLeadsByAdvisor(allTaggedRows, activePeriod.month, activePeriod.year),
@@ -1107,6 +1166,9 @@ export default function ResumenComercial1Grid({
       const params = new URLSearchParams({
         mes: String(Number.parseInt(activePeriod.month, 10)),
         anio: String(activePeriod.year),
+        meta_silvia: String(monthlySalesByAdvisor.silvia),
+        meta_rossy: String(monthlySalesByAdvisor.rossy),
+        meta_sergio: String(monthlySalesByAdvisor.sergio),
         s1_silvia: String(weeklyLeadsByAdvisor.silvia[0]),
         s2_silvia: String(weeklyLeadsByAdvisor.silvia[1]),
         s3_silvia: String(weeklyLeadsByAdvisor.silvia[2]),
@@ -1271,6 +1333,7 @@ export default function ResumenComercial1Grid({
           {canManageKpis && (
             <LeadsAssignmentTable
               leads={weeklyLeadsByAdvisor}
+              monthlySales={monthlySalesByAdvisor}
               loading={isLoading}
               selectedAdvisor={selectedAdvisor}
               onSelectAdvisor={setSelectedAdvisor}
