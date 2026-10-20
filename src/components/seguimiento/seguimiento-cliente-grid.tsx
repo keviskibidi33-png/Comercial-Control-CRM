@@ -40,7 +40,8 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   fecha_ultimo_contacto: "",
   numero_cotizacion: "",
   costo_cotiz_sin_igv: "",
-  estado_seguimiento: "Leads"
+  estado_seguimiento: "Leads",
+  prioridad: "-"
 }
 
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
@@ -1414,7 +1415,10 @@ export function SeguimientoClienteGrid({
                   if (col.key === "comentarios_asesor") {
                     const displayVal = getCommentDisplayValue(cellValue as string)
                     const isEmpty = !cellValue || displayVal === "-"
-                    const commentBoxClass = isEmpty
+                    const isUrgente = String(row.prioridad || "").trim().toLowerCase() === "urgente"
+                    const commentBoxClass = isUrgente
+                      ? "bg-yellow-100 border-yellow-300 text-yellow-950 font-bold hover:bg-yellow-200 shadow-xs"
+                      : isEmpty
                       ? "bg-red-100 border-red-300 text-red-800 hover:bg-red-200"
                       : "bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200"
 
@@ -1426,7 +1430,7 @@ export function SeguimientoClienteGrid({
                       >
                         <div
                           onClick={() => openCommentsModal(row, col.key as "comentarios_asesor")}
-                          title={`Haga clic para ver/editar ${col.label}`}
+                          title={`Haga clic para ver/editar ${col.label}${isUrgente ? " (Urgente)" : ""}`}
                           className={`w-full min-w-0 min-h-5.5 cursor-pointer rounded px-1.5 py-0.5 text-[11px] font-bold border flex items-center justify-between transition-colors ${commentBoxClass}`}
                         >
                           <span className="truncate min-w-0">{displayVal}</span>
@@ -1701,6 +1705,7 @@ export function SeguimientoClienteGrid({
                             ruc: ghostRow.ruc || "",
                             email: ghostRow.email || "",
                             contacto: ghostRow.contacto || "WHATSAPP",
+                            prioridad: ghostRow.prioridad || "-",
                             comentarios_asesor: ghostRow.comentarios_asesor || "",
                           }, "comentarios_asesor")
                         }}
@@ -1844,7 +1849,7 @@ export function SeguimientoClienteGrid({
               </div>
 
               {/* Información detallada para copiar/editar */}
-              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs shrink-0">
+              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs shrink-0">
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Razón Social</span>
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -1956,6 +1961,33 @@ export function SeguimientoClienteGrid({
                           {opt}
                         </option>
                       ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Prioridad</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <select
+                      value={String(commentModalRow.prioridad || "-").trim().toLowerCase() === "urgente" ? "Urgente" : "-"}
+                      onChange={(e) => {
+                        const newVal = e.target.value
+                        if (commentModalRow.id && commentModalRow.id > 0) {
+                          updateCell(commentModalRow.id, "prioridad" as keyof SeguimientoRow, newVal)
+                        } else {
+                          handleGhostChange("prioridad", newVal)
+                        }
+                        setCommentModalRow(prev => prev ? { ...prev, prioridad: newVal } : null)
+                      }}
+                      className={`font-bold rounded px-1.5 py-0.5 text-[11px] border focus:ring-1 focus:ring-blue-500 w-full min-w-0 outline-none h-5.5 transition-colors cursor-pointer ${
+                        String(commentModalRow.prioridad || "").trim().toLowerCase() === "urgente"
+                          ? "bg-yellow-100 border-yellow-400 text-yellow-950"
+                          : "bg-white border-zinc-200 text-zinc-800"
+                      }`}
+                      title="Prioridad del cliente: Normal (-) o Urgente"
+                    >
+                      <option value="-">-</option>
+                      <option value="Urgente">Urgente</option>
                     </select>
                   </div>
                 </div>

@@ -147,6 +147,7 @@ export type SeguimientoRow = {
   fecha_ultimo_contacto?: string
   comentarios_asistente?: string
   comentarios_asesor?: string
+  prioridad?: string
   numero_cotizacion?: string
   costo_cotiz_sin_igv?: string
   estado_seguimiento?: string
