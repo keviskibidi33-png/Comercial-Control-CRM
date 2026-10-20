@@ -426,15 +426,18 @@ export function useCurrentUser() {
             if (qCanViewLab !== null) return qCanViewLab
             return true
         })(),
-        /** Comercial tab is hidden for individual commercial advisors, always visible for admin */
+        /** Comercial tab is visible for Admin and Yerly Infante, hidden for other individual commercial advisors */
         canViewCom: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const nameNorm = (displayName || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
+            const isYerly = isAsesorComercial1(email, displayName, qIsAdvisor1Param) || eNorm === "asesorcomercial1@geofal.com.pe" || eNorm.includes("asesorcomercial1") || nameNorm.includes("yerly")
+            if (isYerly) return true
             if (qCanViewCom !== null) return qCanViewCom
-            return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
+            return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
         /** Publicidad tab is hidden for individual commercial advisors, always visible for admin */
         canViewPublicidad: (() => {

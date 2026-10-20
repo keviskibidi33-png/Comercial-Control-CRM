@@ -682,8 +682,14 @@ export function SeguimientoClienteGrid({
 
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
-      // Non-admins (commercial advisors) must strictly only see their own records
-      if (!isAdmin) {
+      // Non-admins (commercial advisors) must strictly only see their own records,
+      // EXCEPT Yerly Infante and Admins who supervise both Tabla 1 and Tabla 2 (Rossy y Sergio).
+      const isSupervisorYerly =
+        (currentUserEmail || "").toLowerCase().includes("asesorcomercial1") ||
+        (currentUserName || "").toLowerCase().includes("yerly")
+      const canViewAllRows = isAdmin || isSupervisorYerly
+
+      if (!canViewAllRows) {
         const myName = (currentUserName || "").toLowerCase().trim()
         const myMail = (currentUserEmail || "").toLowerCase().trim()
         const aName = (r.asesor || "").toLowerCase().trim()
