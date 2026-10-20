@@ -449,19 +449,44 @@ export function useCurrentUser() {
             if (qCanViewPublicidad !== null) return qCanViewPublicidad
             return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
-        // canViewKpis: restringido estrictamente a Administrador y Yerly Infante (asesorcomercial1)
+        // canViewKpis: los asesores comerciales, ejecutivos y administradores pueden ver sus KPIs personales
         canViewKpis: (() => {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
-            const nameNorm = (displayName || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            // Admin always sees KPI regardless of show_kpi
+            // Admin always sees KPI
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
             if (isSuperAdmin) return true
-            // Yerly Infante tiene acceso exclusivo
+            // Asesores comerciales / ejecutivos ven sus KPIs
+            if (
+                isAsesorComercial1(email, displayName, qIsAdvisor1Param) ||
+                isAsesorComercial2(email, displayName, qIsAdvisor2Param) ||
+                isAsesorComercial3(email, displayName, qIsAdvisor3Param) ||
+                rNorm.includes("comercial") ||
+                rNorm.includes("asesor") ||
+                rNorm.includes("ejecutivo") ||
+                eNorm.includes("comercial") ||
+                tablaSeguimiento === "tabla1" ||
+                tablaSeguimiento === "tabla2" ||
+                tablaSeguimiento === "tabla3" ||
+                tablaSeguimiento === "ambas" ||
+                (tablaSeguimiento && tablaSeguimiento.includes("tabla1"))
+            ) {
+                return true
+            }
+            if (showKpi !== undefined && showKpi !== null) return Boolean(showKpi)
+            if (qShowKpi !== null) return qShowKpi
+            return true
+        })(),
+        // canManageKpis: acceso exclusivo al cuadro y exportable de Metas de Leads (Yerly y Admin)
+        canManageKpis: (() => {
+            const rNorm = (role || qRole || "").toLowerCase()
+            const eNorm = (email || qEmail || "").toLowerCase().trim()
+            const nameNorm = (displayName || "").toLowerCase().trim()
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
+            if (isSuperAdmin) return true
             const isYerly = isAsesorComercial1(email, displayName, qIsAdvisor1Param) || eNorm === "asesorcomercial1@geofal.com.pe" || eNorm.includes("asesorcomercial1") || nameNorm.includes("yerly")
-            if (isYerly) return true
-            return false
+            return isYerly
         })(),
         /** Legacy users are Yerly and Silvia who feed Tabla 1 */
         isLegacyUser: isLegacyTrackingUser(email, displayName),

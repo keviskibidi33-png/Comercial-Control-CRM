@@ -973,7 +973,15 @@ export default function ResumenComercial1Grid({
     if (nameHint.includes("silvia") || emailHint.includes("asesorcomercial@")) {
       return "Silvia Peralta"
     }
-    // Other advisors: use their display name if available, else undefined (backend resolves via JWT)
+    // Rossy Prado
+    if (nameHint.includes("rossy") || emailHint.includes("asesorcomercial2") || emailHint.includes("ejecutivocomercial2")) {
+      return "Rossy Prado"
+    }
+    // Sergio Diaz
+    if (nameHint.includes("sergio") || emailHint.includes("asesorcomercial3") || emailHint.includes("ejecutivocomercial3")) {
+      return "Sergio Diaz"
+    }
+    // Other advisors: use their display name if available, else undefined
     return displayName || undefined
   }, [canManageKpis, userLoading, displayName, normalizedEmail])
 
@@ -984,6 +992,12 @@ export default function ResumenComercial1Grid({
     const emailHint = normalizedEmail
     if (nameHint.includes("yerly") || emailHint.includes("asesorcomercial1")) {
       return "Equipo Comercial — Asesora Senior"
+    }
+    if (nameHint.includes("rossy") || emailHint.includes("asesorcomercial2") || emailHint.includes("ejecutivocomercial2")) {
+      return "Rossy Prado (Ejecutiva Comercial)"
+    }
+    if (nameHint.includes("sergio") || emailHint.includes("asesorcomercial3") || emailHint.includes("ejecutivocomercial3")) {
+      return "Sergio Diaz (Ejecutivo Comercial)"
     }
     return resolvedAdvisorScope
   }, [resolvedAdvisorScope, displayName, normalizedEmail])
@@ -1105,8 +1119,8 @@ export default function ResumenComercial1Grid({
     }
   }
 
-  // Guardia de seguridad: Acceso exclusivo para Yerly Infante y Administradores
-  if (!userLoading && !canViewKpis && !canManageKpis) {
+  // Guardia de seguridad: Acceso para Asesores Comerciales y Administradores
+  if (!userLoading && !canViewKpis) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-50">
         <div className="z-10 flex min-h-14 h-auto md:h-14 shrink-0 flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 border-b border-zinc-200 bg-white px-4 py-2 md:py-0 shadow-sm">
@@ -1131,7 +1145,7 @@ export default function ResumenComercial1Grid({
             </div>
             <h3 className="mt-4 text-base font-bold text-amber-950">Acceso Restringido</h3>
             <p className="mt-2 text-xs text-amber-800">
-              El panel de KPIs y metas de ventas está reservado exclusivamente para Yerly Infante y Administradores del sistema.
+              El panel de KPIs comerciales está reservado para asesores comerciales y administradores del sistema.
             </p>
           </div>
         </div>
@@ -1232,15 +1246,17 @@ export default function ResumenComercial1Grid({
             </span>
           </div>
 
-          {/* Cuadro de resumen de asignación de Leads con Exportable Excel (Idéntico a la plantilla) */}
-          <LeadsAssignmentTable
-            leads={weeklyLeadsByAdvisor}
-            loading={isLoading}
-            selectedAdvisor={selectedAdvisor}
-            onSelectAdvisor={setSelectedAdvisor}
-            onExport={handleExportMetasExcel}
-            isExporting={isExporting}
-          />
+          {/* Cuadro de resumen de asignación de Leads con Exportable Excel (Exclusivo para Yerly / Administrador) */}
+          {canManageKpis && (
+            <LeadsAssignmentTable
+              leads={weeklyLeadsByAdvisor}
+              loading={isLoading}
+              selectedAdvisor={selectedAdvisor}
+              onSelectAdvisor={setSelectedAdvisor}
+              onExport={handleExportMetasExcel}
+              isExporting={isExporting}
+            />
+          )}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
             <span className="font-bold text-slate-800">Reglas:</span>{" "}
