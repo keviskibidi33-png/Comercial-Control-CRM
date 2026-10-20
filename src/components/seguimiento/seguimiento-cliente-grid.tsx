@@ -241,6 +241,11 @@ export function SeguimientoClienteGrid({
   const { isAdmin, email, displayName } = useCurrentUser()
   const currentUserName = displayName || email || ""
   const currentUserEmail = email || ""
+  const isSupervisorYerly =
+    (currentUserEmail || "").toLowerCase().includes("asesorcomercial1") ||
+    (currentUserEmail || "").toLowerCase().includes("ejecutivocomercial1") ||
+    (currentUserName || "").toLowerCase().includes("yerly")
+  const canFilterAsesores = isAdmin || isSupervisorYerly
   const [selectedAsesor, setSelectedAsesor] = useState<string>(forcedAsesor || "")
   const [dbAdvisors, setDbAdvisors] = useState<{label: string, value: string}[]>([])
 
@@ -655,6 +660,14 @@ export function SeguimientoClienteGrid({
   }
 
   const uniqueAdvisors = useMemo(() => {
+    if (tablaId === 2) {
+      // En Seguimiento 2, los únicos asesores asignables son Rossy Prado y Sergio Diaz
+      return [
+        { label: "Rossy Prado", value: "Rossy" },
+        { label: "Sergio Diaz", value: "Sergio" },
+      ]
+    }
+
     const map = new Map<string, { label: string; value: string }>()
 
     dbAdvisors.forEach((a) => {
@@ -674,8 +687,10 @@ export function SeguimientoClienteGrid({
 
     if (tablaId === 1) {
       if (!map.has("silvia")) map.set("silvia", { label: "Silvia Peralta", value: "Silvia" })
-      if (!map.has("yerly")) map.set("yerly", { label: "Yerly Infante", value: "Yerly" })
     }
+
+    // Yerly supervisa la gestión, no debe aparecer en los dropdowns de asesor asignable
+    map.delete("yerly")
 
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, "es"))
   }, [dbAdvisors, rows, tablaId])
@@ -684,9 +699,6 @@ export function SeguimientoClienteGrid({
     return rows.filter((r) => {
       // Non-admins (commercial advisors) must strictly only see their own records,
       // EXCEPT Yerly Infante and Admins who supervise both Tabla 1 and Tabla 2 (Rossy y Sergio).
-      const isSupervisorYerly =
-        (currentUserEmail || "").toLowerCase().includes("asesorcomercial1") ||
-        (currentUserName || "").toLowerCase().includes("yerly")
       const canViewAllRows = isAdmin || isSupervisorYerly
 
       if (!canViewAllRows) {
@@ -1124,8 +1136,8 @@ export function SeguimientoClienteGrid({
             </select>
           </div>
 
-          {/* Asesor Filter (visible strictly for Admins) */}
-          {isAdmin && (
+          {/* Asesor Filter (visible para Admins y para Yerly como supervisora) */}
+          {canFilterAsesores && (
             <div className="relative">
               <select
                 value={selectedAsesor}

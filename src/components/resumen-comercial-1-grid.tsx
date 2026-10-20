@@ -159,6 +159,29 @@ function getMonthYearFromRows(rows: SeguimientoRow[]) {
 }
 
 /**
+ * Calcula la semana comercial (índice 0 a 3 -> Semana 1 a 4) según el calendario real (Lunes a Domingo).
+ * Semana 1: Días del 1 hasta el primer domingo del mes.
+ * Semana 2: Siguiente semana (Lunes a Domingo).
+ * Semana 3: Siguiente semana (Lunes a Domingo).
+ * Semana 4: Siguiente semana y días restantes del mes (consolidados en semana 4).
+ */
+function getCalendarWeekIndex(datePart: string | null): number | null {
+  if (!datePart) return null
+  const parts = datePart.split("-")
+  if (parts.length !== 3) return null
+  const year = Number.parseInt(parts[0], 10)
+  const month = Number.parseInt(parts[1], 10)
+  const day = Number.parseInt(parts[2], 10)
+  if (!Number.isInteger(day) || day <= 0) return null
+
+  // Primer día del mes (Lunes = 0, Domingo = 6)
+  const firstDay = new Date(year, month - 1, 1)
+  const firstWeekday = (firstDay.getDay() + 6) % 7
+  const w = Math.floor((day - 1 + firstWeekday) / 7)
+  return Math.min(3, Math.max(0, w))
+}
+
+/**
  * Cotización enviada se alimenta del patrón: Fecha de contacto + costo sin IGV + categoría cliente.
  */
 function isSentQuote(_row: SeguimientoRow) {
@@ -267,8 +290,7 @@ function buildKpis(rows: SeguimientoRow[], selectedMonth: string, selectedYear: 
 
   for (const row of seguimientoRows) {
     const datePart = getRowDate(row)
-    const day = Number.parseInt(datePart?.slice(8, 10) ?? "", 10)
-    const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
+    const weekIndex = getCalendarWeekIndex(datePart)
     const sale = isSale(row)
 
     if (weekIndex !== null) {
@@ -598,8 +620,7 @@ function calculateWeeklyLeadsByAdvisor(
     if (!datePart || datePart < startDate || datePart >= endDate) continue
     if (!hasQuoteNumber(row.numero_cotizacion)) continue
 
-    const day = Number.parseInt(datePart.slice(8, 10), 10)
-    const weekIndex = Number.isInteger(day) && day > 0 ? Math.min(3, Math.floor((day - 1) / 7)) : null
+    const weekIndex = getCalendarWeekIndex(datePart)
     if (weekIndex === null) continue
 
     const clientName = String(row.razon_social || row.persona_contacto || "Sin Razón Social").trim()
