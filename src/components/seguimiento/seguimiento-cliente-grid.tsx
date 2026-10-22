@@ -151,7 +151,63 @@ const formatDateToDDMMYYYY = (dateStr: string | undefined | null): string => {
   return clean
 }
 
-const formatDateToDDMMYY = formatDateToDDMMYYYY
+const formatDateToDDMMYY = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return ""
+  const str = String(dateStr).trim()
+  if (!str || str === "-") return ""
+
+  const clean = str.split("T")[0].trim()
+
+  // 1. Formato ISO YYYY-MM-DD
+  if (clean.includes("-")) {
+    const parts = clean.split("-")
+    if (parts.length === 3) {
+      const [year, month, day] = parts
+      const shortYear = year.slice(-2)
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${shortYear}`
+    }
+  }
+
+  // 2. Formato con barras DD/MM/YYYY o DD/MM/YY
+  if (clean.includes("/")) {
+    const parts = clean.split("/").filter(Boolean)
+    if (parts.length === 3) {
+      const [day, month, year] = parts
+      const shortYear = year.slice(-2)
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${shortYear}`
+    }
+    if (parts.length === 2) {
+      const [day, month] = parts
+      const currentShortYear = String(new Date().getFullYear()).slice(-2)
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${currentShortYear}`
+    }
+  }
+
+  // 3. Dígitos continuos sin separador (ej: 22102026, 221026, 2210)
+  if (/^\d+$/.test(clean)) {
+    if (clean.length === 8) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      const year = clean.slice(4, 8)
+      return `${day}/${month}/${year.slice(-2)}`
+    }
+    if (clean.length === 6) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      const year = clean.slice(4, 6)
+      return `${day}/${month}/${year}`
+    }
+    if (clean.length === 4) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      const currentShortYear = String(new Date().getFullYear()).slice(-2)
+      return `${day}/${month}/${currentShortYear}`
+    }
+  }
+
+  return clean
+}
+
 
 const getMonthFromDateStr = (dateStr: string | undefined | null): string => {
   if (!dateStr) return ""
@@ -1551,7 +1607,7 @@ export function SeguimientoClienteGrid({
                   // Renders Próxima Fecha de Contacto (destacado amarillo suave si tiene fecha, '-' por defecto)
                   if (col.key === "proxima_fecha_contacto") {
                     const rawStr = cellValue && cellValue !== "-" ? String(cellValue).trim() : ""
-                    const displayValue = rawStr ? formatDateToDDMMYYYY(rawStr) : "-"
+                    const displayValue = rawStr ? formatDateToDDMMYY(rawStr) : "-"
                     const hasDate = Boolean(displayValue && displayValue !== "-")
 
                     return (
@@ -1581,14 +1637,14 @@ export function SeguimientoClienteGrid({
                               }
                               const parsed = parseDDMMYYToDate(val)
                               if (parsed) {
-                                const formatted = formatDateToDDMMYYYY(parsed)
+                                const formatted = formatDateToDDMMYY(parsed)
                                 e.target.value = formatted
                                 const currentParsed = rawStr ? parseDDMMYYToDate(rawStr) : null
                                 if (parsed !== currentParsed) {
                                   updateCell(row.id, "proxima_fecha_contacto", parsed)
                                 }
                               } else {
-                                toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
+                                toast.error("Formato de fecha inválido. Ingrese dd/mm/aa (ej: 22/10/26 o 221026)")
                                 e.target.value = hasDate ? displayValue : ""
                               }
                             }}
@@ -1642,7 +1698,7 @@ export function SeguimientoClienteGrid({
                   // Renders Date cell input
                   if (col.type === "date") {
                     const rawStr = cellValue && cellValue !== "-" ? String(cellValue).trim() : ""
-                    const displayValue = rawStr ? formatDateToDDMMYYYY(rawStr) : ""
+                    const displayValue = rawStr ? formatDateToDDMMYY(rawStr) : ""
                     return (
                       <td
                         key={col.key}
@@ -1654,7 +1710,7 @@ export function SeguimientoClienteGrid({
                           type="text"
                           defaultValue={displayValue}
                           title={displayValue}
-                          placeholder="dd/mm/aaaa"
+                          placeholder="dd/mm/aa"
                           onBlur={(e) => {
                             const val = e.target.value.trim()
                             if (!val || val === "-") {
@@ -1666,14 +1722,14 @@ export function SeguimientoClienteGrid({
                             }
                             const parsed = parseDDMMYYToDate(val)
                             if (parsed) {
-                              const formatted = formatDateToDDMMYYYY(parsed)
+                              const formatted = formatDateToDDMMYY(parsed)
                               e.target.value = formatted
                               const currentParsed = rawStr ? parseDDMMYYToDate(rawStr) : null
                               if (parsed !== currentParsed) {
                                 updateCell(row.id, col.key as keyof SeguimientoRow, parsed)
                               }
                             } else {
-                              toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
+                              toast.error("Formato de fecha inválido. Ingrese dd/mm/aa (ej: 22/10/26 o 221026)")
                               e.target.value = displayValue
                             }
                           }}
@@ -1920,7 +1976,7 @@ export function SeguimientoClienteGrid({
 
               if (col.key === "proxima_fecha_contacto") {
                 const rawVal = (ghostRow.proxima_fecha_contacto as string) || ""
-                const displayVal = rawVal ? formatDateToDDMMYYYY(rawVal) : ""
+                const displayVal = rawVal ? formatDateToDDMMYY(rawVal) : ""
                 const hasVal = Boolean(displayVal && displayVal !== "-")
                 return (
                   <td
@@ -1940,11 +1996,11 @@ export function SeguimientoClienteGrid({
                         }
                         const parsed = parseDDMMYYToDate(val)
                         if (parsed) {
-                          const formatted = formatDateToDDMMYYYY(parsed)
+                          const formatted = formatDateToDDMMYY(parsed)
                           e.target.value = formatted
                           handleGhostChange("proxima_fecha_contacto", parsed)
                         } else {
-                          toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
+                          toast.error("Formato de fecha inválido. Ingrese dd/mm/aa (ej: 22/10/26 o 221026)")
                           e.target.value = hasVal ? displayVal : ""
                         }
                       }}
