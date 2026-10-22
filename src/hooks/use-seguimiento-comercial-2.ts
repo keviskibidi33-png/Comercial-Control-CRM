@@ -34,6 +34,11 @@ const getApiBaseUrls = () => {
 
 const getStoredToken = (): string | null => {
   if (typeof window === "undefined") return null
+  const fromUrl = new URLSearchParams(window.location.search).get("token")
+  if (fromUrl) {
+    try { localStorage.setItem("programacion_access_token", fromUrl) } catch {}
+    return fromUrl
+  }
   return localStorage.getItem("programacion_access_token") || localStorage.getItem("token")
 }
 
@@ -44,6 +49,16 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   }
   if (token) {
     headers["Authorization"] = `Bearer ${token}`
+  }
+
+  if (typeof window !== "undefined") {
+    const searchParams = new URLSearchParams(window.location.search)
+    const devRole = searchParams.get("role")
+    const devUser = searchParams.get("userName") || searchParams.get("user")
+    const devEmail = searchParams.get("email") || searchParams.get("userEmail")
+    if (devRole && !headers["x-dev-user-role"]) headers["x-dev-user-role"] = devRole
+    if (devUser && !headers["x-dev-user-name"]) headers["x-dev-user-name"] = devUser
+    if (devEmail && !headers["x-dev-user-email"]) headers["x-dev-user-email"] = devEmail
   }
 
   const baseUrls = getApiBaseUrls()

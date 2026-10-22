@@ -259,6 +259,17 @@ const parseDDMMYYToDate = (displayStr: string): string | null => {
   return `${fullYear}-${formattedMonth}-${formattedDay}`
 }
 
+const hasValidUpcomingDate = (rawDate: unknown): boolean => {
+  if (!rawDate) return false
+  const str = String(rawDate).trim()
+  if (!str || str === "-" || str === "null" || str === "undefined") return false
+  const parsedIso = parseDDMMYYToDate(str) || (str.includes("-") ? str.split("T")[0].trim() : null)
+  if (!parsedIso) return false
+  const parts = parsedIso.split("-")
+  if (parts.length !== 3) return false
+  return true
+}
+
 const WhatsAppIcon = () => (
   <svg
     viewBox="0 0 24 24"
@@ -363,7 +374,7 @@ export function SeguimientoClienteGrid({
   canViewTabla1 = true,
   canViewTabla2 = true,
   canViewTabla3 = true,
-  canViewPublicidad = true,
+  canViewPublicidad = false,
   tablaId = 1,
   forcedAsesor,
   seguimientoTitle,
@@ -509,21 +520,6 @@ export function SeguimientoClienteGrid({
   const [selectedCategoria, setSelectedCategoria] = useState("")
   const [selectedMonth, setSelectedMonth] = useState("")
   const [filterOnlyUpcoming, setFilterOnlyUpcoming] = useState(false)
-  const [bellOpen, setBellOpen] = useState(false)
-  const [popoverAlign, setPopoverAlign] = useState<"left" | "right">("right")
-  const bellRef = useRef<HTMLDivElement>(null)
-
-  const handleToggleBell = () => {
-    if (!bellOpen && bellRef.current) {
-      const rect = bellRef.current.getBoundingClientRect()
-      if (rect.left < 300) {
-        setPopoverAlign("left")
-      } else {
-        setPopoverAlign("right")
-      }
-    }
-    setBellOpen((prev) => !prev)
-  }
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
@@ -742,103 +738,23 @@ export function SeguimientoClienteGrid({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Close bell popover when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (bellRef.current && !bellRef.current.contains(event.target as Node)) {
-        setBellOpen(false)
-      }
-    }
-    if (bellOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [bellOpen])
-
-  // Contacts approaching due date or overdue (closest first)
-  const upcomingContacts = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const todayTime = today.getTime()
-
+  // Count of contacts with scheduled next contact date (no limit: includes all upcoming dates)
+  const upcomingCount = useMemo(() => {
     const canViewAllRows = isAdmin || isSupervisorYerly
-
-    const list: {
-      row: SeguimientoRow
-      diffDays: number
-      dateFormatted: string
-      statusLabel: string
-      badgeClass: string
-    }[] = []
-
+    let count = 0
     for (const r of rows) {
-      // 1. Non-admins must strictly only see notifications for their own records
       if (!canViewAllRows) {
-        if (!isRowOwnedByUser(r, currentUserName, currentUserEmail)) {
-          continue
-        }
+        if (!isRowOwnedByUser(r, currentUserName, currentUserEmail)) continue
       } else if (selectedAsesor) {
-        // 2. Admins with an advisor filter active (e.g. entering Seguimiento 2 with Rossy or 3 with Sergio)
-        if (!matchesAdvisorFilter(r, selectedAsesor)) {
-          continue
-        }
+        if (!matchesAdvisorFilter(r, selectedAsesor)) continue
       }
-
-      const rawDate = r.proxima_fecha_contacto
-      if (!rawDate || rawDate.trim() === "" || rawDate.trim() === "-") {
-        continue
-      }
-      const parsedIso = parseDDMMYYToDate(rawDate) || (rawDate.includes("-") ? rawDate.split("T")[0].trim() : null)
-      if (!parsedIso) continue
-      const parts = parsedIso.split("-")
-      if (parts.length !== 3) continue
-      const targetDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
-      targetDate.setHours(0, 0, 0, 0)
-      const diffTime = targetDate.getTime() - todayTime
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-
-      // Alert for overdue, today, and upcoming in next 7 days
-      if (diffDays <= 7) {
-        let statusLabel = ""
-        let badgeClass = ""
-        if (diffDays < 0) {
-          const abs = Math.abs(diffDays)
-          statusLabel = abs === 1 ? "Venció ayer" : `Venció hace ${abs} días`
-          badgeClass = "bg-rose-100 text-rose-800 border-rose-300"
-        } else if (diffDays === 0) {
-          statusLabel = "¡Vence Hoy!"
-          badgeClass = "bg-amber-100 text-amber-900 border-amber-300 font-bold"
-        } else if (diffDays === 1) {
-          statusLabel = "Vence mañana"
-          badgeClass = "bg-sky-100 text-sky-800 border-sky-300 font-medium"
-        } else {
-          statusLabel = `En ${diffDays} días`
-          badgeClass = "bg-blue-50 text-blue-700 border-blue-200"
-        }
-
-        list.push({
-          row: r,
-          diffDays,
-          dateFormatted: formatDateToDDMMYYYY(parsedIso),
-          statusLabel,
-          badgeClass,
-        })
+      if (hasValidUpcomingDate(r.proxima_fecha_contacto)) {
+        count++
       }
     }
-
-    // Sort by diffDays ascending: overdue and today first, then closest
-    list.sort((a, b) => a.diffDays - b.diffDays)
-    return list
+    return count
   }, [rows, isAdmin, isSupervisorYerly, currentUserName, currentUserEmail, selectedAsesor])
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-
-  // Keep page within boundaries if total changes
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [total, totalPages, currentPage])
 
   const compareValues = (left: unknown, right: unknown) => {
     const leftValue = left ?? ""
@@ -976,31 +892,48 @@ export function SeguimientoClienteGrid({
       }
 
       if (filterOnlyUpcoming) {
-        const rawDate = r.proxima_fecha_contacto
-        if (!rawDate || rawDate.trim() === "" || rawDate.trim() === "-") return false
-        const isUpcoming = upcomingContacts.some((item) => item.row.id === r.id)
-        if (!isUpcoming) return false
+        if (!hasValidUpcomingDate(r.proxima_fecha_contacto)) return false
       }
 
       return true
     })
-  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth, filterOnlyUpcoming, upcomingContacts, isAdmin, currentUserName, currentUserEmail])
+  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth, filterOnlyUpcoming, isAdmin, currentUserName, currentUserEmail])
 
   const sortedRows = useMemo(() => {
     const baseRows = [...filteredRows]
-    if (!sortConfig) return baseRows
-
-    const { key, direction } = sortConfig
-    return baseRows.sort((leftRow, rightRow) => {
-      const result = compareValues(leftRow[key], rightRow[key])
-      return direction === "asc" ? result : -result
-    })
-  }, [filteredRows, sortConfig])
+    if (sortConfig) {
+      const { key, direction } = sortConfig
+      return baseRows.sort((leftRow, rightRow) => {
+        const result = compareValues(leftRow[key], rightRow[key])
+        return direction === "asc" ? result : -result
+      })
+    }
+    if (filterOnlyUpcoming) {
+      return baseRows.sort((a, b) => {
+        const da = a.proxima_fecha_contacto ? String(a.proxima_fecha_contacto).trim() : ""
+        const db = b.proxima_fecha_contacto ? String(b.proxima_fecha_contacto).trim() : ""
+        const isoA = parseDDMMYYToDate(da) || (da.includes("-") ? da.split("T")[0].trim() : "9999-99-99")
+        const isoB = parseDDMMYYToDate(db) || (db.includes("-") ? db.split("T")[0].trim() : "9999-99-99")
+        return isoA.localeCompare(isoB)
+      })
+    }
+    return baseRows
+  }, [filteredRows, sortConfig, filterOnlyUpcoming])
 
   const pagedRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize
     return sortedRows.slice(start, start + pageSize)
   }, [currentPage, pageSize, sortedRows])
+
+  const activeTotal = filteredRows.length
+  const totalPages = Math.max(1, Math.ceil(activeTotal / pageSize))
+
+  // Keep page within boundaries if activeTotal changes
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [activeTotal, totalPages, currentPage])
 
   useEffect(() => {
     setPageErrorMessage(errorMessage || null)
@@ -1169,7 +1102,7 @@ export function SeguimientoClienteGrid({
               </p>
             </div>
             <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">
-              {total}
+              {activeTotal}
             </span>
           </div>
 
@@ -1201,7 +1134,7 @@ export function SeguimientoClienteGrid({
 
           <button
             onClick={handleExportExcel}
-            disabled={isMutating || isLoading || total === 0}
+            disabled={isMutating || isLoading || activeTotal === 0}
             className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
           >
             <FileDown className="h-3.5 w-3.5" />
@@ -1382,159 +1315,32 @@ export function SeguimientoClienteGrid({
             </button>
           )}
 
-          {/* ── Campanita de Notificaciones de Fechas a Vencer ── */}
-          <div className="relative z-50" ref={bellRef}>
-            <button
-              type="button"
-              onClick={handleToggleBell}
-              className={`relative flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs font-semibold shadow-xs transition-all duration-200 cursor-pointer ${
-                filterOnlyUpcoming
-                  ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600 ring-2 ring-amber-300"
-                  : upcomingContacts.length > 0
-                  ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
-                  : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
-              }`}
-              title={`${upcomingContacts.length} contactos con fecha próxima a vencer`}
-            >
-              <Bell className={`h-4 w-4 ${upcomingContacts.length > 0 && !filterOnlyUpcoming ? "text-amber-600 animate-bounce" : ""}`} />
-              <span className="hidden sm:inline font-bold">Próximos</span>
-              {upcomingContacts.length > 0 && (
-                <span className="flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white shadow-xs">
-                  {upcomingContacts.length}
-                </span>
-              )}
-            </button>
-
-            {/* Dropdown Popover auto-alineable que nace directamente debajo del botón y se mantiene dentro de la pantalla */}
-            {bellOpen && (
-              <div className={`absolute ${popoverAlign === "left" ? "left-0" : "right-0"} top-full mt-2 w-[340px] sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150 overflow-visible`}>
-                {/* Indicador triangular apuntando directamente al botón */}
-                <div className={`absolute -top-1.5 ${popoverAlign === "left" ? "left-6" : "right-6"} h-3 w-3 rotate-45 border-l border-t border-amber-300 bg-amber-50 z-20`} />
-
-                <div className="rounded-xl overflow-hidden relative z-10 bg-white">
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-md bg-amber-500 p-1.5 text-white shadow-xs">
-                        <Bell className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-zinc-800">
-                          Próximas Fechas de Contacto
-                        </h4>
-                        <p className="text-[10px] text-zinc-500">
-                          {upcomingContacts.length} {upcomingContacts.length === 1 ? "contacto pendiente o próximo" : "contactos pendientes o próximos"}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setBellOpen(false)}
-                      className="rounded p-1 text-zinc-400 hover:bg-white hover:text-zinc-600 cursor-pointer"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Filter toggle button */}
-                  <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-2 flex items-center justify-between">
-                    <span className="text-[11px] text-zinc-600 font-medium">
-                      {filterOnlyUpcoming ? "Filtro activo en tabla" : "Ver solo estos en la tabla"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFilterOnlyUpcoming(!filterOnlyUpcoming)
-                        setCurrentPage(1)
-                        setBellOpen(false)
-                      }}
-                      className={`px-2.5 py-1 text-[11px] font-bold rounded cursor-pointer transition-colors ${
-                        filterOnlyUpcoming
-                          ? "bg-amber-600 text-white hover:bg-amber-700"
-                          : "bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100"
-                      }`}
-                    >
-                      {filterOnlyUpcoming ? "Desactivar Filtro" : "Filtrar en Tabla"}
-                    </button>
-                  </div>
-
-                  {/* Contacts List */}
-                  <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100">
-                    {upcomingContacts.length === 0 ? (
-                      <div className="p-6 text-center text-xs text-zinc-500">
-                        <p className="font-semibold text-zinc-700">¡Todo al día! 🎉</p>
-                        <p className="mt-1 text-[11px] text-zinc-400">
-                          No tienes contactos pendientes o con fecha próxima a vencer en los siguientes 7 días.
-                        </p>
-                      </div>
-                    ) : (
-                      upcomingContacts.map((item) => {
-                        const row = item.row
-                        const phone = row.numero_celular ? String(row.numero_celular).trim() : ""
-                        const waUrl = phone ? getWhatsAppUrl(phone) : ""
-
-                        return (
-                          <div
-                            key={row.id}
-                            className="p-3 hover:bg-amber-50/50 transition-colors flex items-start justify-between gap-2"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-xs font-bold text-zinc-900 truncate max-w-[190px]" title={row.razon_social || row.persona_contacto || "Sin nombre"}>
-                                  {row.razon_social || row.persona_contacto || "Sin nombre"}
-                                </span>
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border font-bold ${item.badgeClass}`}>
-                                  {item.statusLabel}
-                                </span>
-                              </div>
-
-                              <div className="mt-1 flex items-center gap-2 text-[11px] text-zinc-500">
-                                <span className="font-semibold text-zinc-700">📅 {item.dateFormatted}</span>
-                                {row.asesor && (
-                                  <span className="truncate text-zinc-600">👤 {row.asesor}</span>
-                                )}
-                              </div>
-
-                              {row.persona_contacto && row.razon_social && (
-                                <p className="text-[10px] text-zinc-400 truncate mt-0.5">
-                                  Contacto: {row.persona_contacto}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                              {waUrl && (
-                                <a
-                                  href={waUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                                  title="Abrir WhatsApp"
-                                >
-                                  <WhatsAppIcon />
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSearch(row.razon_social || row.persona_contacto || "")
-                                  setCurrentPage(1)
-                                  setBellOpen(false)
-                                }}
-                                className="px-1.5 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold cursor-pointer"
-                                title="Buscar este registro en la tabla"
-                              >
-                                Ver
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                </div>
-              </div>
+          {/* ── Botón de Filtro Directo de Próximos (sin límite de días) ── */}
+          <button
+            type="button"
+            onClick={() => {
+              setFilterOnlyUpcoming((prev) => !prev)
+              setCurrentPage(1)
+            }}
+            className={`relative flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs font-semibold shadow-xs transition-all duration-200 cursor-pointer ${
+              filterOnlyUpcoming
+                ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600 ring-2 ring-amber-300"
+                : upcomingCount > 0
+                ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
+            }`}
+            title={filterOnlyUpcoming ? "Desactivar filtro Próximos" : "Filtrar todos los contactos con fecha próxima programada"}
+          >
+            <Bell className={`h-4 w-4 ${upcomingCount > 0 && !filterOnlyUpcoming ? "text-amber-600" : ""}`} />
+            <span className="hidden sm:inline font-bold">Próximos</span>
+            {upcomingCount > 0 && (
+              <span className={`flex h-4.5 min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-black shadow-xs ${
+                filterOnlyUpcoming ? "bg-white text-amber-600" : "bg-red-600 text-white"
+              }`}>
+                {upcomingCount}
+              </span>
             )}
-          </div>
+          </button>
 
           {/* Active Upcoming Filter Badge */}
           {filterOnlyUpcoming && (
@@ -1547,7 +1353,7 @@ export function SeguimientoClienteGrid({
               title="Quitar filtro de próximas fechas"
             >
               <Bell className="h-3.5 w-3.5 text-amber-700" />
-              <span>Solo Próximos ({upcomingContacts.length})</span>
+              <span>Solo Próximos ({upcomingCount})</span>
               <X className="h-3.5 w-3.5 text-amber-700" />
             </button>
           )}
@@ -1800,9 +1606,9 @@ export function SeguimientoClienteGrid({
                     )
                   }
 
-                  // Renders Marketing Dropdown (al marcar 'Aprobado' se traslada a Publicidad)
+                  // Renders Marketing Dropdown (al marcar 'Asignar' se traslada a Publicidad y se bloquea la casilla permanentemente)
                   if (col.key === "marketing_estado") {
-                    const isAprobado = cellValue === "Aprobado"
+                    const isAsignado = cellValue === "Asignar" || cellValue === "Aprobado" || cellValue === "Asignado"
                     return (
                       <td
                         key={col.key}
@@ -1810,22 +1616,24 @@ export function SeguimientoClienteGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         <select
-                          value={isAprobado ? "Aprobado" : "-"}
+                          value={isAsignado ? "Asignar" : "-"}
+                          disabled={isAsignado || isMutating}
                           onChange={async (e) => {
                             const newVal = e.target.value
-                            await updateCellAsync(row.id, "marketing_estado", newVal)
-                            if (newVal === "Aprobado") {
-                              toast.success("Trasladado a Publicidad")
+                            if (newVal === "Asignar") {
+                              await updateCellAsync(row.id, "marketing_estado", "Asignar")
+                              toast.success("Asignado a Marketing")
                             }
                           }}
-                          className={`w-full rounded px-1.5 py-0.5 text-[11px] font-bold border cursor-pointer transition-all ${
-                            isAprobado
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 shadow-2xs"
-                              : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50"
+                          className={`w-full rounded px-1.5 py-0.5 text-[11px] font-bold border transition-all ${
+                            isAsignado
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300 opacity-90 cursor-not-allowed shadow-2xs"
+                              : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50 cursor-pointer"
                           }`}
+                          title={isAsignado ? "Asignado a Marketing (bloqueado)" : "Asignar a Marketing"}
                         >
                           <option value="-">-</option>
-                          <option value="Aprobado">Aprobado</option>
+                          <option value="Asignar">Asignar</option>
                         </select>
                       </td>
                     )
@@ -2150,7 +1958,7 @@ export function SeguimientoClienteGrid({
               }
 
               if (col.key === "marketing_estado") {
-                const isAprobado = ghostRow.marketing_estado === "Aprobado"
+                const isAsignado = ghostRow.marketing_estado === "Asignar" || ghostRow.marketing_estado === "Aprobado" || ghostRow.marketing_estado === "Asignado"
                 return (
                   <td
                     key={`ghost-${col.key}`}
@@ -2158,17 +1966,17 @@ export function SeguimientoClienteGrid({
                     className={`px-1.5 ${baseGhostClass}`}
                   >
                     <select
-                      value={isAprobado ? "Aprobado" : "-"}
+                      value={isAsignado ? "Asignar" : "-"}
                       onChange={(e) => handleGhostChange("marketing_estado", e.target.value)}
                       onKeyDown={handleGhostKeyDown}
                       className={`ghost-input w-full rounded px-1.5 py-0.5 text-[11px] font-bold border cursor-pointer h-6 ${
-                        isAprobado
+                        isAsignado
                           ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                           : "bg-transparent border-zinc-200 text-zinc-600"
                       }`}
                     >
                       <option value="-">-</option>
-                      <option value="Aprobado">Aprobado</option>
+                      <option value="Asignar">Asignar</option>
                     </select>
                   </td>
                 )
@@ -2304,8 +2112,14 @@ export function SeguimientoClienteGrid({
 
       {/* Pagination Footer */}
       <div className="z-10 shrink-0 border-t border-zinc-200 bg-white px-4 py-2 flex items-center justify-between">
-        <div className="text-xs text-zinc-500">
-          Mostrando {Math.min((currentPage - 1) * pageSize + 1, total)}-{Math.min(currentPage * pageSize, total)} de {total} registro(s).
+        <div className="text-xs text-zinc-500 font-medium">
+          {activeTotal === 0 ? (
+            <span>Mostrando 0 registros</span>
+          ) : (
+            <span>
+              Mostrando {Math.min((currentPage - 1) * pageSize + 1, activeTotal)}-{Math.min(currentPage * pageSize, activeTotal)} de {activeTotal} registro(s).
+            </span>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <button

@@ -439,16 +439,8 @@ export function useCurrentUser() {
             if (qCanViewCom !== null) return qCanViewCom
             return !(isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
         })(),
-        /** Publicidad tab is hidden for individual commercial advisors, always visible for admin */
-        canViewPublicidad: (() => {
-            const rNorm = (role || qRole || "").toLowerCase()
-            const eNorm = (email || qEmail || "").toLowerCase().trim()
-            if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return true
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
-            if (isSuperAdmin) return true
-            if (qCanViewPublicidad !== null) return qCanViewPublicidad
-            return !(isAsesorComercial1(email, displayName, qIsAdvisor1Param) || isAsesorComercial2(email, displayName, qIsAdvisor2Param) || isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla2" || tablaSeguimiento === "tabla3")
-        })(),
+        /** Publicidad tab is hidden in Comercial-Control-CRM; the native module is in crm-geofal */
+        canViewPublicidad: false,
         // canViewKpis: los asesores comerciales, ejecutivos y administradores pueden ver sus KPIs personales
         canViewKpis: (() => {
             const rNorm = (role || qRole || "").toLowerCase()

@@ -37,7 +37,7 @@ export function CommercialModuleTabs({
   canViewTabla1 = true,
   canViewTabla2 = true,
   canViewTabla3 = true,
-  canViewPublicidad = true,
+  canViewPublicidad = false,
   isAdmin = false,
 }: CommercialModuleTabsProps) {
   const isAdminView = Boolean(isAdmin && canViewTabla1 && canViewTabla2)
@@ -86,8 +86,8 @@ export function CommercialModuleTabs({
     if (tab === "seguimiento2" && !canViewTabla2) return false
     // Hide Tabla 3 ("Seguimiento 3") when not permitted
     if (tab === "seguimiento3" && !canViewTabla3) return false
-    // Hide Publicidad tab when disabled
-    if (tab === "publicidad" && !canViewPublicidad) return false
+    // Hide Publicidad tab: now replaced by native Marketing & Publicidad module in crm-geofal
+    if (tab === "publicidad") return false
     return true
   })
 
