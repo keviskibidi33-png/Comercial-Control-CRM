@@ -188,7 +188,7 @@ function CommercialHome() {
               canViewTabla3={canViewTabla3}
               canViewPublicidad={canViewPublicidad}
               seguimientoTitle={safeActiveTab === "seguimiento3" ? "Seguimiento 3" : "Seguimiento 2"}
-              forcedAsesor={safeActiveTab === "seguimiento3" ? "Sergio" : undefined}
+              forcedAsesor={safeActiveTab === "seguimiento3" ? "Sergio" : "Rossy"}
             />
           ) : safeActiveTab === "resumen_comercial_1" ? (
             <ResumenComercial1Grid

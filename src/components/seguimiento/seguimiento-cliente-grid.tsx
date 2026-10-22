@@ -22,7 +22,9 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
-  Copy
+  Copy,
+  Bell,
+  Calendar
 } from "lucide-react"
 
 const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
@@ -41,7 +43,9 @@ const DEFAULT_GHOST_ROW: Partial<SeguimientoRow> = {
   numero_cotizacion: "",
   costo_cotiz_sin_igv: "",
   estado_seguimiento: "Leads",
-  prioridad: "-"
+  prioridad: "-",
+  marketing_estado: "-",
+  proxima_fecha_contacto: "",
 }
 
 const STORAGE_KEY = "seguimiento-comercial-ui:v1"
@@ -92,14 +96,62 @@ const getWhatsAppUrl = (phone: string): string => {
   return `https://wa.me/${prefix}${cleanPhone}`
 }
 
-const formatDateToDDMMYY = (dateStr: string | undefined | null): string => {
+const formatDateToDDMMYYYY = (dateStr: string | undefined | null): string => {
   if (!dateStr) return ""
-  const clean = dateStr.split("T")[0]
-  const parts = clean.split("-")
-  if (parts.length !== 3) return dateStr
-  const [year, month, day] = parts
-  return `${day}/${month}/${year.slice(-2)}`
+  const str = String(dateStr).trim()
+  if (!str || str === "-") return ""
+
+  const clean = str.split("T")[0].trim()
+
+  // 1. Formato ISO YYYY-MM-DD
+  if (clean.includes("-")) {
+    const parts = clean.split("-")
+    if (parts.length === 3) {
+      const [year, month, day] = parts
+      const fullYear = year.length === 2 ? `20${year}` : year
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${fullYear}`
+    }
+  }
+
+  // 2. Formato con barras DD/MM/YYYY o DD/MM/YY
+  if (clean.includes("/")) {
+    const parts = clean.split("/").filter(Boolean)
+    if (parts.length === 3) {
+      const [day, month, year] = parts
+      const fullYear = year.length === 2 ? `20${year}` : year
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${fullYear}`
+    }
+    if (parts.length === 2) {
+      const [day, month] = parts
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${new Date().getFullYear()}`
+    }
+  }
+
+  // 3. Dígitos continuos sin separador (ej: 22102026, 221026, 2210)
+  if (/^\d+$/.test(clean)) {
+    if (clean.length === 8) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      const year = clean.slice(4, 8)
+      return `${day}/${month}/${year}`
+    }
+    if (clean.length === 6) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      const year = `20${clean.slice(4, 6)}`
+      return `${day}/${month}/${year}`
+    }
+    if (clean.length === 4) {
+      const day = clean.slice(0, 2)
+      const month = clean.slice(2, 4)
+      return `${day}/${month}/${new Date().getFullYear()}`
+    }
+  }
+
+  return clean
 }
+
+const formatDateToDDMMYY = formatDateToDDMMYYYY
 
 const getMonthFromDateStr = (dateStr: string | undefined | null): string => {
   if (!dateStr) return ""
@@ -112,80 +164,99 @@ const getMonthFromDateStr = (dateStr: string | undefined | null): string => {
     const parts = clean.split("/")
     if (parts.length >= 2) return parts[1].padStart(2, "0")
   }
+  if (/^\d{8}$/.test(clean)) {
+    return clean.slice(2, 4)
+  }
   return ""
 }
 
 const parseDDMMYYToDate = (displayStr: string): string | null => {
-  const clean = displayStr.trim().replace(/[-\s.]/g, "/");
-  if (!clean) return null;
+  const trimmed = (displayStr || "").trim()
+  if (!trimmed || trimmed === "-") return null
 
-  let day = "";
-  let month = "";
-  let year = "";
+  // 1. Si ya viene en formato ISO YYYY-MM-DD o YYYY/MM/DD
+  const isoMatch = trimmed.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/)
+  if (isoMatch) {
+    const y = isoMatch[1]
+    const m = isoMatch[2].padStart(2, "0")
+    const d = isoMatch[3].padStart(2, "0")
+    const dNum = parseInt(d, 10)
+    const mNum = parseInt(m, 10)
+    if (dNum >= 1 && dNum <= 31 && mNum >= 1 && mNum <= 12) {
+      return `${y}-${m}-${d}`
+    }
+  }
+
+  // 2. Normalizar separadores
+  const clean = trimmed.replace(/[-\s.]/g, "/")
+
+  let day = ""
+  let month = ""
+  let year = ""
 
   if (clean.includes("/")) {
-    const parts = clean.split("/").filter(Boolean);
+    const parts = clean.split("/").filter(Boolean)
     if (parts.length === 2) {
-      day = parts[0];
-      month = parts[1];
-      year = String(new Date().getFullYear());
+      day = parts[0]
+      month = parts[1]
+      year = String(new Date().getFullYear())
     } else if (parts.length === 3) {
-      day = parts[0];
-      month = parts[1];
-      year = parts[2];
+      day = parts[0]
+      month = parts[1]
+      year = parts[2]
     } else {
-      return null;
+      return null
     }
   } else {
-    if (!/^\d+$/.test(clean)) return null;
+    if (!/^\d+$/.test(clean)) return null
 
     if (clean.length === 2) {
-      day = clean[0];
-      month = clean[1];
-      year = String(new Date().getFullYear());
+      day = clean[0]
+      month = clean[1]
+      year = String(new Date().getFullYear())
     } else if (clean.length === 3) {
-      const d12 = parseInt(clean.slice(0, 2), 10);
-      const m12 = parseInt(clean.slice(2), 10);
-      const d1 = parseInt(clean.slice(0, 1), 10);
-      const m23 = parseInt(clean.slice(1), 10);
+      const d12 = parseInt(clean.slice(0, 2), 10)
+      const m12 = parseInt(clean.slice(2), 10)
+      const d1 = parseInt(clean.slice(0, 1), 10)
+      const m23 = parseInt(clean.slice(1), 10)
 
       if (d12 <= 31 && m12 >= 1 && m12 <= 12) {
-        day = clean.slice(0, 2);
-        month = clean.slice(2);
+        day = clean.slice(0, 2)
+        month = clean.slice(2)
       } else if (d1 <= 31 && m23 >= 1 && m23 <= 12) {
-        day = clean.slice(0, 1);
-        month = clean.slice(1);
+        day = clean.slice(0, 1)
+        month = clean.slice(1)
       } else {
-        return null;
+        return null
       }
-      year = String(new Date().getFullYear());
+      year = String(new Date().getFullYear())
     } else if (clean.length === 4) {
-      day = clean.slice(0, 2);
-      month = clean.slice(2, 4);
-      year = String(new Date().getFullYear());
+      day = clean.slice(0, 2)
+      month = clean.slice(2, 4)
+      year = String(new Date().getFullYear())
     } else if (clean.length === 6) {
-      day = clean.slice(0, 2);
-      month = clean.slice(2, 4);
-      year = clean.slice(4, 6);
+      day = clean.slice(0, 2)
+      month = clean.slice(2, 4)
+      year = clean.slice(4, 6)
     } else if (clean.length === 8) {
-      day = clean.slice(0, 2);
-      month = clean.slice(2, 4);
-      year = clean.slice(4, 8);
+      day = clean.slice(0, 2)
+      month = clean.slice(2, 4)
+      year = clean.slice(4, 8)
     } else {
-      return null;
+      return null
     }
   }
 
-  const dNum = parseInt(day, 10);
-  const mNum = parseInt(month, 10);
+  const dNum = parseInt(day, 10)
+  const mNum = parseInt(month, 10)
   if (isNaN(dNum) || isNaN(mNum) || dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) {
-    return null;
+    return null
   }
 
-  const fullYear = year.length === 2 ? `20${year}` : year;
-  const formattedDay = String(dNum).padStart(2, "0");
-  const formattedMonth = String(mNum).padStart(2, "0");
-  return `${fullYear}-${formattedMonth}-${formattedDay}`;
+  const fullYear = year.length === 2 ? `20${year}` : year
+  const formattedDay = String(dNum).padStart(2, "0")
+  const formattedMonth = String(mNum).padStart(2, "0")
+  return `${fullYear}-${formattedMonth}-${formattedDay}`
 }
 
 const WhatsAppIcon = () => (
@@ -199,6 +270,64 @@ const WhatsAppIcon = () => (
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
   </svg>
 )
+
+const isRowOwnedByUser = (
+  r: SeguimientoRow,
+  userName: string,
+  userEmail: string
+): boolean => {
+  const myName = (userName || "").toLowerCase().trim()
+  const myMail = (userEmail || "").toLowerCase().trim()
+  const aName = (r.asesor || "").toLowerCase().trim()
+  const cPor = (r.creado_por || "").toLowerCase().trim()
+  const aMail = (r.asesor_email || "").toLowerCase().trim()
+
+  return Boolean(
+    (myName && (aName.includes(myName) || cPor.includes(myName) || (aName.length > 3 && myName.includes(aName)) || (cPor.length > 3 && myName.includes(cPor)))) ||
+    (myMail && (aMail.includes(myMail) || (aMail.length > 3 && myMail.includes(aMail))))
+  )
+}
+
+const matchesAdvisorFilter = (
+  r: SeguimientoRow,
+  selectedAsesor: string
+): boolean => {
+  if (!selectedAsesor) return true
+  const selLower = selectedAsesor.toLowerCase().trim()
+  const aName = (r.asesor || "").toLowerCase().trim()
+  const cPor = (r.creado_por || "").toLowerCase().trim()
+  const aMail = (r.asesor_email || "").toLowerCase().trim()
+
+  const isRossyFilter = selLower.includes("rossy") || selLower.includes("ejecutivocomercial2") || selLower.includes("asesorcomercial2")
+  const isSergioFilter = selLower.includes("sergio") || selLower.includes("ejecutivocomercial3") || selLower.includes("asesorcomercial3")
+  const isSilviaFilter = selLower.includes("silvia") || selLower.includes("asesorcomercial@") || selLower.includes("speralta")
+  const isYerlyFilter = selLower.includes("yerly") || selLower.includes("asesorcomercial1") || selLower.includes("yyerly")
+  const isJuanFilter = selLower.includes("juan") || selLower.includes("jbarba") || selLower.includes("garcia")
+
+  const isRossyRow = aName.includes("rossy") || cPor.includes("ejecutivocomercial2") || cPor.includes("asesorcomercial2") || aMail.includes("ejecutivocomercial2")
+  const isSergioRow = aName.includes("sergio") || cPor.includes("ejecutivocomercial3") || cPor.includes("asesorcomercial3") || aMail.includes("ejecutivocomercial3")
+  const isSilviaRow = aName.includes("silvia") || cPor.includes("asesorcomercial@") || aMail.includes("asesorcomercial@")
+  const isYerlyRow = aName.includes("yerly") || cPor.includes("asesorcomercial1") || aMail.includes("asesorcomercial1")
+  const isJuanRow = aName.includes("juan") || cPor.includes("jbarba") || aMail.includes("jbarba")
+
+  let matches =
+    aName.includes(selLower) ||
+    cPor.includes(selLower) ||
+    aMail.includes(selLower) ||
+    (aName.length > 3 && selLower.includes(aName)) ||
+    (cPor.length > 3 && selLower.includes(cPor)) ||
+    (aMail.length > 3 && selLower.includes(aMail))
+
+  if (!matches) {
+    if (isRossyFilter && isRossyRow) matches = true
+    else if (isSergioFilter && isSergioRow) matches = true
+    else if (isSilviaFilter && isSilviaRow) matches = true
+    else if (isYerlyFilter && isYerlyRow) matches = true
+    else if (isJuanFilter && isJuanRow) matches = true
+  }
+
+  return matches
+}
 
 export interface SeguimientoClienteGridProps {
   activeModuleTab: CommercialModuleTab
@@ -253,8 +382,10 @@ export function SeguimientoClienteGrid({
   useEffect(() => {
     if (forcedAsesor) {
       setSelectedAsesor(forcedAsesor)
+    } else {
+      setSelectedAsesor("")
     }
-  }, [forcedAsesor])
+  }, [forcedAsesor, activeModuleTab])
 
   const [commentModalRow, setCommentModalRow] = useState<SeguimientoRow | null>(null)
   const [activeCommentField, setActiveCommentField] = useState<CommentFieldKey | null>(null)
@@ -377,6 +508,22 @@ export function SeguimientoClienteGrid({
   const [selectedEstadoSeguimiento, setSelectedEstadoSeguimiento] = useState("")
   const [selectedCategoria, setSelectedCategoria] = useState("")
   const [selectedMonth, setSelectedMonth] = useState("")
+  const [filterOnlyUpcoming, setFilterOnlyUpcoming] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
+  const [popoverAlign, setPopoverAlign] = useState<"left" | "right">("right")
+  const bellRef = useRef<HTMLDivElement>(null)
+
+  const handleToggleBell = () => {
+    if (!bellOpen && bellRef.current) {
+      const rect = bellRef.current.getBoundingClientRect()
+      if (rect.left < 300) {
+        setPopoverAlign("left")
+      } else {
+        setPopoverAlign("right")
+      }
+    }
+    setBellOpen((prev) => !prev)
+  }
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(500)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
@@ -595,6 +742,95 @@ export function SeguimientoClienteGrid({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Close bell popover when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(event.target as Node)) {
+        setBellOpen(false)
+      }
+    }
+    if (bellOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [bellOpen])
+
+  // Contacts approaching due date or overdue (closest first)
+  const upcomingContacts = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayTime = today.getTime()
+
+    const canViewAllRows = isAdmin || isSupervisorYerly
+
+    const list: {
+      row: SeguimientoRow
+      diffDays: number
+      dateFormatted: string
+      statusLabel: string
+      badgeClass: string
+    }[] = []
+
+    for (const r of rows) {
+      // 1. Non-admins must strictly only see notifications for their own records
+      if (!canViewAllRows) {
+        if (!isRowOwnedByUser(r, currentUserName, currentUserEmail)) {
+          continue
+        }
+      } else if (selectedAsesor) {
+        // 2. Admins with an advisor filter active (e.g. entering Seguimiento 2 with Rossy or 3 with Sergio)
+        if (!matchesAdvisorFilter(r, selectedAsesor)) {
+          continue
+        }
+      }
+
+      const rawDate = r.proxima_fecha_contacto
+      if (!rawDate || rawDate.trim() === "" || rawDate.trim() === "-") {
+        continue
+      }
+      const parsedIso = parseDDMMYYToDate(rawDate) || (rawDate.includes("-") ? rawDate.split("T")[0].trim() : null)
+      if (!parsedIso) continue
+      const parts = parsedIso.split("-")
+      if (parts.length !== 3) continue
+      const targetDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+      targetDate.setHours(0, 0, 0, 0)
+      const diffTime = targetDate.getTime() - todayTime
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+
+      // Alert for overdue, today, and upcoming in next 7 days
+      if (diffDays <= 7) {
+        let statusLabel = ""
+        let badgeClass = ""
+        if (diffDays < 0) {
+          const abs = Math.abs(diffDays)
+          statusLabel = abs === 1 ? "Venció ayer" : `Venció hace ${abs} días`
+          badgeClass = "bg-rose-100 text-rose-800 border-rose-300"
+        } else if (diffDays === 0) {
+          statusLabel = "¡Vence Hoy!"
+          badgeClass = "bg-amber-100 text-amber-900 border-amber-300 font-bold"
+        } else if (diffDays === 1) {
+          statusLabel = "Vence mañana"
+          badgeClass = "bg-sky-100 text-sky-800 border-sky-300 font-medium"
+        } else {
+          statusLabel = `En ${diffDays} días`
+          badgeClass = "bg-blue-50 text-blue-700 border-blue-200"
+        }
+
+        list.push({
+          row: r,
+          diffDays,
+          dateFormatted: formatDateToDDMMYYYY(parsedIso),
+          statusLabel,
+          badgeClass,
+        })
+      }
+    }
+
+    // Sort by diffDays ascending: overdue and today first, then closest
+    list.sort((a, b) => a.diffDays - b.diffDays)
+    return list
+  }, [rows, isAdmin, isSupervisorYerly, currentUserName, currentUserEmail, selectedAsesor])
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   // Keep page within boundaries if total changes
@@ -703,53 +939,11 @@ export function SeguimientoClienteGrid({
       const canViewAllRows = isAdmin || isSupervisorYerly
 
       if (!canViewAllRows) {
-        const myName = (currentUserName || "").toLowerCase().trim()
-        const myMail = (currentUserEmail || "").toLowerCase().trim()
-        const aName = (r.asesor || "").toLowerCase().trim()
-        const cPor = (r.creado_por || "").toLowerCase().trim()
-        const aMail = (r.asesor_email || "").toLowerCase().trim()
-
-        const isMine =
-          (myName && (aName.includes(myName) || cPor.includes(myName) || (aName.length > 3 && myName.includes(aName)) || (cPor.length > 3 && myName.includes(cPor)))) ||
-          (myMail && (aMail.includes(myMail) || (aMail.length > 3 && myMail.includes(aMail))))
-        if (!isMine) return false
+        if (!isRowOwnedByUser(r, currentUserName, currentUserEmail)) return false
       }
 
       if (selectedAsesor) {
-        const selLower = selectedAsesor.toLowerCase().trim()
-        const aName = (r.asesor || "").toLowerCase().trim()
-        const cPor = (r.creado_por || "").toLowerCase().trim()
-        const aMail = (r.asesor_email || "").toLowerCase().trim()
-
-        const isRossyFilter = selLower.includes("rossy") || selLower.includes("ejecutivocomercial2") || selLower.includes("asesorcomercial2")
-        const isSergioFilter = selLower.includes("sergio") || selLower.includes("ejecutivocomercial3") || selLower.includes("asesorcomercial3")
-        const isSilviaFilter = selLower.includes("silvia") || selLower.includes("asesorcomercial@") || selLower.includes("speralta")
-        const isYerlyFilter = selLower.includes("yerly") || selLower.includes("asesorcomercial1") || selLower.includes("yyerly")
-        const isJuanFilter = selLower.includes("juan") || selLower.includes("jbarba") || selLower.includes("garcia")
-
-        const isRossyRow = aName.includes("rossy") || cPor.includes("ejecutivocomercial2") || cPor.includes("asesorcomercial2") || aMail.includes("ejecutivocomercial2")
-        const isSergioRow = aName.includes("sergio") || cPor.includes("ejecutivocomercial3") || cPor.includes("asesorcomercial3") || aMail.includes("ejecutivocomercial3")
-        const isSilviaRow = aName.includes("silvia") || cPor.includes("asesorcomercial@") || aMail.includes("asesorcomercial@")
-        const isYerlyRow = aName.includes("yerly") || cPor.includes("asesorcomercial1") || aMail.includes("asesorcomercial1")
-        const isJuanRow = aName.includes("juan") || cPor.includes("jbarba") || aMail.includes("jbarba")
-
-        let matchesAsesor =
-          aName.includes(selLower) ||
-          cPor.includes(selLower) ||
-          aMail.includes(selLower) ||
-          (aName.length > 3 && selLower.includes(aName)) ||
-          (cPor.length > 3 && selLower.includes(cPor)) ||
-          (aMail.length > 3 && selLower.includes(aMail))
-
-        if (!matchesAsesor) {
-          if (isRossyFilter && isRossyRow) matchesAsesor = true
-          else if (isSergioFilter && isSergioRow) matchesAsesor = true
-          else if (isSilviaFilter && isSilviaRow) matchesAsesor = true
-          else if (isYerlyFilter && isYerlyRow) matchesAsesor = true
-          else if (isJuanFilter && isJuanRow) matchesAsesor = true
-        }
-
-        if (!matchesAsesor) return false
+        if (!matchesAdvisorFilter(r, selectedAsesor)) return false
       }
 
       if (selectedEstado) {
@@ -781,9 +975,16 @@ export function SeguimientoClienteGrid({
         if (selCatNorm.includes("ENS") && !/ENS|LABORATORIO|MEZCLA|AGREGADO|LADRILLO|PROCTOR|ROCA/.test(catVal)) return false
       }
 
+      if (filterOnlyUpcoming) {
+        const rawDate = r.proxima_fecha_contacto
+        if (!rawDate || rawDate.trim() === "" || rawDate.trim() === "-") return false
+        const isUpcoming = upcomingContacts.some((item) => item.row.id === r.id)
+        if (!isUpcoming) return false
+      }
+
       return true
     })
-  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth, isAdmin, currentUserName, currentUserEmail])
+  }, [rows, selectedAsesor, selectedEstado, selectedEstadoSeguimiento, selectedCategoria, selectedMonth, filterOnlyUpcoming, upcomingContacts, isAdmin, currentUserName, currentUserEmail])
 
   const sortedRows = useMemo(() => {
     const baseRows = [...filteredRows]
@@ -911,11 +1112,13 @@ export function SeguimientoClienteGrid({
   const COLUMNS: readonly GridColumn[] = [
     { key: "no", label: "N°", width: "w-12 min-w-[48px] max-w-[48px] text-center", stickyLeft: "0px" },
     { key: "fecha_contacto", label: "Fecha\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "48px" },
-    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "123px" },
-    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "223px" },
-    { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "323px" },
-    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "453px" },
-    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "613px" },
+    { key: "marketing_estado", label: "Asignar\nMarketing", width: "w-[105px] min-w-[105px] max-w-[105px] text-center", stickyLeft: "123px" },
+    { key: "persona_contacto", label: "Persona\nContacto", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "228px" },
+    { key: "numero_celular", label: "Celular", width: "w-[100px] min-w-[100px] max-w-[100px]", type: "text", stickyLeft: "328px" },
+    { key: "comentarios_asesor", label: "Asesor\nComentario", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text", stickyLeft: "428px" },
+    { key: "razon_social", label: "Empresa", width: "w-[160px] min-w-[160px] max-w-[160px]", type: "text", stickyLeft: "558px" },
+    { key: "fecha_ultimo_contacto", label: "F. Último\nContacto", width: "w-[75px] min-w-[75px] max-w-[75px] text-center", type: "date", stickyLeft: "718px", isLastPinned: true },
+    { key: "proxima_fecha_contacto", label: "Próx. Fecha\nContacto", width: "w-[85px] min-w-[85px] max-w-[85px] text-center", type: "date" },
     { key: "rubro", label: "Rubro", width: "w-[108px] min-w-[108px] max-w-[108px]", type: "catalog", catalogKey: "rubros" },
     { key: "estado_cliente", label: "Estado Cliente", width: "w-44 min-w-[176px] max-w-[176px]", type: "catalog", catalogKey: "estados" },
     { key: "servicio_solicitado", label: "Servicio\nSolicitado", width: "w-[130px] min-w-[130px] max-w-[130px]", type: "text" },
@@ -1026,7 +1229,7 @@ export function SeguimientoClienteGrid({
       </div>
 
       {/* Toolbar Area */}
-      <div className="flex items-center justify-between p-2 border-b border-zinc-200 bg-white gap-2 z-20 shrink-0 overflow-visible">
+      <div className="relative z-50 flex items-center justify-between p-2 border-b border-zinc-200 bg-white gap-2 shrink-0 overflow-visible">
         <div className="flex items-center gap-2 flex-1 flex-wrap">
           {/* Search Input */}
           <div className="relative w-50 lg:w-62.5">
@@ -1159,7 +1362,7 @@ export function SeguimientoClienteGrid({
           )}
 
           {/* Clear Filters Button */}
-          {(search || selectedEstado || selectedEstadoSeguimiento || selectedCategoria || selectedAsesor || selectedMonth) && (
+          {(search || selectedEstado || selectedEstadoSeguimiento || selectedCategoria || selectedAsesor || selectedMonth || filterOnlyUpcoming) && (
             <button
               onClick={() => {
                 setSearch("")
@@ -1168,6 +1371,7 @@ export function SeguimientoClienteGrid({
                 setSelectedCategoria("")
                 setSelectedAsesor("")
                 setSelectedMonth("")
+                setFilterOnlyUpcoming(false)
                 setCurrentPage(1)
               }}
               className="flex items-center gap-1 h-8 px-2.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
@@ -1175,6 +1379,176 @@ export function SeguimientoClienteGrid({
             >
               <X className="h-3.5 w-3.5" />
               <span>Limpiar Filtros</span>
+            </button>
+          )}
+
+          {/* ── Campanita de Notificaciones de Fechas a Vencer ── */}
+          <div className="relative z-50" ref={bellRef}>
+            <button
+              type="button"
+              onClick={handleToggleBell}
+              className={`relative flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs font-semibold shadow-xs transition-all duration-200 cursor-pointer ${
+                filterOnlyUpcoming
+                  ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600 ring-2 ring-amber-300"
+                  : upcomingContacts.length > 0
+                  ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                  : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
+              }`}
+              title={`${upcomingContacts.length} contactos con fecha próxima a vencer`}
+            >
+              <Bell className={`h-4 w-4 ${upcomingContacts.length > 0 && !filterOnlyUpcoming ? "text-amber-600 animate-bounce" : ""}`} />
+              <span className="hidden sm:inline font-bold">Próximos</span>
+              {upcomingContacts.length > 0 && (
+                <span className="flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white shadow-xs">
+                  {upcomingContacts.length}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Popover auto-alineable que nace directamente debajo del botón y se mantiene dentro de la pantalla */}
+            {bellOpen && (
+              <div className={`absolute ${popoverAlign === "left" ? "left-0" : "right-0"} top-full mt-2 w-[340px] sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150 overflow-visible`}>
+                {/* Indicador triangular apuntando directamente al botón */}
+                <div className={`absolute -top-1.5 ${popoverAlign === "left" ? "left-6" : "right-6"} h-3 w-3 rotate-45 border-l border-t border-amber-300 bg-amber-50 z-20`} />
+
+                <div className="rounded-xl overflow-hidden relative z-10 bg-white">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-md bg-amber-500 p-1.5 text-white shadow-xs">
+                        <Bell className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-800">
+                          Próximas Fechas de Contacto
+                        </h4>
+                        <p className="text-[10px] text-zinc-500">
+                          {upcomingContacts.length} {upcomingContacts.length === 1 ? "contacto pendiente o próximo" : "contactos pendientes o próximos"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setBellOpen(false)}
+                      className="rounded p-1 text-zinc-400 hover:bg-white hover:text-zinc-600 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Filter toggle button */}
+                  <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-2 flex items-center justify-between">
+                    <span className="text-[11px] text-zinc-600 font-medium">
+                      {filterOnlyUpcoming ? "Filtro activo en tabla" : "Ver solo estos en la tabla"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterOnlyUpcoming(!filterOnlyUpcoming)
+                        setCurrentPage(1)
+                        setBellOpen(false)
+                      }}
+                      className={`px-2.5 py-1 text-[11px] font-bold rounded cursor-pointer transition-colors ${
+                        filterOnlyUpcoming
+                          ? "bg-amber-600 text-white hover:bg-amber-700"
+                          : "bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+                      }`}
+                    >
+                      {filterOnlyUpcoming ? "Desactivar Filtro" : "Filtrar en Tabla"}
+                    </button>
+                  </div>
+
+                  {/* Contacts List */}
+                  <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100">
+                    {upcomingContacts.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-zinc-500">
+                        <p className="font-semibold text-zinc-700">¡Todo al día! 🎉</p>
+                        <p className="mt-1 text-[11px] text-zinc-400">
+                          No tienes contactos pendientes o con fecha próxima a vencer en los siguientes 7 días.
+                        </p>
+                      </div>
+                    ) : (
+                      upcomingContacts.map((item) => {
+                        const row = item.row
+                        const phone = row.numero_celular ? String(row.numero_celular).trim() : ""
+                        const waUrl = phone ? getWhatsAppUrl(phone) : ""
+
+                        return (
+                          <div
+                            key={row.id}
+                            className="p-3 hover:bg-amber-50/50 transition-colors flex items-start justify-between gap-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-bold text-zinc-900 truncate max-w-[190px]" title={row.razon_social || row.persona_contacto || "Sin nombre"}>
+                                  {row.razon_social || row.persona_contacto || "Sin nombre"}
+                                </span>
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border font-bold ${item.badgeClass}`}>
+                                  {item.statusLabel}
+                                </span>
+                              </div>
+
+                              <div className="mt-1 flex items-center gap-2 text-[11px] text-zinc-500">
+                                <span className="font-semibold text-zinc-700">📅 {item.dateFormatted}</span>
+                                {row.asesor && (
+                                  <span className="truncate text-zinc-600">👤 {row.asesor}</span>
+                                )}
+                              </div>
+
+                              {row.persona_contacto && row.razon_social && (
+                                <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                                  Contacto: {row.persona_contacto}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                              {waUrl && (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                  title="Abrir WhatsApp"
+                                >
+                                  <WhatsAppIcon />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSearch(row.razon_social || row.persona_contacto || "")
+                                  setCurrentPage(1)
+                                  setBellOpen(false)
+                                }}
+                                className="px-1.5 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold cursor-pointer"
+                                title="Buscar este registro en la tabla"
+                              >
+                                Ver
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Active Upcoming Filter Badge */}
+          {filterOnlyUpcoming && (
+            <button
+              onClick={() => {
+                setFilterOnlyUpcoming(false)
+                setCurrentPage(1)
+              }}
+              className="flex items-center gap-1.5 h-8 px-2.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-md transition-colors cursor-pointer"
+              title="Quitar filtro de próximas fechas"
+            >
+              <Bell className="h-3.5 w-3.5 text-amber-700" />
+              <span>Solo Próximos ({upcomingContacts.length})</span>
+              <X className="h-3.5 w-3.5 text-amber-700" />
             </button>
           )}
         </div>
@@ -1368,10 +1742,99 @@ export function SeguimientoClienteGrid({
                     )
                   }
 
+                  // Renders Próxima Fecha de Contacto (destacado amarillo suave si tiene fecha, '-' por defecto)
+                  if (col.key === "proxima_fecha_contacto") {
+                    const rawStr = cellValue && cellValue !== "-" ? String(cellValue).trim() : ""
+                    const displayValue = rawStr ? formatDateToDDMMYYYY(rawStr) : "-"
+                    const hasDate = Boolean(displayValue && displayValue !== "-")
+
+                    return (
+                      <td
+                        key={col.key}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        <div className={`w-full rounded px-1 py-0.5 border flex items-center justify-center transition-colors ${
+                          hasDate 
+                            ? "bg-amber-100 border-amber-300 text-amber-950 font-bold shadow-2xs" 
+                            : "bg-transparent border-transparent text-zinc-400 hover:border-zinc-200"
+                        }`}>
+                          <input
+                            key={`${row.id}-proxima-${displayValue}`}
+                            type="text"
+                            defaultValue={hasDate ? displayValue : ""}
+                            title={hasDate ? `Próxima fecha: ${displayValue}` : "Sin fecha asignada (-)"}
+                            placeholder="-"
+                            onBlur={(e) => {
+                              const val = e.target.value.trim()
+                              if (!val || val === "-") {
+                                if (rawStr !== "") {
+                                  updateCell(row.id, "proxima_fecha_contacto", null)
+                                }
+                                e.target.value = ""
+                                return
+                              }
+                              const parsed = parseDDMMYYToDate(val)
+                              if (parsed) {
+                                const formatted = formatDateToDDMMYYYY(parsed)
+                                e.target.value = formatted
+                                const currentParsed = rawStr ? parseDDMMYYToDate(rawStr) : null
+                                if (parsed !== currentParsed) {
+                                  updateCell(row.id, "proxima_fecha_contacto", parsed)
+                                }
+                              } else {
+                                toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
+                                e.target.value = hasDate ? displayValue : ""
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.currentTarget.blur()
+                              }
+                            }}
+                            className={`w-full text-center bg-transparent border-none outline-none text-[11px] p-0 ${
+                              hasDate ? "font-bold text-amber-950 placeholder:text-amber-700/50" : "font-medium text-zinc-500 placeholder:text-zinc-400"
+                            }`}
+                          />
+                        </div>
+                      </td>
+                    )
+                  }
+
+                  // Renders Marketing Dropdown (al marcar 'Aprobado' se traslada a Publicidad)
+                  if (col.key === "marketing_estado") {
+                    const isAprobado = cellValue === "Aprobado"
+                    return (
+                      <td
+                        key={col.key}
+                        style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                        className={`px-1.5 ${baseCellClass}`}
+                      >
+                        <select
+                          value={isAprobado ? "Aprobado" : "-"}
+                          onChange={async (e) => {
+                            const newVal = e.target.value
+                            await updateCellAsync(row.id, "marketing_estado", newVal)
+                            if (newVal === "Aprobado") {
+                              toast.success("Trasladado a Publicidad")
+                            }
+                          }}
+                          className={`w-full rounded px-1.5 py-0.5 text-[11px] font-bold border cursor-pointer transition-all ${
+                            isAprobado
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 shadow-2xs"
+                              : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <option value="-">-</option>
+                          <option value="Aprobado">Aprobado</option>
+                        </select>
+                      </td>
+                    )
+                  }
+
                   // Renders Date cell input
                   if (col.type === "date") {
-                    const dbDate = cellValue ? String(cellValue).split("T")[0] : ""
-                    const displayValue = formatDateToDDMMYY(dbDate)
+                    const rawStr = cellValue && cellValue !== "-" ? String(cellValue).trim() : ""
+                    const displayValue = rawStr ? formatDateToDDMMYYYY(rawStr) : ""
                     return (
                       <td
                         key={col.key}
@@ -1379,23 +1842,30 @@ export function SeguimientoClienteGrid({
                         className={`px-1.5 ${baseCellClass}`}
                       >
                         <input
+                          key={`${row.id}-${col.key}-${displayValue}`}
                           type="text"
                           defaultValue={displayValue}
                           title={displayValue}
-                          placeholder="dd/mm/aa"
+                          placeholder="dd/mm/aaaa"
                           onBlur={(e) => {
                             const val = e.target.value.trim()
-                            if (!val) {
-                              if (dbDate !== "") {
+                            if (!val || val === "-") {
+                              if (rawStr !== "") {
                                 updateCell(row.id, col.key as keyof SeguimientoRow, null)
                               }
+                              e.target.value = ""
                               return
                             }
                             const parsed = parseDDMMYYToDate(val)
-                            if (parsed && parsed !== dbDate) {
-                              updateCell(row.id, col.key as keyof SeguimientoRow, parsed)
-                            } else if (!parsed) {
-                              toast.error("Formato de fecha inválido. Use dd/mm/aa.")
+                            if (parsed) {
+                              const formatted = formatDateToDDMMYYYY(parsed)
+                              e.target.value = formatted
+                              const currentParsed = rawStr ? parseDDMMYYToDate(rawStr) : null
+                              if (parsed !== currentParsed) {
+                                updateCell(row.id, col.key as keyof SeguimientoRow, parsed)
+                              }
+                            } else {
+                              toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
                               e.target.value = displayValue
                             }
                           }}
@@ -1635,6 +2105,70 @@ export function SeguimientoClienteGrid({
                           {opt}
                         </option>
                       ))}
+                    </select>
+                  </td>
+                )
+              }
+
+              if (col.key === "proxima_fecha_contacto") {
+                const rawVal = (ghostRow.proxima_fecha_contacto as string) || ""
+                const displayVal = rawVal ? formatDateToDDMMYYYY(rawVal) : ""
+                const hasVal = Boolean(displayVal && displayVal !== "-")
+                return (
+                  <td
+                    key={`ghost-${col.key}`}
+                    className={`px-1.5 ${baseGhostClass}`}
+                  >
+                    <input
+                      type="text"
+                      placeholder="-"
+                      defaultValue={hasVal ? displayVal : ""}
+                      key={`ghost-${col.key}-${displayVal}`}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim()
+                        if (!val || val === "-") {
+                          handleGhostChange("proxima_fecha_contacto", "")
+                          return
+                        }
+                        const parsed = parseDDMMYYToDate(val)
+                        if (parsed) {
+                          const formatted = formatDateToDDMMYYYY(parsed)
+                          e.target.value = formatted
+                          handleGhostChange("proxima_fecha_contacto", parsed)
+                        } else {
+                          toast.error("Formato de fecha inválido. Ingrese dd/mm/aaaa (ej: 22/10/2026 o 22102026)")
+                          e.target.value = hasVal ? displayVal : ""
+                        }
+                      }}
+                      onKeyDown={handleGhostKeyDown}
+                      className={`ghost-input w-full text-center rounded px-1 py-0.5 text-[11px] focus:bg-white focus:ring-1 focus:ring-blue-500 h-6 border ${
+                        hasVal ? "bg-amber-100 border-amber-300 text-amber-950 font-bold" : "bg-transparent border-zinc-200 text-zinc-800"
+                      }`}
+                    />
+                  </td>
+                )
+              }
+
+              if (col.key === "marketing_estado") {
+                const isAprobado = ghostRow.marketing_estado === "Aprobado"
+                return (
+                  <td
+                    key={`ghost-${col.key}`}
+                    style={col.stickyLeft ? { position: "sticky", left: col.stickyLeft, zIndex: 10 } : undefined}
+                    className={`px-1.5 ${baseGhostClass}`}
+                  >
+                    <select
+                      value={isAprobado ? "Aprobado" : "-"}
+                      onChange={(e) => handleGhostChange("marketing_estado", e.target.value)}
+                      onKeyDown={handleGhostKeyDown}
+                      className={`ghost-input w-full rounded px-1.5 py-0.5 text-[11px] font-bold border cursor-pointer h-6 ${
+                        isAprobado
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          : "bg-transparent border-zinc-200 text-zinc-600"
+                      }`}
+                    >
+                      <option value="-">-</option>
+                      <option value="Aprobado">Aprobado</option>
                     </select>
                   </td>
                 )

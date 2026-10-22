@@ -151,6 +151,8 @@ export type SeguimientoRow = {
   numero_cotizacion?: string
   costo_cotiz_sin_igv?: string
   estado_seguimiento?: string
+  marketing_estado?: string
+  proxima_fecha_contacto?: string
   creado_por?: string
   fecha_creacion?: string
   fecha_actualizacion?: string
