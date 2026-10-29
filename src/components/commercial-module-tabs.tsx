@@ -78,14 +78,11 @@ export function CommercialModuleTabs({
     if (tab === "lab" && !canViewLab) return false
     // Hide Comercial tab when disabled
     if (tab === "com" && !canViewCom) return false
-    // Hide KPI tab entirely when user doesn't have permission
-    if (tab === "resumen_comercial_1" && !canViewKpis) return false
-    // Hide Tabla 1 ("Seguimiento") for non-legacy commercial users
-    if (tab === "seguimiento" && !canViewTabla1) return false
-    // Hide Tabla 2 ("Seguimiento 2") when not permitted
-    if (tab === "seguimiento2" && !canViewTabla2) return false
-    // Hide Tabla 3 ("Seguimiento 3") when not permitted
-    if (tab === "seguimiento3" && !canViewTabla3) return false
+    // Hide Seguimiento and KPI tabs: now replaced by native Seguimiento Comercial module in crm-geofal
+    if (tab === "seguimiento") return false
+    if (tab === "seguimiento2") return false
+    if (tab === "seguimiento3") return false
+    if (tab === "resumen_comercial_1") return false
     // Hide Publicidad tab: now replaced by native Marketing & Publicidad module in crm-geofal
     if (tab === "publicidad") return false
     return true
