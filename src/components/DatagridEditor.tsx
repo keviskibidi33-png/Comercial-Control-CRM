@@ -8,7 +8,7 @@ import { columnsLab } from "@/components/datagrid/columns"
 import { columnsComercial } from "@/components/datagrid/columns-comercial"
 import { columnsAdmin } from "@/components/datagrid/columns-admin"
 import { useProgramacionData } from "@/hooks/use-programacion-data"
-import { RefreshCw, Wifi, WifiOff, FileDown, Info, Lock } from "lucide-react"
+import { RefreshCw, Wifi, WifiOff, FileDown, Info, Lock, Loader2 } from "lucide-react"
 import { LoginButton } from "@/components/login-button"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import type { ProgramacionServicio } from "@/types/programacion"
@@ -72,7 +72,7 @@ export function DatagridEditor() {
     const searchParams = useSearchParams()
     const modeParam = searchParams.get('mode')
     const { loading: authLoading, userId, role, email, allowedViews, getCanView, getCanWrite, needsAuth, permissions } = useCurrentUser()
-    const { data, isLoading, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData()
+    const { data, isLoading, isExporting, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData()
 
     // State to track filtered data for Excel export
     const [filteredItems, setFilteredItems] = React.useState<ProgramacionServicio[]>([])
@@ -256,11 +256,11 @@ export function DatagridEditor() {
                             const modeMap = { 'LAB': 'lab', 'COM': 'comercial', 'ADMIN': 'administracion' } as const
                             exportToExcel(filteredItems, modeMap[viewMode])
                         }}
-                        disabled={data.length === 0}
+                        disabled={data.length === 0 || isExporting}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <FileDown className="w-3.5 h-3.5" />
-                        <span>Exportar Excel</span>
+                        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                        <span>{isExporting ? "Generando..." : "Exportar Excel"}</span>
                     </button>
 
                     <div className="flex items-center gap-3">

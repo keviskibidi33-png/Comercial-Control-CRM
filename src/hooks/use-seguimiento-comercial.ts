@@ -32,14 +32,40 @@ const getApiBaseUrls = () => {
   return Array.from(candidates)
 }
 
+
+function isTokenExpired(token: string | null | undefined): boolean {
+  if (!token || typeof token !== "string") return true
+  try {
+    const parts = token.split(".")
+    if (parts.length !== 3) return true
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    )
+    const payload = JSON.parse(jsonPayload)
+    if (!payload.exp) return false
+    return Date.now() >= payload.exp * 1000 - 30000
+  } catch {
+    return false
+  }
+}
+
 const getStoredToken = (): string | null => {
   if (typeof window === "undefined") return null
   const fromUrl = new URLSearchParams(window.location.search).get("token")
-  if (fromUrl) {
+  if (fromUrl && !isTokenExpired(fromUrl)) {
     try { localStorage.setItem("programacion_access_token", fromUrl) } catch {}
     return fromUrl
   }
-  return localStorage.getItem("programacion_access_token") || localStorage.getItem("token")
+  const local = localStorage.getItem("programacion_access_token") || localStorage.getItem("token")
+  if (local && !isTokenExpired(local)) {
+    return local
+  }
+  return null
 }
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {

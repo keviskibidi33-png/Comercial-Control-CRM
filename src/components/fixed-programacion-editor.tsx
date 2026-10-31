@@ -7,7 +7,7 @@ import { columnsComercial } from "@/components/datagrid/columns-comercial"
 import { columnsAdmin } from "@/components/datagrid/columns-admin"
 import { CommercialModuleTabs, type CommercialModuleTab } from "@/components/commercial-module-tabs"
 import { useProgramacionData } from "@/hooks/use-programacion-data"
-import { RefreshCw, Wifi, WifiOff, FileDown, Info, Lock, ShieldAlert } from "lucide-react"
+import { RefreshCw, Wifi, WifiOff, FileDown, Info, Lock, ShieldAlert, Loader2 } from "lucide-react"
 import { LoginButton } from "@/components/login-button"
 import { useCurrentUser, type ViewMode } from "@/hooks/use-current-user"
 import type { ProgramacionServicio } from "@/types/programacion"
@@ -144,7 +144,7 @@ export function FixedProgramacionEditor({
   canViewPublicidad,
 }: FixedProgramacionEditorProps) {
   const { loading: authLoading, userId, role, email, needsAuth, getCanWrite, permissions, isAdmin } = useCurrentUser()
-  const { data, isLoading, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
+  const { data, isLoading, isExporting, refetch, realtimeStatus, updateField, insertRow, exportToExcel } = useProgramacionData(kind)
   const [filteredItems, setFilteredItems] = React.useState<ProgramacionServicio[]>([])
   const [activeViewMode, setActiveViewMode] = React.useState<ViewMode>(viewMode)
 
@@ -312,11 +312,11 @@ export function FixedProgramacionEditor({
 
           <button
             onClick={() => exportToExcel(filteredItems, currentExportMode)}
-            disabled={data.length === 0}
+            disabled={data.length === 0 || isExporting}
             className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
           >
-            <FileDown className="h-3.5 w-3.5" />
-            <span>Exportar Excel</span>
+            {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+            <span>{isExporting ? "Generando..." : "Exportar Excel"}</span>
           </button>
 
           <div className="flex items-center gap-3">

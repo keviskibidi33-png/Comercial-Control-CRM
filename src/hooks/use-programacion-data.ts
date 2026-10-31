@@ -142,11 +142,34 @@ function resolveParentOrigin(): string | null {
 
 type ProgramacionModuleKind = "laboratorio" | "oficina_tecnica" | "comercial" | "administracion"
 
+
+function isTokenExpired(token: string | null | undefined): boolean {
+    if (!token || typeof token !== "string") return true
+    try {
+        const parts = token.split(".")
+        if (parts.length !== 3) return true
+        const base64Url = parts[1]
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split("")
+                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+                .join("")
+        )
+        const payload = JSON.parse(jsonPayload)
+        if (!payload.exp) return false
+        return Date.now() >= payload.exp * 1000 - 30000
+    } catch {
+        return false
+    }
+}
+
 export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     void _moduleKind
     const supabase = useMemo(() => createClient(), [])
     const queryClient = useQueryClient()
     const { loading: authLoading } = useCurrentUser()
+    const [isExporting, setIsExporting] = useState(false)
     const [realtimeStatus, setRealtimeStatus] = useState<"CONNECTING" | "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED">("CONNECTING")
 
     // IDs written locally — kept for 4 s so ALL cascade events are skipped
@@ -156,7 +179,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
 
         const direct = localStorage.getItem("programacion_access_token")
             || localStorage.getItem("token")
-        if (direct) return direct
+        if (direct && !isTokenExpired(direct)) return direct
 
         const extractToken = (parsed: AuthTokenPayload | null): string | null => {
             if (!parsed) return null
@@ -176,7 +199,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             try {
                 const parsed = JSON.parse(raw)
                 const token = extractToken(parsed)
-                if (token) return token
+                if (token && !isTokenExpired(token)) return token
             } catch {
                 // Ignore malformed entries
             }
@@ -550,6 +573,8 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
     }, [queryClient, supabase])
 
     const exportToExcel = useCallback(async (items: ProgramacionServicio[], mode: 'lab' | 'comercial' | 'administracion' = 'lab') => {
+        if (isExporting) return
+        setIsExporting(true)
         const toastId = toast.loading("Generando Excel...")
         const traceId = buildTraceId()
         const startedAt = Date.now()
@@ -557,7 +582,7 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.geofal.com.pe"
             const { data: { session } } = await supabase.auth.getSession()
             let sessionToken = session?.access_token || null
-            if (!sessionToken) {
+            if (!sessionToken || isTokenExpired(sessionToken)) {
                 try {
                     const { data } = await supabase.auth.refreshSession()
                     sessionToken = data?.session?.access_token || null
@@ -565,14 +590,18 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
                     // ignore refresh failures; fallback chain continues
                 }
             }
-            const urlToken = typeof window !== "undefined"
+            const rawUrlToken = typeof window !== "undefined"
                 ? new URLSearchParams(window.location.search).get("token")
                 : null
+            const urlToken = rawUrlToken && !isTokenExpired(rawUrlToken) ? rawUrlToken : null
             const localToken = getStoredAccessToken()
-            const parentToken = sessionToken || urlToken || localToken
-                ? null
-                : await requestTokenFromParent(traceId, 5000)
-            const accessToken = sessionToken || urlToken || localToken || parentToken
+            
+            const validToken = (!isTokenExpired(sessionToken) ? sessionToken : null)
+                || urlToken
+                || (localToken && !isTokenExpired(localToken) ? localToken : null)
+
+            const parentToken = validToken ? null : await requestTokenFromParent(traceId, 5000)
+            let accessToken = validToken || parentToken
 
             exportDebugLog(`[${traceId}] Token source evaluation`, {
                 mode,
@@ -619,14 +648,33 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             }
             const endpoint = endpointMap[mode] || '/programacion/export'
 
-            const response = await fetch(`${apiUrl}${endpoint}`, {
+            let response = await fetch(`${apiUrl}${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`,
+                    ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
                 },
                 body: JSON.stringify({ items }),
             })
+
+            // Auto-recuperación ante 401: solicitar token fresco al parent y reintentar 1 vez
+            if (response.status === 401 && typeof window !== "undefined") {
+                exportDebugLog(`[${traceId}] 401 recibido, solicitando token fresco al parent para reintentar`)
+                localStorage.removeItem("programacion_access_token")
+                localStorage.removeItem("token")
+                const freshParentToken = await requestTokenFromParent(`${traceId}-retry`, 5000)
+                if (freshParentToken) {
+                    accessToken = freshParentToken
+                    response = await fetch(`${apiUrl}${endpoint}`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify({ items }),
+                    })
+                }
+            }
 
             if (!response.ok) {
                 const errorText = await response.text()
@@ -657,12 +705,15 @@ export function useProgramacionData(_moduleKind?: ProgramacionModuleKind) {
             const message = error instanceof Error ? error.message : "No se pudo generar el Excel"
             console.error("[Programacion] Error al exportar Excel:", message)
             toast.error("No se pudo generar el Excel", { id: toastId })
+        } finally {
+            setIsExporting(false)
         }
-    }, [getStoredAccessToken, requestTokenFromParent, supabase])
+    }, [getStoredAccessToken, isExporting, requestTokenFromParent, supabase])
 
     return {
         data: programacion,
         isLoading,
+        isExporting,
         refetch,
         realtimeStatus,
         updateField,
