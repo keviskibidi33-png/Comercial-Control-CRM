@@ -518,6 +518,7 @@ export function useCurrentUser() {
             const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla3 !== null) return qCanViewTabla3
+            if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
             if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return false
             if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return true
             return false
