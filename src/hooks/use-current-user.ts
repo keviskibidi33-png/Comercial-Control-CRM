@@ -520,7 +520,7 @@ export function useCurrentUser() {
             if (qCanViewTabla3 !== null) return qCanViewTabla3
             if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
             if (isAsesorComercial2(email, displayName, qIsAdvisor2Param) || tablaSeguimiento === "tabla2") return false
-            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3") return true
+            if (isAsesorComercial3(email, displayName, qIsAdvisor3Param) || tablaSeguimiento === "tabla3" || (tablaSeguimiento && tablaSeguimiento.includes("tabla3"))) return true
             return false
         })(),
     }
