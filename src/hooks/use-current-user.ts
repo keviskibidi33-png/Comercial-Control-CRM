@@ -530,8 +530,11 @@ export function isAsesorComercial1(
     email?: string | null,
     displayName?: string | null,
     paramFlag?: boolean,
+    role?: string | null,
 ): boolean {
     if (paramFlag) return true
+    const normRole = String(role || "").toLowerCase().trim()
+    if (normRole === "asistente_comercial" || normRole === "asistente comercial") return true
     const normEmail = String(email || "").toLowerCase().trim()
     const normName = String(displayName || "").toLowerCase().trim()
     return (

@@ -74,20 +74,12 @@ export function CommercialModuleTabs({
   }
 
   const visibleTabs = (Object.keys(TAB_LABELS) as CommercialModuleTab[]).filter((tab) => {
+    // Control Comercial contiene estrictamente Laboratorio y Comercial (sin KPIs ni Seguimientos)
+    if (tab !== "lab" && tab !== "com") return false
     // Hide Lab tab when disabled
     if (tab === "lab" && !canViewLab) return false
     // Hide Comercial tab when disabled
     if (tab === "com" && !canViewCom) return false
-    // Hide KPI tab entirely when user doesn't have permission
-    if (tab === "resumen_comercial_1" && !canViewKpis) return false
-    // Hide Tabla 1 ("Seguimiento") when not permitted
-    if (tab === "seguimiento" && !canViewTabla1) return false
-    // Hide Tabla 2 ("Seguimiento 2") when not permitted
-    if (tab === "seguimiento2" && !canViewTabla2) return false
-    // Hide Tabla 3 ("Seguimiento 3") when not permitted
-    if (tab === "seguimiento3" && !canViewTabla3) return false
-    // Hide Publicidad tab when not permitted
-    if (tab === "publicidad" && !canViewPublicidad) return false
     return true
   })
 
