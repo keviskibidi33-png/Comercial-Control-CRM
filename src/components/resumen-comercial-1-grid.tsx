@@ -980,7 +980,6 @@ export default function ResumenComercial1Grid({
     if (userLoading) return false   // safe default until role loads
     return (
       normalizedRole.includes("admin") ||
-      normalizedRole.includes("gerencia") ||
       normalizedRole.includes("administrador")
     )
   }, [isAdminFromUrl, userLoading, normalizedRole])

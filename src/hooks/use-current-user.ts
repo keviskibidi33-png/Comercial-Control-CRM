@@ -412,8 +412,8 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            const isAdminEmail = eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
-            return rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || isAdminEmail
+            const isAdminEmail = eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            return rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || isAdminEmail
         })(),
         /** Specific restrictions for individual advisors */
         isAsesorComercial2: isAsesorComercial2(email, displayName, qIsAdvisor2Param),
@@ -432,7 +432,7 @@ export function useCurrentUser() {
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             const nameNorm = (displayName || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             const isYerly = isAsesorComercial1(email, displayName, qIsAdvisor1Param) || eNorm === "asesorcomercial1@geofal.com.pe" || eNorm.includes("asesorcomercial1") || nameNorm.includes("yerly")
             if (isYerly) return true
@@ -447,7 +447,7 @@ export function useCurrentUser() {
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
             // Admin always sees KPI
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
             if (isSuperAdmin) return true
             // Asesores comerciales / ejecutivos ven sus KPIs
             if (
@@ -475,7 +475,7 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             const nameNorm = (displayName || "").toLowerCase().trim()
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe" || eNorm === "labprueba@crm.com"
             if (isSuperAdmin) return true
             const isYerly = isAsesorComercial1(email, displayName, qIsAdvisor1Param) || eNorm === "asesorcomercial1@geofal.com.pe" || eNorm.includes("asesorcomercial1") || nameNorm.includes("yerly")
             return isYerly
@@ -487,7 +487,7 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla1 !== null) return qCanViewTabla1
             if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
@@ -501,7 +501,7 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla2 !== null) return qCanViewTabla2
             if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
@@ -515,7 +515,7 @@ export function useCurrentUser() {
             const rNorm = (role || qRole || "").toLowerCase()
             const eNorm = (email || qEmail || "").toLowerCase().trim()
             if (rNorm === "marketing" || eNorm === "marketing@geofal.com.pe") return false
-            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("gerencia") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "gerencia@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
+            const isSuperAdmin = rNorm.includes("admin") || rNorm.includes("administrador") || qIsAdmin || eNorm === "admin@geofal.com.pe" || eNorm === "speralta@geofal.com.pe"
             if (isSuperAdmin) return true
             if (qCanViewTabla3 !== null) return qCanViewTabla3
             if (isAsesorComercial1(email, displayName, qIsAdvisor1Param)) return true
@@ -585,7 +585,7 @@ export function isKpiAuthorizedUser(role: string | null | undefined, email: stri
     const normEmail = String(email || "").toLowerCase().trim()
     const normName = String(displayName || "").toLowerCase().trim()
 
-    if (normRole.includes("admin") || normRole.includes("gerencia") || normRole.includes("administrador") || normEmail === "admin@geofal.com.pe" || normEmail === "gerencia@geofal.com.pe" || normEmail === "speralta@geofal.com.pe") {
+    if (normRole.includes("admin") || normRole.includes("administrador") || normEmail === "admin@geofal.com.pe" || normEmail === "speralta@geofal.com.pe") {
         return true
     }
 
