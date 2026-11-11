@@ -633,7 +633,7 @@ const formatServiceCostDisplay = (value: unknown): string => {
 
     if (!Number.isFinite(parsed)) return raw
 
-    return `S/. ${parsed.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `S/. ${Math.abs(parsed).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 const normalizeServiceCostInput = (value: string): string => {
@@ -652,7 +652,7 @@ const normalizeServiceCostInput = (value: string): string => {
     if (!cleaned) return ""
 
     const parsed = Number(cleaned)
-    return Number.isFinite(parsed) ? parsed.toFixed(2) : raw
+    return Number.isFinite(parsed) ? Math.abs(parsed).toFixed(2) : raw
 }
 
 const CostoServicioCell = React.memo(({ getValue, row: { original }, column: { id }, table }: EditableCellProps<ProgramacionServicio>) => {
